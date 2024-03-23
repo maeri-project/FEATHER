@@ -1,0 +1,26 @@
+mapspace_constraints:
+  - target: RegisterFile
+    type: bypass
+    bypass:
+    - Outputs
+    - Inputs
+    Meep:
+    - Weights
+  - target: GlobalBuffer
+    type: bypass
+    keep:
+    - Inputs
+    - Weights
+    bypass:
+    - Outputs
+  - target: MainMemory
+    type: bypass
+    keep:
+    - Weights
+    - Inputs
+    - Outputs
+    bypass: []
+  - target: GlobalBuffer
+    type: spatial
+    factors: R=1 S=1 P=1 Q=1 N=1 C<=16 M<=16
+

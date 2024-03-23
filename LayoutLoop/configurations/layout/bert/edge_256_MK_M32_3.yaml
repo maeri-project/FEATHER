@@ -1,0 +1,21 @@
+layout:
+  - target: MainMemory
+    type: temporal
+    factors: M=512 N=1 K=768
+    permutation: MK
+
+  - target: GlobalBuffer
+    type: temporal
+    factors: M=16 N=1 K=768
+    permutation: MK
+
+  - target: GlobalBuffer
+    type: spatial
+    factors: M=32 N=1 K=1
+    permutation: MK
+
+  - target: RegisterFile
+    type: temporal
+    factors: M=1 N=1 K=1
+    permutation: MK
+

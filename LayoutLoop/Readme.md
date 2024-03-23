@@ -8,8 +8,7 @@ To avoid the tedious dependency, we offer the docker with all dependencies and c
 
 Steps: download the docker and put it into <path>
 ```
-unzip <path>/feather_docker.zip
-docker load --input <decompressed_image>
+docker load -i feather_docker.tar 
 docker image ls
 ```
 View the image name from the all available docker images.

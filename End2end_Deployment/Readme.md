@@ -7,15 +7,15 @@ In this folder, we provide the jupyter notebook which could be directly run end-
 - FEATHER.bit: the prebuilt FEATHER bitstream
 - FEATHER.hwh: the prebuilt FEATHER hardware handoff
 
-## Deploy Once-for-all weight-sharing ResNet-50 down to FEATHER running on the ZCU104 FPGA.
-1. open the link in brower [link](blabababa)
-2. type in the password `xilinx` to login.
-3. open the jupyter notebook `blabla/FEATHER.ipynb` 
-4. run the jupyter notebook block by block and enjoy XD.
+## FEATHER: Deploy Once-for-all weight-sharing ResNet-50 down to **FEATHER** running on the ZCU104 FPGA (Mandatory: ~5 min)
+1. open the link in brower [link](https://jupyter_zcu104.lukezhang97.com/)
+2. type in the password `isca2024artifact` to login.
+3. open the jupyter notebook `feather/feather.ipynb`.
+4. run all blocks in jupyter notebook, where we pick 6 SubNets of weights-sharing resnet-50 [link](https://github.com/mit-han-lab/once-for-all/). FETHER could accelerate all different types of layers with different dataflows - layout, and it requires offline compilation to search (dataflow, layout) pairs for each model. To simplify the reproduction complexity, we only show one type of workload in this reproduction, which delivers the key performance/functionality of FEATHER.
 
-## Deploy Once-for-all weight-sharing ResNet-50 down to Xilinx DPU running on the ZCU104 FPGA.
-1. open the jupyter notebook `blabla/FEATHER.ipynb` 
-2. run the jupyter notebook block by block and enjoy XD.
+## Baseline: Deploy Once-for-all weight-sharing ResNet-50 down to **Xilinx DPU** running on the ZCU104 FPGA  (Optional: 4 min)
+We also provide codes to run the commerical Xilinx DPU accelerator for the same set of workloads and obtain per-layer performance.
+1. stay tuned.
 
 By comparing the layer-by-layer performance, you could see that FEATHER outperforms Xilinx DPU by most of the layers, which is align with Figure 12.
 

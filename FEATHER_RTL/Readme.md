@@ -1,12 +1,18 @@
-# Synthesis and PnR Flows
+# Figure 14: Synthesis and PnR for FEATHER
+In this folder, we open source the Synthesis and PnR flow of FEATHER.
 
-## Synthesis and PnR estimated times >96 hours for the largest design[64x64]
+First, we analyze the pre-run results, which are the synthesis and PnR logs from our long-latency local run. 
+Second, we provide code base and detailed step-by-step ASIC synthesis and PnR flow to rerun Syn and PnR for FEATHER.
+Note that: Synthesis and PnR estimated times >96 hours for the largest design[64x64], and thus it's optional.
 
-## Tools used
+## 0 !Pre-run Results Analysis! (Mandatory, reading takes 4 minutes)
+@Anirudh, adding the prerun results
+
+## 1. Dependency
 1. Synthesis    -   Synopsys Design Compiler
 2. PnR          -   Cadence Innovus
 
-## Environment Description
+## 2. Environment Description
 ```bash
 ├── alib-52
 ├── cons
@@ -18,13 +24,13 @@
 ├── mmmc.view
 └── PnR.tcl
 ```
-### alib-52
+### 2.1 alib-52
 lib files relevant to TSMC 28 nm process (don't touch!)
 
 The provided codebase is intended exclusively for artifact evaluation purposes. Please refrain from distributing the files externally or utilizing them for any other purpose.
 
 
-### cons
+### 2.2 cons
 Synthesis Constraints
 1. **defaults.tcl** \
     This file contains the essential constraints such as input clock constraint, skew, input/output constraints etc. \
@@ -34,7 +40,7 @@ Synthesis Constraints
     set clk_period 1
     ```
     Where 1 here is 1 ns.
-### lib_setup
+### 2.3 lib_setup
 
 The dc_setup_lvt.tcl and dc_setup_svt.tcl files will contain the paths to the TSMC Library.
 
@@ -46,7 +52,7 @@ set synthetic_library {absolute/path/to/tsmc_libfile.db}
 set link_library {absolute/path/to/tsmc_libfile.db}
 ```
 
-### scripts
+### 2.4 scripts
 1. **syn.tcl** \
     set the top file at:
     ```tcl
@@ -59,7 +65,7 @@ set link_library {absolute/path/to/tsmc_libfile.db}
 
     This is the script to launch synthesis
 
-## Running Synthesis with Synopsys Design Compiler - 
+## 3. Running Synthesis with Synopsys Design Compiler - (Optional, >96 hours)
 
 ```bash
 $ csh
@@ -69,24 +75,24 @@ $ csh
 > source :run_syn
 ```
 
-### outputs
+### 3.1 outputs
 After successful synthesis the following files are generated
 1. feather_top.**g.v**
 2. feather_top.**sdc**
 3. feather_top.**sdf**
 4. feather_top.**ddc**
 
-### reports
+### 3.2 reports
 After successful synthesis the following reports are generated
 1. feather_top_area.rpt
 2. feather_top_dw_area.rpt
 3. feather_top_power.rpt
 4. feather_top_timing.rpt
 
-### RTL
+### 3.3 RTL
 All the RTL design files
 
-### PnR Scripts
+### 3.4 PnR Scripts
 Please ensure synthesis is run successfully before updating and running the below scripts
 1. **mmmc.view** 
     1. Ensure **qx_tech_file**, **library_file** and **timing** library paths are set
@@ -110,7 +116,7 @@ Please ensure synthesis is run successfully before updating and running the belo
     set init_verilog absolute/path/to/top_most_heriarchy_module_name.g.v
     ```
 
-## Running PnR with Innovus -
+## 4. Running PnR with Innovus - (Optional, >96 hours)
 1. After sourcing all the environments:
 ```bash
 > innovus

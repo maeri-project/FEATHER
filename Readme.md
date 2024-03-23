@@ -18,8 +18,8 @@ python results_generation.py
 # Structure of the Repo: 
 Each folder consists (1) pre-run results for each experiments, and (2) detailed step-by-step operation to reproduce the experiments.
 ## Experiment Set 1 - Figure 12 - End-to-end deployment on FPGA to run ResNet-50
-- Experiment 1 Pre-run results. 
-- Experiment 1 Detail step-by-step running (Optional, Estimated 48 hours)
+- Experiment 1 Pre-run results.
+- Experiment 1 Pre-built FPGA bitstream to ease the time of reviewer for ease of reproducing the results.
 ## Experiment Set 2 - Figure 13 - full design space automated exploration using LayoutLoop 
 - Experiment 2 Pre-run results `LayoutLoop/pre_run_results`
 - Experiment 2 Detail step-by-step running (Optional, Estimated 48 hours)

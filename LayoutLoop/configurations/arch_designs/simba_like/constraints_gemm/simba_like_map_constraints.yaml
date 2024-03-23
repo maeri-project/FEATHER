@@ -1,0 +1,31 @@
+#
+# The following constraints are not limitations of the hardware architecture,
+# but help limit the search space to speed up search
+#
+
+mapspace_constraints:
+  targets:
+    # intuitive optimization to not tile the R and S dimension at the GLB level
+    - target: PEAccuBuffer
+      type: spatial
+    # intuitive optimization according to hardware dimension
+    - target: RegisterFile
+      type: spatial
+    # The temporal constraints for the components below should together include all the dimensions of the problem
+    # Each being responsible for a non-overlapping subset of them
+    # responsible for P and Q
+    - target: PEWeightRegs
+      type: temporal
+      permutation: MNK
+    # no temporal amplification
+    - target: RegisterFile
+      type: temporal
+      permutation: MNK
+    # responsible for M
+    - target: PEAccuBuffer
+      type: temporal
+      permutation: MNK
+    # responsible for R and S
+    - target: PEWeightBuffer
+      type: temporal
+      permutation: MNK

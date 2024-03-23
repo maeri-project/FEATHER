@@ -1,0 +1,79 @@
+mapping:
+  - target: ofmap_spad
+    type: datatype
+    keep:
+      - Outputs
+    bypass:
+      - Inputs
+      - Weights
+  - target: weights_spad
+    type: datatype
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: RegisterFile
+    type: datatype
+    keep:
+      - Inputs
+    bypass:
+      - Weights
+      - Outputs
+  - target: DummyBuffer
+    type: datatype
+    keep:
+      []
+    bypass:
+      - Inputs
+      - Weights
+      - Outputs
+  - target: GlobalBuffer
+    type: datatype
+    keep:
+      - Inputs
+      - Outputs
+    bypass:
+      - Weights
+  - target: MainMemory
+    type: datatype
+    keep:
+      - Inputs
+      - Weights
+      - Outputs
+    bypass:
+      []
+  - target: ofmap_spad
+    type: temporal
+    factors: M1 N1 K1
+    permutation: MNK
+  - target: weights_spad
+    type: temporal
+    factors: M1 N1 K1
+    permutation: MNK
+  - target: RegisterFile
+    type: temporal
+    factors: M1 N1 K1
+    permutation: MNK
+  - target: DummyBuffer
+    type: spatial
+    factors: M1 N4 K2
+    permutation: NKM
+    split: 0
+  - target: DummyBuffer
+    type: temporal
+    factors: M1 N1 K1
+    permutation: MNK
+  - target: GlobalBuffer
+    type: spatial
+    factors: M1 N16 K1
+    permutation: NMK
+    split: 1
+  - target: GlobalBuffer
+    type: temporal
+    factors: M1 N1 K24
+    permutation: KMN
+  - target: MainMemory
+    type: temporal
+    factors: M512 N48 K16
+    permutation: MNK

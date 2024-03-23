@@ -1,0 +1,57 @@
+ERT_summary:
+  version: 0.3
+  table_summary:
+  - name: System.Chip.PE.RegisterFile[0..255]
+    actions:
+    - name: read
+      average_energy: 0.2123
+      max_energy: 0.42018
+      min_energy: 0.00441
+    - name: write
+      average_energy: 0.2123
+      max_energy: 0.42018
+      min_energy: 0.00441
+    - name: idle
+      energy: 0.00441
+    primitive_estimation(s):
+    - name: System.Chip.PE.RegisterFile[0..255]
+      estimator: Aladdin_table
+  - name: System.Chip.PE.MACC[0..255]
+    actions:
+    - name: mac_random
+      energy: 0.5608
+    - name: mac_reused
+      energy: 0.47989
+    - name: mac_gated
+      energy: 0.03642
+    - name: idle
+      energy: 0.01797
+    primitive_estimation(s):
+    - name: System.Chip.PE.MACC[0..255]
+      estimator: Aladdin_table
+  - name: System.Chip.GlobalBuffer
+    actions:
+    - name: read
+      average_energy: 62.31575
+      max_energy: 124.61
+      min_energy: 0.0215
+    - name: write
+      average_energy: 59.02725
+      max_energy: 118.033
+      min_energy: 0.0215
+    - name: idle
+      energy: 0.0215
+    primitive_estimation(s):
+    - name: System.Chip.GlobalBuffer
+      estimator: Cacti
+  - name: System.MainMemory
+    actions:
+    - name: read
+      energy: 2048
+    - name: write
+      energy: 2048
+    - name: idle
+      energy: 0
+    primitive_estimation(s):
+    - name: System.MainMemory
+      estimator: Cacti

@@ -1,0 +1,21 @@
+layout:
+  - target: MainMemory
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=672 M=1 N=1
+    permutation: PSRQC MN
+
+  - target: GlobalBuffer
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=672 M=1 N=1
+    permutation: PSRQC MN
+
+  - target: GlobalBuffer
+    type: spatial
+    factors: R=1 S=1 P=32 Q=1 C=1 M=1 N=1
+    permutation: PSRQC MN
+
+  - target: RegisterFile
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1
+    permutation: PSRQC MN
+

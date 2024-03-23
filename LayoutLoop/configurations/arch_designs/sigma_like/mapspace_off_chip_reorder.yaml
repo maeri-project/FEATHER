@@ -1,0 +1,20 @@
+mapspace_constraints:
+  - target: RegisterFile
+    type: bypass
+    keep:
+    - Weights
+    - Inputs
+    - Outputs
+  - target: GlobalBuffer
+    type: bypass
+    keep:
+    - Weights
+    bypass:
+    - Inputs
+    - Outputs
+  - target: MainMemory
+    type: bypass
+    keep:
+    - Weights
+    - Inputs
+    - Outputs

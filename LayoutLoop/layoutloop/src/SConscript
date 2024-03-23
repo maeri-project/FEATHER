@@ -1,0 +1,281 @@
+# Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#  * Neither the name of NVIDIA CORPORATION nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+# OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+# -*- mode:python -*-
+import os
+
+Import('env')
+
+env.Append(CPPDEFINES = [('BUILD_BASE_DIR', '\\"' + env["BUILD_BASE_DIR"] + '\\"')])
+env.Append(CPPPATH = [os.path.join(env['BUILD_BASE_DIR'], 'include')])
+#env.Append(CPPPATH = ['src/include'])
+#env["CPPPATH"] = ["."]
+
+if GetOption('debug'):
+    env.Append(CCFLAGS = ['-g', '-O0'])
+else:
+    env.Append(CCFLAGS = ['-g', '-O3', '-flto'])
+    
+env.Append(CCFLAGS = ['-Werror', '-Wall', '-Wextra', '-std=c++17', '-pthread'])
+
+if GetOption('clang'):
+  env.Append(CCFLAGS = ['-ferror-limit=1'])
+else:
+  env.Append(CCFLAGS = ['-fmax-errors=1'])
+
+env.Append(LIBPATH = ['.'])
+# If we are doing a static build, the timeloop library must be the first
+# item in the link order.
+if GetOption('link_static'):
+    env.Append(LIBS = ['timeloop-mapper'])
+
+env.Append(LINKFLAGS = ['-std=c++17', '-pthread'])
+if str(Platform()) != 'darwin':
+  env.Append(LINKFLAGS = ['-static-libgcc', '-static-libstdc++'])
+
+env.Append(LIBS = ['config++', 'yaml-cpp', 'ncurses'])
+if str(Platform()) != 'darwin':
+  env.Append(LIBS = ['tinfo'])
+
+# barvinok needs to be before isl because it references isl functions
+if GetOption('with_isl'):
+    env.Append(LIBS = ['barvinok', 'isl', 'ntl', 'pthread', 'polylibgmp', 'gmp'])
+
+if GetOption('link_static'):
+    print("Using static linking.")
+    env.Append(LINKFLAGS = [ '-Wl,--whole-archive', '-static', '-lpthread', '-Wl,--no-whole-archive'])
+    env.Append(LIBS = ['tinfo', 'gpm'])
+else:
+    print("Using dynamic linking.")
+
+env.Append(LIBS = ['boost_iostreams', 'boost_serialization'])
+
+if os.environ.get('BOOSTDIR'):
+    env.Append(CPPFLAGS = ['-I' + os.environ['BOOSTDIR'] + '/include'])
+    env.Append(LIBPATH = [os.environ['BOOSTDIR'] + '/lib'])
+
+if "LIBCONFIGPATH" in os.environ:
+    LIBCONFIGPATH = os.environ["LIBCONFIGPATH"]
+    env["LIBPATH"] += [LIBCONFIGPATH + '/lib']
+    env["CPPFLAGS"] += ['-I' + LIBCONFIGPATH + '/include']
+
+if "HDF5PATH" in os.environ:
+    HDF5PATH = os.environ["HDF5PATH"]
+    env["LIBPATH"] += [HDF5PATH + '/lib']
+    env["CPPFLAGS"] += ['-I' + HDF5PATH + '/include']
+    env["LIBS"] += ['hdf5', 'hdf5_hl']
+elif "HDF5PATH_INCLUDE" in os.environ:
+    HDF5PATH_INCLUDE = os.environ["HDF5PATH_INCLUDE"]
+    env["CPPPATH"] += ['-I' + HDF5PATH_INCLUDE]
+    env["LIBS"] += ['hdf5_cpp', 'hdf5_hl_cpp', 'hdf5_serial', 'hdf5_serial_hl']
+
+if "YAMLCPPPATH" in os.environ:
+    YAMLCPPPATH = os.environ["YAMLCPPPATH"]
+    env["LIBPATH"] += [YAMLCPPPATH + '/lib']
+    env["CPPFLAGS"] += ['-I' + YAMLCPPPATH + '/include']
+
+if "NCURSESPATH" in os.environ:
+    NCURSESPATH = os.environ["NCURSESPATH"]
+    env.Append(LIBPATH = [NCURSESPATH + '/lib'])
+    env.Append(CPPFLAGS = ['-I' + NCURSESPATH + '/include'])
+
+if "BARVINOKPATH" in os.environ:
+    BARVINOKPATH = os.environ["BARVINOKPATH"]
+    env.Append(LIBPATH = [BARVINOKPATH + '/lib'])
+    env.Append(CPPFLAGS = ['-I' + BARVINOKPATH + '/include'])
+
+if "NTLPATH" in os.environ:
+    NTLPATH = os.environ["NTLPATH"]
+    env.Append(LIBPATH = [NTLPATH + '/lib'])
+    env.Append(CPPFLAGS = ['-I' + NTLPATH + '/include'])
+
+if GetOption('use_accelergy'):
+    env["CPPDEFINES"] += [('USE_ACCELERGY')]
+
+if not os.path.isdir('../src/pat'):
+    print ("ERROR: 'src/pat' not found. Please create a symbolic link to the source code for the power-area-timing model and place it in src/pat. E.g., ln -s pat-public/src/pat src/pat.")
+    Exit(1)
+
+# Build the model library.
+    
+common_sources = Split("""
+loop-analysis/coordinate-space-tile-info.cpp
+loop-analysis/loop-state.cpp
+loop-analysis/tiling.cpp
+loop-analysis/tiling-tile-info.cpp
+loop-analysis/point.cpp
+loop-analysis/point-set-aahr.cpp
+loop-analysis/point-set-multi-aahr.cpp
+loop-analysis/nest-analysis-tile-info.cpp
+loop-analysis/nest-analysis.cpp
+loop-analysis/aahr-carve.cpp
+sparse-analysis/state.cpp
+sparse-analysis/sparse-analysis.cpp
+sparse-analysis/compute-gs-analyzer.cpp
+sparse-analysis/storage-gs-analyzer.cpp
+sparse-analysis/representation-analyzer.cpp
+sparse-analysis/storage-optimization-combiner.cpp
+loop-analysis/operation-type.cpp
+pat/pat.cpp
+mapping/loop.cpp
+mapping/nest.cpp
+model/model-base.cpp
+model/engine.cpp
+model/level.cpp
+model/arithmetic.cpp
+model/buffer.cpp
+model/topology.cpp
+model/network.cpp
+model/network-factory.cpp
+model/network-legacy.cpp
+model/network-reduction-tree.cpp
+model/network-simple-multicast.cpp
+model/sparse-optimization-info.cpp
+model/sparse-optimization-parser.cpp
+model/util.cpp
+util/banner.cpp
+util/args.cpp
+util/numeric.cpp
+util/map2d.cpp
+util/accelergy_interface.cpp
+workload/shape-models/problem-shape.cpp
+workload/workload.cpp
+workload/shape-models/operation-space.cpp
+workload/density-models/density-distribution.cpp
+workload/density-models/density-distribution-factory.cpp
+workload/density-models/fixed-structured-distribution.cpp
+workload/density-models/hypergeometric-distribution.cpp
+workload/density-models/banded-distribution.cpp
+workload/format-models/metadata-format.cpp
+workload/format-models/metadata-format-factory.cpp
+workload/format-models/run-length-encoding.cpp
+workload/format-models/uncompressed-offset-pair.cpp
+workload/format-models/coordinate-payload.cpp
+workload/format-models/uncompressed-bitmask.cpp
+workload/format-models/bitmask.cpp
+compound-config/compound-config.cpp
+""")
+
+if GetOption('with_isl'):
+    common_sources = common_sources + ['loop-analysis/point-set-isl.cpp']
+
+modellib_sources = common_sources + Split("""
+data/cnn/cnn-layers.cpp
+data/cnn/cnn-densities.cpp
+mapping/mapping.cpp
+mapping/parser.cpp
+layout/parser.cpp
+mapping/arch-properties.cpp
+mapping/constraints.cpp
+""")
+
+mapspace_sources = Split("""
+mapspaces/mapspace-base.cpp
+mapspaces/mapspace-factory.cpp
+mapspaces/subspaces.cpp
+mapspaces/uber.cpp
+""")
+
+search_sources = Split("""
+search/search-factory.cpp
+search/exhaustive.cpp
+search/hybrid.cpp
+search/linear-pruned.cpp
+search/random-pruned.cpp
+search/random.cpp
+""")
+
+mapperlib_sources = modellib_sources + mapspace_sources + search_sources
+
+libenv = env.Clone()
+
+if GetOption('link_static'):
+    lib_model_static = libenv.StaticLibrary(target = 'timeloop-model', source = modellib_sources)
+    libenv.Install(env["BUILD_BASE_DIR"] + '/lib', [ lib_model_static ])
+else:
+    lib_model_shared = libenv.SharedLibrary(target = 'timeloop-model', source = modellib_sources)
+    libenv.Install(env["BUILD_BASE_DIR"] + '/lib', [ lib_model_shared ])
+#libenv.Install(env["BUILD_BASE_DIR"] + '/lib', [ lib_model_shared, lib_model_static ])
+
+if GetOption('link_static'):
+    lib_mapper_static = libenv.StaticLibrary(target = 'timeloop-mapper', source = mapperlib_sources)
+    libenv.Install(env["BUILD_BASE_DIR"] + '/lib', [ lib_mapper_static ])
+else:
+    lib_mapper_shared = libenv.SharedLibrary(target = 'timeloop-mapper', source = mapperlib_sources)
+    libenv.Install(env["BUILD_BASE_DIR"] + '/lib', [ lib_mapper_shared ])
+
+# If we are doing a dynamic build, the timeloop library must be the last
+# item in the link order.
+if not GetOption('link_static'):
+    env.Append(LIBS = ['timeloop-mapper'])
+
+# Build the various binaries.
+
+metrics_sources = Split("""
+applications/metrics/metrics.cpp
+applications/metrics/main.cpp
+""")
+
+model_sources = Split("""
+applications/model/model.cpp
+applications/model/main.cpp
+""")
+
+mapper_sources = Split("""
+applications/mapper/mapper.cpp
+applications/mapper/mapper-thread.cpp
+applications/mapper/main.cpp
+""")
+
+simple_mapper_sources = Split("""
+applications/simple-mapper/simple-mapper.cpp
+applications/simple-mapper/main.cpp
+""")
+
+design_space_sources = Split("""
+applications/mapper/mapper.cpp
+applications/mapper/mapper-thread.cpp
+applications/design-space/arch.cpp
+applications/design-space/problem.cpp
+applications/design-space/design-space.cpp
+applications/design-space/main.cpp
+""")
+
+bin_metrics = env.Program(target = 'timeloop-metrics', source = metrics_sources)
+bin_model = env.Program(target = 'timeloop-model', source = model_sources)
+bin_simple_mapper = env.Program(target = 'timeloop-simple-mapper', source = simple_mapper_sources)
+bin_mapper = env.Program(target = 'timeloop-mapper', source = mapper_sources)
+bin_design_space = env.Program(target = 'timeloop-design-space', source = design_space_sources)
+
+env.Install(env["BUILD_BASE_DIR"] + '/bin', [ bin_metrics,
+                                              bin_model,
+                                              bin_simple_mapper,
+                                              bin_mapper,
+                                              bin_design_space
+                                            ])
+
+#os.symlink(os.path.abspath('timeloop-mapper'), os.path.abspath('timeloop'))
+#os.symlink(os.path.abspath('timeloop-model'), os.path.abspath('model'))

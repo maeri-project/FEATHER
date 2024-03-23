@@ -1,0 +1,25 @@
+problem:
+  instance:
+    K: 768
+    M: 512
+    N: 768
+  shape:
+    data-spaces:
+    - name: A
+      projection:
+      - - - M
+      - - - K
+    - name: B
+      projection:
+      - - - N
+      - - - K
+    - name: O
+      projection:
+      - - - M
+      - - - N
+      read-write: true
+    dimensions:
+    - M
+    - N
+    - K
+    name: gemm-ABO

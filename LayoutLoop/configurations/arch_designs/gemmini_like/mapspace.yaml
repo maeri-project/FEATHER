@@ -1,0 +1,49 @@
+mapspace_constraints:
+  - target: RegisterFile
+    type: bypass
+    bypass:
+    - Outputs
+    - Inputs
+    Meep:
+    - Weights
+  - target: Accumulator
+    type: bypass
+    bypass:
+    - Weights
+    - Inputs
+    Meep:
+    - Outputs
+  - target: GlobalBuffer
+    type: bypass
+    keep:
+    - Inputs
+    - Weights
+    bypass:
+    - Outputs
+  - target: MainMemory
+    type: bypass
+    keep:
+    - Weights
+    - Inputs
+    - Outputs
+    bypass: []
+  - target: RegisterFile
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1
+    permutation: PQRSCMN
+  - target: Accumulator
+    type: spatial
+    factors: R=1 S=1 P=1 Q=1 C<=16 M=1 N=1
+    permutation: QMC
+  - target: Accumulator
+    type: temporal
+    permutation: QPNCSRM
+  - target: GlobalBuffer
+    type: spatial
+    factors: R=1 S=1 P=1 Q=1 N=1 C=1 M<=16
+  - target: GlobalBuffer
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1
+  - target: MainMemory
+    type: temporal
+    permutation: CSRMQPN

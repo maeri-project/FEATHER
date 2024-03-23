@@ -1,0 +1,41 @@
+#
+# The following constraints are limitations of the hardware architecture and dataflow
+#
+architecture_constraints:
+  targets:
+    # certain buffer only stores certain datatypes
+    - target: PEWeightRegs
+      type: datatype
+      keep: [Weights]
+      bypass: [Inputs, Outputs]
+    - target: PEAccuBuffer
+      type: datatype
+      keep: [Outputs]
+      bypass: [Weights, Inputs]
+    - target: PEWeightBuffer
+      type: datatype
+      keep: [Weights]
+      bypass: [Inputs, Outputs]
+    - target: RegisterFile
+      type: datatype
+      keep: [Inputs]
+      bypass: [Weights, Outputs]
+    - target: GlobalBuffer
+      type: datatype
+      keep: [Inputs, Outputs]
+      bypass: [Weights]
+    # do not allow parallel-for for P, Q, R, S, M, N
+    - target: PEAccuBuffer
+      type: spatial
+      factors: K=1
+      permutation: MNK
+    # do not allow parallel-for for P, Q, R, S, C, N
+    - target: RegisterFile
+      type: spatial
+      factors: N=1
+      permutation: MNK
+    # do not allow parallel-for for P, Q, R, S, N
+    - target: GlobalBuffer
+      type: spatial
+      factors: M=1 N<=16 K<=16
+      permutation: MNK

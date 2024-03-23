@@ -1,5 +1,17 @@
+/*
+    Top Module:  Generic Single Port SRAM 
+    Data:        Only data width matters.
+    Format:      keeping the input format unchanged
+    Timing:      Sequential Logic
+    Reset:       Asynchronized Reset [Low Reset]
+
+    Function:    Array of SRAM BANKs
+
+    Author:      Jianming Tong (jianming.tong@gatech.edu), Anirudh Itagi (aitagi7@gatech.edu)
+*/
 
 `timescale 1ns / 1ps
+
 module sram_sp_2d_array #(
     parameter SRAM_BANK_DATA_WIDTH  = 8  ,                      //
     parameter SRAM_BANK_ADDR_WIDTH  = 10 ,                      //
@@ -80,22 +92,6 @@ module sram_sp_2d_array #(
                                                                                     :   0;
             assign  w_i_addr    [BANK_ITER] =   (w_i_bank_a_wr_en[BANK_ITER] == 1)  ?   w_i_bank_a_addr    [BANK_ITER]
                                                                                     :   w_i_bank_b_rd_addr [BANK_ITER];
-
-//            sram_bank_dp#(
-//                .SRAM_BANK_DATA_WIDTH   (SRAM_BANK_DATA_WIDTH           ),
-//                .SRAM_BANK_ADDR_WIDTH   (SRAM_BANK_ADDR_WIDTH           ),
-//                .SRAM_BANK_DEPTH        (SRAM_BANK_DEPTH                )
-//            ) sram_bank_dp_inst(
-//                .clk                    (clk                            ),
-//                .rst_n                  (rst_n                          ),
-//                .i_a_wr_addr            (w_i_bank_a_addr    [BANK_ITER] ),
-//                .i_a_wr_en              (w_i_bank_a_wr_en   [BANK_ITER] ),
-//                .i_a_wr_data            (w_i_bank_a_wr_data [BANK_ITER] ),
-//                .i_b_rd_addr            (w_i_bank_b_rd_addr [BANK_ITER] ),
-//                .i_b_rd_en              (w_i_bank_b_rd_en   [BANK_ITER] ),
-//                .o_b_rd_data            (w_o_bank_b_rd_data [BANK_ITER] )
-//            );
-
         end
 
     endgenerate

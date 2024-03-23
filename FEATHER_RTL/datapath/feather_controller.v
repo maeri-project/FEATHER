@@ -1,3 +1,15 @@
+/*
+    Top Module:  Feather Controller
+    Data:        Only data width matters.
+    Format:      keeping the input format unchanged
+    Timing:      Sequential Logic
+    Reset:       Asynchronized Reset [Low Reset]
+
+    Function:    Interconnects all the FEATHER modules. Performs the SRAM RD/WR control and PING/PONG muxing logic
+
+    Author:      Jianming Tong (jianming.tong@gatech.edu), Anirudh Itagi (aitagi7@gatech.edu)
+*/
+
 `timescale 1ns / 1ps
 
 module feather_controller #(
@@ -128,9 +140,9 @@ module feather_controller #(
 );
 
     localparam NUM_STAGE                            =   2*(LOG2_DPE_COL_NUM) - 1;                           // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
-    localparam birrd_COMMAND_WIDTH_PER_ROW           =   2*NUM_STAGE ;                                       // 2_BIT_CMD * (Number of stages-1)
-    localparam birrd_IN_COMMAND_WIDTH                =   birrd_COMMAND_WIDTH_PER_ROW * DPE_COL_NUM >> 1 ;     // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
-    localparam INSTR_SRAM_BANK_DATA_WIDTH           =   birrd_IN_COMMAND_WIDTH;                              //  instruction is only birrd instruction here
+    localparam birrd_COMMAND_WIDTH_PER_ROW          =   2*NUM_STAGE ;                                       // 2_BIT_CMD * (Number of stages-1)
+    localparam birrd_IN_COMMAND_WIDTH               =   birrd_COMMAND_WIDTH_PER_ROW * DPE_COL_NUM >> 1 ;    // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
+    localparam INSTR_SRAM_BANK_DATA_WIDTH           =   birrd_IN_COMMAND_WIDTH;                             //  instruction is only birrd instruction here
     localparam WEIGHTS_DEPTH                        =   DPE_ROW_NUM;                                        //
     localparam LOG2_WEIGHTS_DEPTH                   =   LOG2_DPE_ROW_NUM;                                   //
     localparam PE_SEL_WIDTH                         =   LOG2_DPE_COL_NUM + LOG2_WEIGHTS_DEPTH;              //
@@ -160,7 +172,7 @@ module feather_controller #(
     */
     input                                               clk                                     ;
     input                                               rst_n                                   ;
-    input                                               i_feather_top_en                         ;
+    input                                               i_feather_top_en                        ;
     input       [IACTS_DATA_WIDTH               -1: 0]  i_iacts_zp                              ;
     input                                               i_iacts_zp_valid                        ;
     input       [WEIGHTS_DATA_WIDTH/DPE_COL_NUM -1: 0]  i_weights_zp                            ;
@@ -195,11 +207,11 @@ module feather_controller #(
     output                                              o_weights_ping_pong_sel                 ;
     output      [PE_SEL_WIDTH                   -1: 0]  o_pe_sel                                ;
     output      [LOG2_WEIGHTS_DEPTH             -1: 0]  o_weights_to_use                        ;
-    output      [birrd_IN_COMMAND_WIDTH          -1: 0]  o_birrd_instr                            ;
+    output      [birrd_IN_COMMAND_WIDTH         -1: 0]  o_birrd_instr                           ;
 
     // inputs from birrd
-    input       [OUTBUF_SRAM_DATA_WIDTH         -1: 0]  i_data_bus_from_birrd                    ;
-    input       [OUTBUF_NUM_BANKS               -1: 0]  i_data_bus_from_birrd_valid              ;
+    input       [OUTBUF_SRAM_DATA_WIDTH         -1: 0]  i_data_bus_from_birrd                   ;
+    input       [OUTBUF_NUM_BANKS               -1: 0]  i_data_bus_from_birrd_valid             ;
 
     // I-O from-to iActs Ping
     output      [IACTS_SRAM_DATA_WIDTH          -1: 0]  o_iacts_sram_a_wr_data_ping             ;
@@ -267,16 +279,16 @@ module feather_controller #(
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_mul_with_scale                    ;
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_mul_with_scale_and_store_oact     ;
 
-    wire    [IACTS_PINGPONG_CONFIG_WIDTH        -1: 0]  w_iacts_pingpong_config              ;
-    wire    [WEIGHTS_PINGPONG_CONFIG_WIDTH      -1: 0]  w_weights_pingpong_config            ;
-    reg     [birrd_IN_COMMAND_WIDTH              -1: 0]  r_birrd_instr                        ;
+    wire    [IACTS_PINGPONG_CONFIG_WIDTH        -1: 0]  w_iacts_pingpong_config             ;
+    wire    [WEIGHTS_PINGPONG_CONFIG_WIDTH      -1: 0]  w_weights_pingpong_config           ;
+    reg     [birrd_IN_COMMAND_WIDTH             -1: 0]  r_birrd_instr                       ;
 
 
     reg                                                 r_weights_ping_pong_sel             ;
     reg     [PE_SEL_WIDTH                       -1: 0]  r_pe_sel                            ;
     reg     [LOG2_WEIGHTS_DEPTH                 -1: 0]  r_weights_to_use                    ;
 
-    reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_o_birrd_data_bus_valid             ;
+    reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_o_birrd_data_bus_valid            ;
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_partial_sum_done                  ;
 
 
@@ -294,32 +306,31 @@ module feather_controller #(
     reg     [OACTS_DATA_WIDTH                   -1: 0]  r_oacts_post_quant          [0 : DPE_COL_NUM-1];
     wire    [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_oacts_post_quant;
 
-    // reg but actually wire -- will be deleted
-    /*reg*/ wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_from_ctrl_to_dpe            ;
-    /*reg*/ wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_valid_from_ctrl_to_dpe      ;
-    /*reg*/ wire     [DPE_COL_NUM                        -1: 0]  w_weights_valid_from_ctrl_to_dpe    ;
-    /*reg*/ wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_from_ctrl_to_dpe          ;
-    /*reg*/ wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_sram_a_wr_data_ping     ;
-    /*reg*/ wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_a_wr_addr_ping     ;
-    /*reg*/ wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_a_wr_en_ping       ;
-    /*reg*/ wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_b_rd_addr_ping     ;
-    /*reg*/ wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_b_rd_en_ping       ;
-    /*reg*/ wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_sram_a_wr_data_pong     ;
-    /*reg*/ wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_a_wr_addr_pong     ;
-    /*reg*/ wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_a_wr_en_pong       ;
-    /*reg*/ wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_b_rd_addr_pong     ;
-    /*reg*/ wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_b_rd_en_pong       ;
-    /*reg*/ wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_sram_a_wr_data_ping   ;
-    /*reg*/ wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_a_wr_addr_ping   ;
-    /*reg*/ wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_a_wr_en_ping     ;
-    /*reg*/ wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_b_rd_addr_ping   ;
-    /*reg*/ wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_b_rd_en_ping     ;
-    /*reg*/ wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_sram_a_wr_data_pong   ;
-    /*reg*/ wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_a_wr_addr_pong   ;
-    /*reg*/ wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_a_wr_en_pong     ;
-    /*reg*/ wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_b_rd_addr_pong   ;
-    /*reg*/ wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_b_rd_en_pong     ;
-    /*reg*/ wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_oacts_read_data               ;
+    wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_from_ctrl_to_dpe           ;
+    wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_valid_from_ctrl_to_dpe     ;
+    wire     [DPE_COL_NUM                        -1: 0]  w_weights_valid_from_ctrl_to_dpe   ;
+    wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_from_ctrl_to_dpe         ;
+    wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_sram_a_wr_data_ping        ;
+    wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_a_wr_addr_ping        ;
+    wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_a_wr_en_ping          ;
+    wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_b_rd_addr_ping        ;
+    wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_b_rd_en_ping          ;
+    wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_iacts_sram_a_wr_data_pong        ;
+    wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_a_wr_addr_pong        ;
+    wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_a_wr_en_pong          ;
+    wire     [IACTS_SRAM_ADDR_WIDTH              -1: 0]  w_iacts_sram_b_rd_addr_pong        ;
+    wire     [IACTS_NUM_BANKS                    -1: 0]  w_iacts_sram_b_rd_en_pong          ;
+    wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_sram_a_wr_data_ping      ;
+    wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_a_wr_addr_ping      ;
+    wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_a_wr_en_ping        ;
+    wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_b_rd_addr_ping      ;
+    wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_b_rd_en_ping        ;
+    wire     [WEIGHTS_SRAM_DATA_WIDTH            -1: 0]  w_weights_sram_a_wr_data_pong      ;
+    wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_a_wr_addr_pong      ;
+    wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_a_wr_en_pong        ;
+    wire     [WEIGHTS_SRAM_ADDR_WIDTH            -1: 0]  w_weights_sram_b_rd_addr_pong      ;
+    wire     [WEIGHTS_NUM_BANKS                  -1: 0]  w_weights_sram_b_rd_en_pong        ;
+    wire     [IACTS_SRAM_DATA_WIDTH              -1: 0]  w_oacts_read_data                  ;
 
 
 
@@ -338,7 +349,7 @@ module feather_controller #(
             r_scale_val                     <=  0;
             r_weights_zp                    <=  0;
             r_iacts_zp                      <=  0;
-            r_birrd_instr                    <=  0;
+            r_birrd_instr                   <=  0;
             r_iacts_pingpong_rd_addr        <=  0;
             r_weights_pingpong_rd_addr      <=  0;
             r_weights_ping_pong_sel         <=  0;
@@ -452,7 +463,6 @@ module feather_controller #(
 
                 IACTS_PINGPONG_FILL_PONG:
                 begin
-                    //(w_iacts_pingpong_config == IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING)
                     if(i_iacts_write_addr == i_iacts_write_addr_end)
                     begin
                         r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING;
@@ -475,7 +485,6 @@ module feather_controller #(
             case(r_weights_buf_ping_pong_state)
                 WEIGHTS_PINGPONG_IDLE:
                 begin
-                    //(w_weights_pingpong_config    ==  WEIGHTS_PINGPONG_FILL_PING)
                     if(i_feather_top_en == 1)
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_FILL_PING;
@@ -528,7 +537,6 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_PONG_FEED_DPE:
                 begin
-                    //(w_weights_pingpong_config    ==  WEIGHTS_PINGPONG_FILL_PING)
                     if(r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end)
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_FILL_PING;
@@ -572,10 +580,7 @@ module feather_controller #(
 
 
         //************************************************************************************************//
-        //if()    // CHECK THIS
-        //begin
         r_birrd_instr        <=  i_instr_sram_b_rd_data[birrd_IN_COMMAND_WIDTH-1 : 0];
-        //end
         //************************************************************************************************//
 
         end
@@ -616,7 +621,7 @@ module feather_controller #(
         |      +---+           +---+       |        |      +---+           +---+       |
         |           \          Λ           |        |                                  |
         |            V        /            |        |                                  |
-        |             DPE+birrd             |        |             DPE+birrd             |
+        |             DPE+birrd            |        |             DPE+birrd             |
         +----------------------------------+        +----------------------------------+
 
         + ---------------------------------+        + ---------------------------------+
@@ -632,8 +637,44 @@ module feather_controller #(
         |      +---+           +---+       |        |      +---+           +---+       |
         |          Λ           /           |        |                                  |
         |           \         V            |        |                                  |
+        |             DPE+birrd            |        |             DPE+birrd             |
+        +----------------------------------+        +----------------------------------+
+
+            ping pong control generation - weights
+
+        + ---------------------------------+        + ---------------------------------+
+        | r_weights_buf_ping_pong_state= 1 |        | r_weights_buf_ping_pong_state= 3 |
+        +----------------------------------+        +----------------------------------+
+        |    in                            |        |                            in    |
+        |     \                            |        |                           /      |
+        |      V                           |        |                          V       |
+        |      +---+           +---+       |        |      +---+           +---+       |
+        |      |   |           |   |       |        |      |   |           |   |       |
+        |      | I |           | O |       |        |      | I |           | O |       |
+        |      |   |           |   |       |        |      |   |           |   |       |
+        |      +---+           +---+       |        |      +---+           +---+       |
+        |                                  |        |                                  |
+        |                                  |        |                                  |
+        |                                  |        |                                  |
+        +----------------------------------+        +----------------------------------+
+
+        + ---------------------------------+        + ---------------------------------+
+        | r_weights_buf_ping_pong_state= 2 |        | r_weights_buf_ping_pong_state= 4 |
+        +----------------------------------+        +----------------------------------+
+        |                                  |        |                                  |
+        |                                  |        |                                  |
+        |                                  |        |                                  |
+        |      +---+           +---+       |        |      +---+           +---+       |
+        |      |   |           |   |       |        |      |   |           |   |       |
+        |      | I |           | O |       |        |      | I |           | O |       |
+        |      |   |           |   |       |        |      |   |           |   |       |
+        |      +---+           +---+       |        |      +---+           +---+       |
+        |           \                      |        |                      /           |
+        |            V                     |        |                     V            |
         |             DPE+birrd             |        |             DPE+birrd             |
         +----------------------------------+        +----------------------------------+
+    */
+
 
     */
 
@@ -723,243 +764,8 @@ module feather_controller #(
                                                     (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)      ?   ~0                                              :
                                                                                                                                 0   );
 
-
-
-    // convert to assign statement finally
-    //  iActs-oActs Ping Pong
-//    always @ (*)
-//    begin
-
-    // for iActs Ping, port A
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_FILL_PING)
-//        begin
-//            w_iacts_sram_a_wr_data_ping     <=  i_iacts_write_data; // check if need to register
-//            w_iacts_sram_a_wr_addr_ping     <=  {IACTS_NUM_BANKS{i_iacts_write_addr}};
-//            w_iacts_sram_a_wr_en_ping       <=  {IACTS_NUM_BANKS{i_iacts_write_valid}};
-//        end
-//        else if (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING)
-//        begin
-//            w_iacts_sram_a_wr_data_ping     <=  w_oacts_post_quant; // check if need to register
-//            w_iacts_sram_a_wr_addr_ping     <=  r_oacts_wr_addr_to_pingpong;
-//            w_iacts_sram_a_wr_en_ping       <=  r_mul_with_scale_and_store_oact;
-//        end
-//        else
-//        begin
-//            w_iacts_sram_a_wr_data_ping     <= 0;
-//            w_iacts_sram_a_wr_addr_ping     <= 0;
-//            w_iacts_sram_a_wr_en_ping       <= 0;
-//        end
-//
-    // for iActs Ping, port B
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG)
-//        begin
-//            w_iacts_sram_b_rd_addr_ping     <=  {IACTS_NUM_BANKS{r_iacts_pingpong_rd_addr}};
-//            w_iacts_sram_b_rd_en_ping       <=  ~0; //   all 1
-//        end
-//        else if (r_acts_buf_ping_pong_state == IACTS_PINGPONG_DRAIN_PING)
-//        begin
-//            w_iacts_sram_b_rd_addr_ping     <=  {IACTS_NUM_BANKS{i_oacts_read_addr}};
-//            w_iacts_sram_b_rd_en_ping       <=  {IACTS_NUM_BANKS{i_oacts_read_valid}};
-//        end
-//        else
-//        begin
-//            w_iacts_sram_b_rd_addr_ping     <=  0;
-//            w_iacts_sram_b_rd_en_ping       <=  0;
-//        end
-
-//-----------------------------------------------------------------------
-//    // for iActs Pong, port A
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_FILL_PONG)
-//        begin
-//            w_iacts_sram_a_wr_data_pong     <=  i_iacts_write_data; // check if need to register
-//            w_iacts_sram_a_wr_addr_pong     <=  {IACTS_NUM_BANKS{i_iacts_write_addr}};
-//            w_iacts_sram_a_wr_en_pong       <=  {IACTS_NUM_BANKS{i_iacts_write_valid}};
-//        end
-//        else if (r_acts_buf_ping_pong_state == IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG)
-//        begin
-//            w_iacts_sram_a_wr_data_pong     <=  w_oacts_post_quant; // check if need to register
-//            w_iacts_sram_a_wr_addr_pong     <=  r_oacts_wr_addr_to_pingpong;
-//            w_iacts_sram_a_wr_en_pong       <=  r_mul_with_scale_and_store_oact;
-//        end
-//        else
-//        begin
-//            w_iacts_sram_a_wr_data_pong     <=  0;
-//            w_iacts_sram_a_wr_addr_pong     <=  0;
-//            w_iacts_sram_a_wr_en_pong       <=  0;
-//        end
-
-    // for iActs Pong, port B
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING)
-//        begin
-//            w_iacts_sram_b_rd_addr_pong     <=  {IACTS_NUM_BANKS{r_iacts_pingpong_rd_addr}};
-//            w_iacts_sram_b_rd_en_pong       <=  ~0; //   all 1
-//        end
-//        else if (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PONG)
-//        begin
-//            w_iacts_sram_b_rd_addr_pong     <=  {IACTS_NUM_BANKS{i_oacts_read_addr}};
-//            w_iacts_sram_b_rd_en_pong       <=  {IACTS_NUM_BANKS{i_oacts_read_valid}};
-//        end
-//        else
-//        begin
-//            w_iacts_sram_b_rd_addr_pong     <=  0;
-//            w_iacts_sram_b_rd_en_pong       <=  0;
-//        end
-//
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG)
-//        begin
-//            w_iacts_from_ctrl_to_dpe        <=  i_iacts_sram_b_rd_data_ping;
-//            w_iacts_valid_from_ctrl_to_dpe  <=  ~0; //   all 1
-//        end
-//        else if (r_acts_buf_ping_pong_state == IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING)
-//        begin
-//            w_iacts_from_ctrl_to_dpe        <=  i_iacts_sram_b_rd_data_pong;
-//            w_iacts_valid_from_ctrl_to_dpe  <=  ~0; //   all 1
-//        end
-//        else
-//        begin
-//            w_iacts_from_ctrl_to_dpe        <=  0;
-//            w_iacts_valid_from_ctrl_to_dpe  <=  0;
-//        end
-//
-//        if      (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PONG)
-//        begin
-//            w_oacts_read_data               <=  i_iacts_sram_b_rd_data_pong;
-//        end
-//        else if (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PING)
-//        begin
-//            w_oacts_read_data               <=  i_iacts_sram_b_rd_data_ping;
-//        end
-//        else
-//        begin
-//            w_oacts_read_data               <=  0;
-//        end
-//
-//    end
 //__________________________________________________________________________________________________________________________
 //__________________________________________________________________________________________________________________________
-
-
-
-
-//__________________________________________________________________________________________________________________________
-//__________________________________________________________________________________________________________________________
-    /*
-            ping pong control generation - weights
-
-        + ---------------------------------+        + ---------------------------------+
-        | r_weights_buf_ping_pong_state= 1 |        | r_weights_buf_ping_pong_state= 3 |
-        +----------------------------------+        +----------------------------------+
-        |    in                            |        |                            in    |
-        |     \                            |        |                           /      |
-        |      V                           |        |                          V       |
-        |      +---+           +---+       |        |      +---+           +---+       |
-        |      |   |           |   |       |        |      |   |           |   |       |
-        |      | I |           | O |       |        |      | I |           | O |       |
-        |      |   |           |   |       |        |      |   |           |   |       |
-        |      +---+           +---+       |        |      +---+           +---+       |
-        |                                  |        |                                  |
-        |                                  |        |                                  |
-        |                                  |        |                                  |
-        +----------------------------------+        +----------------------------------+
-
-        + ---------------------------------+        + ---------------------------------+
-        | r_weights_buf_ping_pong_state= 2 |        | r_weights_buf_ping_pong_state= 4 |
-        +----------------------------------+        +----------------------------------+
-        |                                  |        |                                  |
-        |                                  |        |                                  |
-        |                                  |        |                                  |
-        |      +---+           +---+       |        |      +---+           +---+       |
-        |      |   |           |   |       |        |      |   |           |   |       |
-        |      | I |           | O |       |        |      | I |           | O |       |
-        |      |   |           |   |       |        |      |   |           |   |       |
-        |      +---+           +---+       |        |      +---+           +---+       |
-        |           \                      |        |                      /           |
-        |            V                     |        |                     V            |
-        |             DPE+birrd             |        |             DPE+birrd             |
-        +----------------------------------+        +----------------------------------+
-    */
-
-
-//        //  Weights Ping Pong
-//    always @ (*)
-//    begin
-//
-//        // Weigths Ping, A
-//        if      (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_FILL_PING)
-//        begin
-//            w_weights_sram_a_wr_data_ping       <=  i_weights_write_data;
-//            w_weights_sram_a_wr_addr_ping       <=  {WEIGHTS_NUM_BANKS{i_weights_write_addr}};
-//            w_weights_sram_a_wr_en_ping         <=  {WEIGHTS_NUM_BANKS{i_weights_write_valid}};
-//        end
-//        else
-//        begin
-//            w_weights_sram_a_wr_data_ping       <=  0;
-//            w_weights_sram_a_wr_addr_ping       <=  0;
-//            w_weights_sram_a_wr_en_ping         <=  0;
-//        end
-//
-//        // Weigths Ping, B
-//        if      (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)
-//        begin
-//            w_weights_sram_b_rd_addr_ping       <=  {WEIGHTS_NUM_BANKS{r_weights_pingpong_rd_addr}};
-//            w_weights_sram_b_rd_en_ping         <=  ~0; //   all 1
-//        end
-//        else
-//        begin
-//            w_weights_sram_b_rd_addr_ping       <=  0;
-//            w_weights_sram_b_rd_en_ping         <=  0;
-//            w_weights_valid_from_ctrl_to_dpe    <=  0;
-//        end
-//
-//        // Weigths Pong, A
-//        if      (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_FILL_PONG)
-//        begin
-//            w_weights_sram_a_wr_data_pong       <=  i_weights_write_data;
-//            w_weights_sram_a_wr_addr_pong       <=  {WEIGHTS_NUM_BANKS{i_weights_write_addr}};
-//            w_weights_sram_a_wr_en_pong         <=  {WEIGHTS_NUM_BANKS{i_weights_write_valid}};
-//        end
-//        else
-//        begin
-//            w_weights_sram_a_wr_data_pong       <=  0;
-//            w_weights_sram_a_wr_addr_pong       <=  0;
-//            w_weights_sram_a_wr_en_pong         <=  0;
-//        end
-//
-//        // Weigths Pong, B
-//        if      (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)
-//        begin
-//            w_weights_sram_b_rd_addr_pong       <=  {WEIGHTS_NUM_BANKS{r_weights_pingpong_rd_addr}};
-//            w_weights_sram_b_rd_en_pong         <=  ~0; //   all 1
-//        end
-//        else
-//        begin
-//            w_weights_sram_b_rd_addr_pong       <=  0;
-//            w_weights_sram_b_rd_en_pong         <=  0;
-//            w_weights_valid_from_ctrl_to_dpe    <=  0;
-//        end
-//
-//        if      (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)
-//        begin
-//            w_weights_from_ctrl_to_dpe          <=  i_weights_sram_b_rd_data_ping;
-//            w_weights_valid_from_ctrl_to_dpe    <=  ~0;
-//        end
-//        else if (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)
-//        begin
-//            w_weights_from_ctrl_to_dpe          <=  i_weights_sram_b_rd_data_pong;
-//            w_weights_valid_from_ctrl_to_dpe    <=  ~0;
-//        end
-//        else
-//        begin
-//            w_weights_from_ctrl_to_dpe          <=  0;
-//            w_weights_valid_from_ctrl_to_dpe    <=  0;
-//        end
-//
-//    end
-//__________________________________________________________________________________________________________________________
-//__________________________________________________________________________________________________________________________
-
-
-
 
 
 // output of birrd processing and R/W generation for birrd OUTPUT BUFFER
@@ -990,10 +796,10 @@ module feather_controller #(
 
             for(GENVAR_COL_SRAM_ITER0=0; GENVAR_COL_SRAM_ITER0<DPE_COL_NUM; GENVAR_COL_SRAM_ITER0=GENVAR_COL_SRAM_ITER0+1)
             begin
-                r_o_birrd_data           [GENVAR_COL_SRAM_ITER0]    <=  0;
-                r_o_birrd_data_prev      [GENVAR_COL_SRAM_ITER0]    <=  0;
+                r_o_birrd_data          [GENVAR_COL_SRAM_ITER0]    <=  0;
+                r_o_birrd_data_prev     [GENVAR_COL_SRAM_ITER0]    <=  0;
                 r_oacts_post_quant      [GENVAR_COL_SRAM_ITER0]    <=  0;
-                r_o_birrd_data_for_mul   [GENVAR_COL_SRAM_ITER0]    <=  0;
+                r_o_birrd_data_for_mul  [GENVAR_COL_SRAM_ITER0]    <=  0;
             end
             r_outbuf_sram_a_wr_addr_temp        <=  0;
             r_outbuf_sram_a_wr_addr             <=  0;
@@ -1002,7 +808,7 @@ module feather_controller #(
             r_bypass_to_scale                   <=  0;
             r_mul_with_scale                    <=  0;
             r_mul_with_scale_and_store_oact     <=  0;
-            r_o_birrd_data_bus_valid             <=  0;
+            r_o_birrd_data_bus_valid            <=  0;
             r_partial_sum_done                  <=  0;
             r_outbuf_sram_a_wr_data             <=  0;
         end
@@ -1012,7 +818,7 @@ module feather_controller #(
 
 
             // registering output of birrd to BANKS
-            r_o_birrd_data_bus_valid             <=  i_data_bus_from_birrd_valid;
+            r_o_birrd_data_bus_valid            <=  i_data_bus_from_birrd_valid;
             r_partial_sum_done                  <=  r_o_birrd_data_bus_valid;
 
             for(GENVAR_COL_SRAM_ITER=0; GENVAR_COL_SRAM_ITER<DPE_COL_NUM; GENVAR_COL_SRAM_ITER=GENVAR_COL_SRAM_ITER+1)
@@ -1127,7 +933,7 @@ module feather_controller #(
     assign  o_weights_ping_pong_sel             =   r_weights_ping_pong_sel             ;
     assign  o_pe_sel                            =   r_pe_sel                            ;
     assign  o_weights_to_use                    =   r_weights_to_use                    ;
-    assign  o_birrd_instr                        =   r_birrd_instr                        ;
+    assign  o_birrd_instr                       =   r_birrd_instr                       ;
     assign  o_iacts_sram_a_wr_data_ping         =   w_iacts_sram_a_wr_data_ping         ;
     assign  o_iacts_sram_a_wr_addr_ping         =   w_iacts_sram_a_wr_addr_ping         ;
     assign  o_iacts_sram_a_wr_en_ping           =   w_iacts_sram_a_wr_en_ping           ;

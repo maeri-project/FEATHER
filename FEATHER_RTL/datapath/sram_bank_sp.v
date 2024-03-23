@@ -1,10 +1,21 @@
+/*
+    Top Module:  Generic Single Port SRAM Bank
+    Data:        Only data width matters.
+    Format:      keeping the input format unchanged
+    Timing:      Sequential Logic
+    Reset:       Asynchronized Reset [Low Reset]
 
+    Function:    Single, Common RD/WR enable to control read and write
+
+    Author:      Jianming Tong (jianming.tong@gatech.edu), Anirudh Itagi (aitagi7@gatech.edu)
+*/
 
 `timescale 1ns / 1ps
+
 module sram_bank_sp #(
-    parameter SRAM_BANK_DATA_WIDTH      = 8  ,                  //
-    parameter SRAM_BANK_ADDR_WIDTH      = 10 ,                  //
-    parameter SRAM_BANK_DEPTH           = 2**SRAM_BANK_ADDR_WIDTH    //
+    parameter SRAM_BANK_DATA_WIDTH      = 8  ,                      //
+    parameter SRAM_BANK_ADDR_WIDTH      = 10 ,                      //
+    parameter SRAM_BANK_DEPTH           = 2**SRAM_BANK_ADDR_WIDTH   //
 
 )(
     clk,
@@ -46,7 +57,6 @@ module sram_bank_sp #(
     begin
         if(!rst_n)
         begin
-            // check this - comment below reset init logic out for synthesis?
             for (i=0; i<SRAM_BANK_DEPTH; i=i+1)
             begin
                 r_sram_bank[i]   <=  0;

@@ -1,66 +1,28 @@
 /*
+    Top Module:  Feather Top module
+    Data:        Only data width matters.
+    Format:      keeping the input format unchanged
+    Timing:      Sequential Logic
+    Reset:       Asynchronized Reset [Low Reset]
 
-ToDo:
-1. check the valids and stuff for iacts ping pong and output buffer
-2. need to modify instruction width to account for r_mul_with_scale (it is per bank)
-3. need to understand better about the instruction pipelining so that switching !r_bypass_to_scale to r_bypass_to_scale
-4. weights ping pong not clear
-5. remove dp unnecessary ports
+    Function:    Contains all the BIRRD, NEST, SRAMs and Feather controller instantiations
 
-
+    Author:      Jianming Tong (jianming.tong@gatech.edu), Anirudh Itagi (aitagi7@gatech.edu)
 */
 
-
 `timescale 1ns / 1ps
-
-//module feather_top #(
-//    parameter DPE_COL_NUM                       =   8,                                              //
-//    parameter DPE_ROW_NUM                       =   4,                                              //
-//    parameter LOG2_DPE_COL_NUM                  =   3,                                              //
-//    parameter LOG2_DPE_ROW_NUM                  =   2,                                              //
-//
-//    parameter WEIGHTS_DATA_WIDTH                =   8*DPE_COL_NUM,                                  //
-//    parameter WEIGHTS_NUM_BANKS                 =   1,                                              //
-//    parameter WEIGHTS_SRAM_DATA_WIDTH           =   WEIGHTS_NUM_BANKS*WEIGHTS_DATA_WIDTH,           //
-//    parameter WEIGHTS_SRAM_BANK_ADDR_WIDTH      =   10,                                             //
-//    parameter WEIGHTS_SRAM_ADDR_WIDTH           =   WEIGHTS_NUM_BANKS*WEIGHTS_SRAM_BANK_ADDR_WIDTH, //
-//
-//    parameter IACTS_DATA_WIDTH                  =   8,                                              //
-//    parameter IACTS_NUM_BANKS                   =   DPE_COL_NUM,                                    //
-//    parameter IACTS_SRAM_DATA_WIDTH             =   IACTS_NUM_BANKS*IACTS_DATA_WIDTH,               //
-//    parameter IACTS_SRAM_BANK_ADDR_WIDTH        =   10,                                             //
-//    parameter IACTS_SRAM_ADDR_WIDTH             =   IACTS_NUM_BANKS*IACTS_SRAM_BANK_ADDR_WIDTH,     //
-//
-//    parameter SCALE_VALUE_WIDTH                 =   32,                                             //
-//
-//    parameter PE_OUTPUT_WIDTH                   =   32,                                             //
-//
-//    parameter OACTS_DATA_WIDTH                  =   8,                                              //
-//
-//    parameter OUTBUF_DATA_WIDTH                 =   PE_OUTPUT_WIDTH,                                //
-//    parameter OUTBUF_NUM_BANKS                  =   DPE_COL_NUM,                                    //
-//    parameter OUTBUF_SRAM_DATA_WIDTH            =   OUTBUF_NUM_BANKS*OUTBUF_DATA_WIDTH,             //
-//    parameter OUTBUF_SRAM_BANK_ADDR_WIDTH       =   10,                                             //
-//    parameter OUTBUF_SRAM_ADDR_WIDTH            =   OUTBUF_NUM_BANKS*OUTBUF_SRAM_BANK_ADDR_WIDTH,   //
-//
-//    parameter INSTR_SRAM_BANK_ADDR_WIDTH        =   10                                              //
-//)(
 
 module feather_top #(
 //    parameter DPE_COL_NUM                       =   64,
 //    parameter DPE_ROW_NUM                       =   64,
-//    parameter LOG2_DPE_COL_NUM                  =   6,
-//    parameter LOG2_DPE_ROW_NUM                  =   6,
 //
 //    parameter DPE_COL_NUM                       =   16,
 //    parameter DPE_ROW_NUM                       =   16,
-//    parameter LOG2_DPE_COL_NUM                  =   4,
-//    parameter LOG2_DPE_ROW_NUM                  =   4,
 
     parameter DPE_COL_NUM                       =   32,
     parameter DPE_ROW_NUM                       =   32,
-    parameter LOG2_DPE_COL_NUM                  =   5,
-    parameter LOG2_DPE_ROW_NUM                  =   5,
+    parameter LOG2_DPE_COL_NUM                  =   $clog2(DPE_COL_NUM),
+    parameter LOG2_DPE_ROW_NUM                  =   $clog2(DPE_ROW_NUM),
 
     parameter WEIGHTS_DATA_WIDTH                =   8*DPE_COL_NUM,                                  //
     parameter WEIGHTS_NUM_BANKS                 =   1,                                              //
@@ -92,7 +54,7 @@ module feather_top #(
     clk                                     ,
     rst_n                                   ,
 
-    i_feather_top_en                         ,
+    i_feather_top_en                        ,
 
     // input data
     // ZP data
@@ -134,9 +96,9 @@ module feather_top #(
 );
 
     localparam NUM_STAGE                        =   2*(LOG2_DPE_COL_NUM) - 1;                           // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
-    localparam birrd_COMMAND_WIDTH_PER_ROW       =   2*NUM_STAGE ;                                       // 2_BIT_CMD * (Number of stages-1)
-    localparam birrd_IN_COMMAND_WIDTH            =   birrd_COMMAND_WIDTH_PER_ROW * DPE_COL_NUM >> 1 ;     // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
-    localparam INSTR_SRAM_BANK_DATA_WIDTH       =   birrd_IN_COMMAND_WIDTH;                              //  instruction is only birrd instruction here
+    localparam birrd_COMMAND_WIDTH_PER_ROW      =   2*NUM_STAGE ;                                       // 2_BIT_CMD * (Number of stages-1)
+    localparam birrd_IN_COMMAND_WIDTH           =   birrd_COMMAND_WIDTH_PER_ROW * DPE_COL_NUM >> 1 ;    // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
+    localparam INSTR_SRAM_BANK_DATA_WIDTH       =   birrd_IN_COMMAND_WIDTH;                             //  instruction is only birrd instruction here
     localparam WEIGHTS_DEPTH                    =   DPE_ROW_NUM;                                        //
     localparam LOG2_WEIGHTS_DEPTH               =   LOG2_DPE_ROW_NUM;                                   //
     localparam PE_SEL_WIDTH                     =   LOG2_DPE_COL_NUM + LOG2_WEIGHTS_DEPTH;              //
@@ -197,7 +159,7 @@ module feather_top #(
     wire                                                w_weights_ping_pong_sel                 ;
     wire    [PE_SEL_WIDTH                       -1: 0]  w_pe_sel                                ;
     wire    [LOG2_WEIGHTS_DEPTH                 -1: 0]  w_weights_to_use                        ;
-    wire    [birrd_IN_COMMAND_WIDTH              -1: 0]  w_birrd_instr                            ;
+    wire    [birrd_IN_COMMAND_WIDTH             -1: 0]  w_birrd_instr                           ;
 
     /*
         feather Controller + Buffers' signals
@@ -443,7 +405,7 @@ ________________________________________________________________________________
     )feather_CONTROLLER_INST(
         .clk                                (clk                                ),  // inputs from top
         .rst_n                              (rst_n                              ),
-        .i_feather_top_en                    (i_feather_top_en                    ),
+        .i_feather_top_en                   (i_feather_top_en                   ),
         .i_iacts_zp                         (i_iacts_zp                         ),
         .i_iacts_zp_valid                   (i_iacts_zp_valid                   ),
         .i_weights_zp                       (i_weights_zp                       ),
@@ -476,9 +438,9 @@ ________________________________________________________________________________
         .o_weights_ping_pong_sel            (w_weights_ping_pong_sel            ),
         .o_pe_sel                           (w_pe_sel                           ),
         .o_weights_to_use                   (w_weights_to_use                   ),
-        .o_birrd_instr                       (w_birrd_instr                       ),
-        .i_data_bus_from_birrd               (w_o_birrd_data_bus                  ),  // inputs from birrd
-        .i_data_bus_from_birrd_valid         (w_o_birrd_data_bus_valid            ),
+        .o_birrd_instr                      (w_birrd_instr                      ),
+        .i_data_bus_from_birrd              (w_o_birrd_data_bus                 ),  // inputs from birrd
+        .i_data_bus_from_birrd_valid        (w_o_birrd_data_bus_valid           ),
         .o_iacts_sram_a_wr_data_ping        (w_iacts_sram_a_wr_data_ping        ),  // I-O from-to iActs Ping
         .o_iacts_sram_a_wr_addr_ping        (w_iacts_sram_a_wr_addr_ping        ),
         .o_iacts_sram_a_wr_en_ping          (w_iacts_sram_a_wr_en_ping          ),
@@ -564,7 +526,7 @@ ________________________________________________________________________________
             for(GENVAR_DPE_INST_ROW_ITER=0; GENVAR_DPE_INST_ROW_ITER < DPE_ROW_NUM; GENVAR_DPE_INST_ROW_ITER=GENVAR_DPE_INST_ROW_ITER+1)
             begin: feather_GENVAR_DPE_INST_ROW_ITER
                 feather_pe#(
-                    .THIS_PE_ID                 ((DPE_ROW_NUM*GENVAR_DPE_INST_COL_ITER) + GENVAR_DPE_INST_ROW_ITER),  // think about this
+                    .THIS_PE_ID                 ((DPE_ROW_NUM*GENVAR_DPE_INST_COL_ITER) + GENVAR_DPE_INST_ROW_ITER),
                     .IACTS_DATA_WIDTH           (IACTS_DATA_WIDTH   ),
                     .WEIGHTS_DATA_WIDTH         (WEIGHTS_DATA_WIDTH/DPE_COL_NUM ),
                     .WEIGHTS_DEPTH              (DPE_ROW_NUM        ),
@@ -637,12 +599,12 @@ ________________________________________________________________________________
     )   birrd_INST(
         .clk                (clk                        ),
         .rst_n              (rst_n                      ),
-        .i_valid            (w_i_birrd_data_bus_valid    ),  // all valids are coming at same time
-        .i_data_bus         (w_i_birrd_data_bus          ),
-        .o_valid            (w_o_birrd_data_bus_valid    ),
-        .o_data_bus         (w_o_birrd_data_bus          ),
+        .i_valid            (w_i_birrd_data_bus_valid   ),
+        .i_data_bus         (w_i_birrd_data_bus         ),
+        .o_valid            (w_o_birrd_data_bus_valid   ),
+        .o_data_bus         (w_o_birrd_data_bus         ),
         .i_en               (1'b1                       ),
-        .i_cmd              (w_birrd_instr               )
+        .i_cmd              (w_birrd_instr              )
     );
 //###############################################################################################//
 

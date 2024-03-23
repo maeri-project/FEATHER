@@ -1,0 +1,116 @@
+ 
+****************************************
+Report : area
+Design : lambda_top
+Version: U-2022.12-SP5
+Date   : Sat Nov 11 19:16:58 2023
+****************************************
+
+Library(s) Used:
+
+    tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
+
+Number of ports:                       751579
+Number of nets:                      16510637
+Number of cells:                     15463980
+Number of combinational cells:       10508238
+Number of sequential cells:           4951027
+Number of macros/black boxes:               0
+Number of buf/inv:                     914359
+Number of references:                    4172
+
+Combinational area:            7049730.001675
+Buf/Inv area:                   275170.517134
+Noncombinational area:        11228928.678843
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (Wire load has zero net area)
+
+Total cell area:              18278658.680519
+Total area:                 undefined
+
+Area of detected synthetic parts
+--------------------------------
+  No DW parts to report!
+
+Estimated area of ungrouped synthetic parts
+-------------------------------------------
+                                            Estimated  Perc. of
+  Module                 Implem.  Count          Area cell area
+  ---------------------- -------  ----- ------------- ---------
+  DP_OP_1436J29_122_3250     str      1       83.6640      0.0%
+  DP_OP_1437J29_123_3250     str      1       83.6640      0.0%
+  DP_OP_1438J29_124_3250     str      1       83.6640      0.0%
+  DP_OP_1439J29_125_3250     str      1       83.6640      0.0%
+  DP_OP_1440J29_126_3250     str      1       83.6640      0.0%
+  DP_OP_1441J29_127_3250     str      1       83.6640      0.0%
+  DP_OP_1442J29_128_3250     str      1       83.6640      0.0%
+  DP_OP_1443J29_129_3250     str      1       83.6640      0.0%
+  DP_OP_1444J29_130_3250     str      1       83.6640      0.0%
+  DP_OP_1445J29_131_3250     str      1       83.6640      0.0%
+  DP_OP_1446J29_132_3250     str      1       83.6640      0.0%
+  DP_OP_1447J29_133_3250     str      1       83.6640      0.0%
+  DP_OP_1448J29_134_3250     str      1       83.6640      0.0%
+  DP_OP_1449J29_135_3250     str      1       83.6640      0.0%
+  DP_OP_1450J29_136_3250     str      1       83.6640      0.0%
+  DP_OP_1451J29_137_3250     str      1       83.6640      0.0%
+  DP_OP_1452J29_138_3250     str      1       83.6640      0.0%
+  DP_OP_1453J29_139_3250     str      1       83.6640      0.0%
+  DP_OP_1454J29_140_3250     str      1       83.6640      0.0%
+  DP_OP_1455J29_141_3250     str      1       83.6640      0.0%
+  DP_OP_1456J29_142_3250     str      1       83.6640      0.0%
+  DP_OP_1457J29_143_3250     str      1       83.6640      0.0%
+  DP_OP_1458J29_144_3250     str      1       83.6640      0.0%
+  DP_OP_1459J29_145_3250     str      1       83.6640      0.0%
+  DP_OP_1460J29_146_3250     str      1       83.6640      0.0%
+  DP_OP_1461J29_147_3250     str      1       83.6640      0.0%
+  DP_OP_1462J29_148_3250     str      1       83.6640      0.0%
+  DP_OP_1463J29_149_3250     str      1       83.6640      0.0%
+  DP_OP_1464J29_150_3250     str      1       83.6640      0.0%
+  DP_OP_1465J29_151_3250     str      1       83.6640      0.0%
+  DP_OP_1466J29_152_3250     str      1       83.6640      0.0%
+  DP_OP_1467J29_153_3250     str      1       83.6640      0.0%
+  DP_OP_1468J29_154_3250     str      1       83.6640      0.0%
+  DP_OP_1469J29_155_3250     str      1       83.6640      0.0%
+  DP_OP_1470J29_156_3250     str      1       83.6640      0.0%
+  DP_OP_1471J29_157_3250     str      1       83.6640      0.0%
+  DP_OP_1472J29_158_3250     str      1       83.6640      0.0%
+  DP_OP_1473J29_159_3250     str      1       83.6640      0.0%
+  DP_OP_1474J29_160_3250     str      1       83.6640      0.0%
+  DP_OP_1475J29_161_3250     str      1       83.6640      0.0%
+  DP_OP_1476J29_162_3250     str      1       83.6640      0.0%
+  DP_OP_1477J29_163_3250     str      1       83.6640      0.0%
+  DP_OP_1478J29_164_3250     str      1       83.6640      0.0%
+  DP_OP_1479J29_165_3250     str      1       83.6640      0.0%
+  DP_OP_1480J29_166_3250     str      1       83.6640      0.0%
+  DP_OP_1481J29_167_3250     str      1       83.6640      0.0%
+  DP_OP_1482J29_168_3250     str      1       83.6640      0.0%
+  DP_OP_1483J29_169_3250     str      1       83.6640      0.0%
+  DP_OP_1484J29_170_3250     str      1       83.6640      0.0%
+  DP_OP_1485J29_171_3250     str      1       83.6640      0.0%
+  DP_OP_1486J29_172_3250     str      1       83.6640      0.0%
+  DP_OP_1487J29_173_3250     str      1       83.6640      0.0%
+  DP_OP_1488J29_174_3250     str      1       83.6640      0.0%
+  DP_OP_1489J29_175_3250     str      1       83.6640      0.0%
+  DP_OP_1490J29_176_3250     str      1       83.6640      0.0%
+  DP_OP_1491J29_177_3250     str      1       83.6640      0.0%
+  DP_OP_1492J29_178_3250     str      1       83.6640      0.0%
+  DP_OP_1493J29_179_3250     str      1       83.6640      0.0%
+  DP_OP_1494J29_180_3250     str      1       83.6640      0.0%
+  DP_OP_1495J29_181_3250     str      1       83.6640      0.0%
+  DP_OP_1496J29_182_3250     str      1       83.6640      0.0%
+  DP_OP_1497J29_183_3250     str      1       83.6640      0.0%
+  DP_OP_1498J29_184_3250     str      1       83.6640      0.0%
+  DP_OP_1499J29_185_3250     str      1       83.6640      0.0%
+  DW01_add               apparch   4512   271551.1608      1.5%
+  DW01_inc               apparch   8195    60917.0437      0.3%
+  DW01_sub               apparch   8192   150700.0312      0.8%
+  DW_cmp                 apparch   8197    34093.6546      0.2%
+  DW_mult_uns            apparch   4160   684697.8340      3.7%
+  ---------------------- -------  ----- ------------- ---------
+  DP_OP Subtotal:                    64     5354.4932      0.0%
+  Total:                          33320  1207314.2175      6.6%
+
+Subtotal of datapath(DP_OP) cell area:  5354.4932  0.0%  (estimated)
+Total synthetic cell area:              1207314.2175  6.6%  (estimated)
+
+1

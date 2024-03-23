@@ -1,0 +1,30 @@
+ 
+****************************************
+Report : area
+Design : adder
+Version: J-2014.09-SP3
+Date   : Sat Jun 20 18:03:41 2020
+****************************************
+
+Library(s) Used:
+
+    tcbn28hpcplusbwp30p140tt0p8v25c (File: /home/green1/DKIT/tsmc_muse/IP/TSMC28_STD_CELLS/custom_utils_ck/tsmc_ip/tcbn28hpcplusbwp30p140/nldm/tcbn28hpcplusbwp30p140tt0p8v25c.db)
+
+Number of ports:                           98
+Number of nets:                          1839
+Number of cells:                         1740
+Number of combinational cells:           1530
+Number of sequential cells:               210
+Number of macros/black boxes:               0
+Number of buf/inv:                        335
+Number of references:                      67
+
+Combinational area:                811.314003
+Buf/Inv area:                       85.554001
+Noncombinational area:             397.655997
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (Wire load has zero net area)
+
+Total cell area:                  1208.970000
+Total area:                 undefined
+1

@@ -1,0 +1,2 @@
+# source /tools/software/synopsys/setup.csh
+dc_shell -f syn.tcl -output_log_file syn.log

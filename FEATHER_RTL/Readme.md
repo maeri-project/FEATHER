@@ -3,10 +3,19 @@ In this folder, we open source the Synthesis and PnR flow of FEATHER.
 
 First, we analyze the pre-run results, which are the synthesis and PnR logs from our long-latency local run. 
 Second, we provide code base and detailed step-by-step ASIC synthesis and PnR flow to rerun Syn and PnR for FEATHER.
-Note that: Synthesis and PnR estimated times >96 hours for the largest design[64x64], and thus it's optional.
+Note that: Synthesis and PnR estimated times >192 hours for the largest design[64x128], and thus it's optional.
 
 ## 0 !Pre-run Results Analysis! (Mandatory, reading takes 4 minutes)
-@Anirudh, adding the prerun results
+
+|Config |Area       |Power      |Frequency (GHz)|
+|-------|-----------|-----------|---------------|
+|64x128 |36920519.69|   26400.00|    1.00       |
+|64x64  |18389176.19|   13200.00|    1.00       |
+|32x32  | 2727906.70|     961.70|    1.00       |
+|16x32  |  965665.10|     655.55|    1.00       |
+|16x16  |  475897.19|     323.48|    1.00       |
+|8x8    |   97976.46|      65.25|    1.00       |
+|4x4    |   24693.98|      16.28|    1.00       |
 
 ## 1. Dependency
 1. Synthesis    -   Synopsys Design Compiler

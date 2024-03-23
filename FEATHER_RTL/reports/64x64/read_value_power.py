@@ -5,8 +5,8 @@ def find_value(file_name):
 
     values_at_0_217 = []
     for i in range(len(lines)):
-        if "LAMBDA_GENVAR_DPE_INST_COL_" in lines[i]:
         #if "_COL_WISE_O_DATA_BUS" in lines[i]:
+        if "LAMBDA_GENVAR_DPE_INST_COL_" in lines[i]:
             # Assuming the next line has values as shown in the example
             # Split the next line into a list of values
             values = lines[i+1].split()
@@ -17,7 +17,7 @@ def find_value(file_name):
 
     return values_at_0_217
 
-file_name = "../64x128/lambda_top_power.rpt"
+file_name = "../../8x8/reports/lambda_top_power.rpt"
 values = find_value(file_name)
 print(values)
 print(np.sum(values))

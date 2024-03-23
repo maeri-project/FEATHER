@@ -17,7 +17,7 @@ def find_value(file_name):
 
     return values_at_0_217
 
-file_name = "../64x128/lambda_top_area.rpt"
+file_name = "../../8x8/reports/lambda_top_area.rpt"
 values = find_value(file_name)
 print(values)
 print(np.sum(values))

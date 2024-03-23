@@ -8,7 +8,7 @@ Report : power
         -analysis_effort low
 Design : lambda_top
 Version: U-2022.12-SP5
-Date   : Thu Nov  9 17:12:48 2023
+Date   : Tue Nov 21 17:55:13 2023
 ****************************************
 
 
@@ -292,259 +292,259 @@ Power-specific unit information :
                                        Switch   Int      Leak     Total
 Hierarchy                              Power    Power    Power    Power    %
 --------------------------------------------------------------------------------
-lambda_top                                0.644   31.664 2.31e+05   32.540 100.0
+lambda_top                                1.371   63.630 2.49e+05   65.250 100.0
   AFFT_INST (afft_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_NUM_INPUT_DATA8_IN_COMMAND_WIDTH10)
-                                       3.47e-02    1.830 1.41e+04    1.879   5.8
+                                       7.68e-02    3.669 1.79e+04    3.764   5.8
     last_stage_3__group_first_half_1__switch_first_half_1__last_stage (afft_2x2_simple_last_cmd_flow_seq_32_2_00000002_0)
-                                       2.93e-04 8.59e-02  682.704 8.68e-02   0.3
+                                       2.88e-03    0.172  890.921    0.176   0.3
     last_stage_3__group_first_half_1__switch_first_half_0__last_stage (afft_2x2_simple_last_cmd_flow_seq_32_2_00000002_1)
-                                       1.36e-03 8.59e-02  684.272 8.80e-02   0.3
+                                       3.37e-03    0.173  890.209    0.177   0.3
     last_stage_3__group_first_half_0__switch_first_half_1__last_stage (afft_2x2_simple_last_cmd_flow_seq_32_2_00000002_2)
-                                       1.43e-03 8.59e-02  684.182 8.80e-02   0.3
+                                       3.32e-03    0.173  891.224    0.177   0.3
     last_stage_3__group_first_half_0__switch_first_half_0__last_stage (afft_2x2_simple_last_cmd_flow_seq_32_2_00000002_3)
-                                       1.23e-03 8.59e-02  684.293 8.79e-02   0.3
+                                       1.07e-03    0.173  889.149    0.175   0.3
     second_half_2__group_first_half_0__switch_first_half_3__third_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_0)
-                                       1.69e-03 8.87e-02  696.272 9.11e-02   0.3
+                                       3.60e-03    0.178  880.339    0.182   0.3
     second_half_2__group_first_half_0__switch_first_half_2__third_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1)
-                                       5.00e-04 8.87e-02  693.724 8.99e-02   0.3
+                                       1.45e-03    0.178  878.164    0.180   0.3
     second_half_2__group_first_half_0__switch_first_half_1__third_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_2)
-                                       1.69e-03 8.87e-02  696.151 9.11e-02   0.3
+                                       3.65e-03    0.178  879.164    0.182   0.3
     second_half_2__group_first_half_0__switch_first_half_0__third_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_3)
-                                       1.19e-03 8.87e-02  695.563 9.06e-02   0.3
+                                       3.78e-03    0.178  881.039    0.183   0.3
     first_half_1__group_sec_half_0__switch_sec_half_3__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_0)
-                                       1.70e-03 9.15e-02  707.693 9.39e-02   0.3
+                                       3.82e-03    0.183  888.264    0.188   0.3
     first_half_1__group_sec_half_0__switch_sec_half_2__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1)
-                                       1.75e-03 9.15e-02  706.673 9.40e-02   0.3
+                                       1.48e-03    0.184  888.694    0.186   0.3
     first_half_1__group_sec_half_0__switch_sec_half_1__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_2)
-                                       5.74e-04 9.14e-02  706.092 9.27e-02   0.3
+                                       3.83e-03    0.183  889.650    0.188   0.3
     first_half_1__group_sec_half_0__switch_sec_half_0__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_3)
-                                       1.73e-03 9.15e-02  707.138 9.39e-02   0.3
+                                       3.87e-03    0.184  890.639    0.188   0.3
     first_half_0__group_sec_half_1__switch_sec_half_1__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH8_0)
-                                       1.88e-03 9.43e-02  719.344 9.69e-02   0.3
+                                       3.96e-03    0.189  900.719    0.193   0.3
     first_half_0__group_sec_half_1__switch_sec_half_0__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH8_1)
-                                       1.87e-03 9.43e-02  719.451 9.69e-02   0.3
+                                       4.04e-03    0.189  902.141    0.194   0.3
     first_half_0__group_sec_half_0__switch_sec_half_1__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH8_2)
-                                       1.83e-03 9.43e-02  718.088 9.68e-02   0.3
+                                       3.52e-03    0.189  902.040    0.193   0.3
     first_half_0__group_sec_half_0__switch_sec_half_0__second_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH8_3)
-                                       1.80e-03 9.42e-02  718.698 9.67e-02   0.3
+                                       4.05e-03    0.189  902.388    0.194   0.3
     first_stage_switch_3__first_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH10_0)
-                                       6.76e-04 9.71e-02  730.054 9.85e-02   0.3
+                                       3.82e-03    0.194  910.385    0.199   0.3
     first_stage_switch_2__first_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH10_1)
-                                       1.48e-03 9.70e-02  730.437 9.92e-02   0.3
+                                       4.13e-03    0.195  911.488    0.200   0.3
     first_stage_switch_1__first_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH10_2)
-                                       1.94e-03 9.71e-02  731.307 9.98e-02   0.3
+                                       2.90e-03    0.194  911.798    0.198   0.3
     first_stage_switch_0__first_stage (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH10_3)
-                                       1.89e-03 9.70e-02  730.524 9.96e-02   0.3
+                                       4.08e-03    0.195  913.114    0.200   0.3
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_0)
-                                       4.81e-04 4.33e-02  405.531 4.41e-02   0.1
+                                       8.25e-04 8.63e-02  400.915 8.75e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID63_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.57e-03    0.383 2.77e+03    0.393   1.2
+                                       1.62e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID62_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.67e-03    0.383 2.78e+03    0.394   1.2
+                                       1.63e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID61_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.79e-03    0.383 2.78e+03    0.394   1.2
+                                       1.67e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID60_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.95e-03    0.384 2.78e+03    0.394   1.2
+                                       1.70e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID59_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.09e-03    0.384 2.78e+03    0.395   1.2
+                                       1.74e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID58_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.27e-03    0.382 2.77e+03    0.393   1.2
+                                       1.77e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID57_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.49e-03    0.382 2.77e+03    0.394   1.2
+                                       1.80e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_7__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID56_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.63e-03    0.383 2.77e+03    0.394   1.2
+                                       1.85e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_1)
-                                       4.41e-04 4.30e-02  405.114 4.39e-02   0.1
+                                       8.79e-04 8.61e-02  401.474 8.74e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID55_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.55e-03    0.383 2.78e+03    0.393   1.2
+                                       1.61e-02    0.769 2.97e+03    0.788   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID54_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.65e-03    0.383 2.78e+03    0.394   1.2
+                                       1.64e-02    0.770 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID53_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.78e-03    0.383 2.78e+03    0.394   1.2
+                                       1.67e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID52_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.90e-03    0.384 2.78e+03    0.394   1.2
+                                       1.70e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID51_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.05e-03    0.384 2.78e+03    0.395   1.2
+                                       1.73e-02    0.772 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID50_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.19e-03    0.382 2.77e+03    0.393   1.2
+                                       1.77e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID49_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.40e-03    0.382 2.77e+03    0.393   1.2
+                                       1.80e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_6__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID48_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.65e-03    0.383 2.77e+03    0.394   1.2
+                                       1.84e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_2)
-                                       4.87e-04 4.32e-02  405.644 4.41e-02   0.1
+                                       8.03e-04 8.63e-02  400.869 8.75e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID47_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.59e-03    0.383 2.78e+03    0.393   1.2
+                                       1.64e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID46_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.65e-03    0.383 2.78e+03    0.394   1.2
+                                       1.66e-02    0.771 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID45_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.78e-03    0.383 2.78e+03    0.394   1.2
+                                       1.68e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID44_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.91e-03    0.384 2.78e+03    0.394   1.2
+                                       1.70e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID43_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.08e-03    0.384 2.78e+03    0.395   1.2
+                                       1.74e-02    0.772 2.98e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID42_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.22e-03    0.382 2.77e+03    0.393   1.2
+                                       1.78e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID41_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.38e-03    0.382 2.77e+03    0.393   1.2
+                                       1.83e-02    0.769 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_5__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID40_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.61e-03    0.383 2.77e+03    0.394   1.2
+                                       1.85e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_3)
-                                       4.33e-04 4.30e-02  404.958 4.39e-02   0.1
+                                       8.60e-04 8.62e-02  401.571 8.74e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID39_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.59e-03    0.383 2.78e+03    0.393   1.2
+                                       1.62e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID38_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.57e-03    0.383 2.78e+03    0.393   1.2
+                                       1.66e-02    0.771 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID37_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.78e-03    0.383 2.78e+03    0.394   1.2
+                                       1.68e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID36_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.91e-03    0.384 2.78e+03    0.394   1.2
+                                       1.71e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID35_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.08e-03    0.384 2.78e+03    0.395   1.2
+                                       1.75e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID34_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.19e-03    0.382 2.77e+03    0.393   1.2
+                                       1.78e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID33_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.32e-03    0.382 2.77e+03    0.393   1.2
+                                       1.82e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_4__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID32_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.61e-03    0.383 2.77e+03    0.394   1.2
+                                       1.85e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_4)
-                                       4.87e-04 4.33e-02  405.502 4.41e-02   0.1
+                                       8.07e-04 8.62e-02  400.764 8.75e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID31_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.56e-03    0.383 2.78e+03    0.393   1.2
+                                       1.61e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID30_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.60e-03    0.383 2.78e+03    0.393   1.2
+                                       1.66e-02    0.771 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID29_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.81e-03    0.384 2.78e+03    0.394   1.2
+                                       1.68e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID28_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.91e-03    0.384 2.78e+03    0.394   1.2
+                                       1.71e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID27_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.08e-03    0.384 2.78e+03    0.395   1.2
+                                       1.74e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID26_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.27e-03    0.382 2.77e+03    0.393   1.2
+                                       1.78e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID25_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.44e-03    0.382 2.77e+03    0.393   1.2
+                                       1.82e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_3__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID24_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.56e-03    0.383 2.77e+03    0.394   1.2
+                                       1.85e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_5)
-                                       4.41e-04 4.30e-02  404.969 4.39e-02   0.1
+                                       8.83e-04 8.62e-02  401.390 8.75e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID23_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.58e-03    0.383 2.78e+03    0.393   1.2
+                                       1.62e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID22_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.67e-03    0.383 2.78e+03    0.394   1.2
+                                       1.64e-02    0.770 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID21_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.75e-03    0.383 2.78e+03    0.394   1.2
+                                       1.67e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID20_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.89e-03    0.384 2.78e+03    0.394   1.2
+                                       1.70e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID19_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.06e-03    0.384 2.78e+03    0.395   1.2
+                                       1.74e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID18_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.24e-03    0.382 2.77e+03    0.393   1.2
+                                       1.78e-02    0.768 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID17_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.42e-03    0.382 2.77e+03    0.393   1.2
+                                       1.81e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_2__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID16_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.67e-03    0.383 2.77e+03    0.394   1.2
+                                       1.84e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_6)
-                                       4.81e-04 4.33e-02  405.659 4.42e-02   0.1
+                                       8.24e-04 8.63e-02  400.885 8.75e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID15_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.52e-03    0.383 2.78e+03    0.393   1.2
+                                       1.62e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID14_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.64e-03    0.383 2.78e+03    0.394   1.2
+                                       1.66e-02    0.771 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID13_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.78e-03    0.383 2.78e+03    0.394   1.2
+                                       1.70e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID12_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.91e-03    0.384 2.78e+03    0.394   1.2
+                                       1.72e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID11_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.06e-03    0.384 2.78e+03    0.395   1.2
+                                       1.75e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID10_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.21e-03    0.382 2.77e+03    0.393   1.2
+                                       1.79e-02    0.769 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID9_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.40e-03    0.382 2.77e+03    0.393   1.2
+                                       1.81e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID8_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.62e-03    0.383 2.77e+03    0.394   1.2
+                                       1.85e-02    0.770 2.99e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA8_DATA_WIDTH32_7)
-                                       4.47e-04 4.30e-02  405.104 4.39e-02   0.1
+                                       8.75e-04 8.61e-02  401.550 8.74e-02   0.1
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_7__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID7_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.54e-03    0.383 2.78e+03    0.393   1.2
+                                       1.62e-02    0.770 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_6__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID6_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.71e-03    0.383 2.78e+03    0.394   1.2
+                                       1.65e-02    0.771 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_5__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID5_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.77e-03    0.383 2.78e+03    0.394   1.2
+                                       1.69e-02    0.772 2.97e+03    0.791   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_4__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID4_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       7.90e-03    0.384 2.78e+03    0.394   1.2
+                                       1.71e-02    0.772 2.97e+03    0.792   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_3__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID3_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.00e-03    0.384 2.78e+03    0.395   1.2
+                                       1.74e-02    0.773 2.97e+03    0.793   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_2__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID2_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.14e-03    0.382 2.77e+03    0.393   1.2
+                                       1.78e-02    0.769 2.97e+03    0.789   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID1_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.37e-03    0.382 2.77e+03    0.393   1.2
+                                       1.82e-02    0.769 2.97e+03    0.790   1.2
   LAMBDA_GENVAR_DPE_INST_COL_ITER_0__LAMBDA_GENVAR_DPE_INST_ROW_ITER_0__LAMBDA_PE_OTHER_ROWS (lambda_pe_THIS_PE_ID0_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH8_LOG2_WEIGHTS_DEPTH3_PE_SEL_WIDTH6_PE_OUTPUT_WIDTH32)
-                                       8.55e-03    0.383 2.78e+03    0.394   1.2
+                                       1.84e-02    0.770 3.00e+03    0.791   1.2
   LAMBDA_CONTROLLER_INST (lambda_controller_WEIGHTS_DATA_WIDTH64_WEIGHTS_NUM_BANKS1_WEIGHTS_SRAM_DATA_WIDTH64_WEIGHTS_SRAM_BANK_ADDR_WIDTH2_WEIGHTS_SRAM_ADDR_WIDTH2_IACTS_DATA_WIDTH8_IACTS_NUM_BANKS8_IACTS_SRAM_DATA_WIDTH64_IACTS_SRAM_BANK_ADDR_WIDTH2_IACTS_SRAM_ADDR_WIDTH16_SCALE_VALUE_WIDTH32_PE_OUTPUT_WIDTH32_DPE_COL_NUM8_DPE_ROW_NUM8_LOG2_DPE_COL_NUM3_LOG2_DPE_ROW_NUM3_OACTS_DATA_WIDTH8_OUTBUF_DATA_WIDTH32_OUTBUF_NUM_BANKS8_OUTBUF_SRAM_DATA_WIDTH256_OUTBUF_SRAM_BANK_ADDR_WIDTH2_OUTBUF_SRAM_ADDR_WIDTH16_INSTR_SRAM_BANK_ADDR_WIDTH2)
-                                       3.03e-02    1.395 1.30e+04    1.438   4.4
+                                       5.59e-02    2.794 1.42e+04    2.864   4.4
   OUTPUT_BUFFER_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK8)
-                                       3.15e-02    1.648 1.05e+04    1.690   5.2
+                                       6.30e-02    3.296 1.05e+04    3.370   5.2
     SP_SRAM_BANKS_7__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0)
-                                       3.86e-03    0.206 1.31e+03    0.211   0.6
+                                       7.79e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_6__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1)
-                                       3.85e-03    0.206 1.31e+03    0.211   0.6
+                                       7.74e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_5__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2)
-                                       3.88e-03    0.206 1.31e+03    0.211   0.6
+                                       7.79e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_4__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3)
-                                       3.85e-03    0.206 1.31e+03    0.211   0.6
+                                       7.73e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4)
-                                       3.85e-03    0.206 1.31e+03    0.211   0.6
+                                       7.71e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5)
-                                       3.88e-03    0.206 1.31e+03    0.211   0.6
+                                       7.71e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6)
-                                       3.85e-03    0.206 1.31e+03    0.211   0.6
+                                       7.82e-03    0.412 1.31e+03    0.421   0.6
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7)
-                                       2.59e-03    0.206 1.31e+03    0.210   0.6
+                                       5.01e-03    0.412 1.31e+03    0.418   0.6
   INSTR_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH40_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1)
-                                       7.50e-03    0.278 1.74e+03    0.288   0.9
+                                       1.49e-02    0.556 1.73e+03    0.573   0.9
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH40_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4)
-                                       7.37e-03    0.278 1.73e+03    0.287   0.9
+                                       1.46e-02    0.556 1.73e+03    0.572   0.9
   IACTS_PONG_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK8_0)
-                                       6.88e-03    0.412 2.92e+03    0.422   1.3
+                                       1.39e-02    0.824 2.92e+03    0.841   1.3
     SP_SRAM_BANKS_7__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0)
-                                       1.53e-04 5.14e-02  356.426 5.20e-02   0.2
+                                       3.28e-04    0.103  356.396    0.104   0.2
     SP_SRAM_BANKS_6__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1)
-                                       8.44e-04 5.15e-02  357.983 5.27e-02   0.2
+                                       1.70e-03    0.103  357.957    0.105   0.2
     SP_SRAM_BANKS_5__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2)
-                                       8.45e-04 5.15e-02  357.970 5.27e-02   0.2
+                                       3.18e-04    0.103  356.403    0.104   0.2
     SP_SRAM_BANKS_4__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3)
-                                       8.44e-04 5.15e-02  357.968 5.27e-02   0.2
+                                       1.71e-03    0.103  357.947    0.105   0.2
     SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4)
-                                       1.54e-04 5.14e-02  356.426 5.20e-02   0.2
+                                       1.70e-03    0.103  357.937    0.105   0.2
     SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5)
-                                       6.16e-04 5.15e-02  357.976 5.25e-02   0.2
+                                       1.70e-03    0.103  357.974    0.105   0.2
     SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6)
-                                       8.44e-04 5.15e-02  357.958 5.27e-02   0.2
+                                       1.70e-03    0.103  357.935    0.105   0.2
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7)
-                                       8.47e-04 5.15e-02  357.974 5.27e-02   0.2
+                                       1.71e-03    0.103  357.966    0.105   0.2
   IACTS_PING_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK8_1)
-                                       9.91e-03    0.416 2.92e+03    0.428   1.3
+                                       2.05e-02    0.833 2.92e+03    0.856   1.3
     SP_SRAM_BANKS_7__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_8)
-                                       5.18e-04 5.19e-02  357.392 5.27e-02   0.2
+                                       1.11e-03    0.104  357.454    0.105   0.2
     SP_SRAM_BANKS_6__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_9)
-                                       1.20e-03 5.19e-02  358.901 5.34e-02   0.2
+                                       1.82e-03    0.104  359.021    0.106   0.2
     SP_SRAM_BANKS_5__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_10)
-                                       1.21e-03 5.19e-02  358.888 5.35e-02   0.2
+                                       2.50e-03    0.104  358.990    0.107   0.2
     SP_SRAM_BANKS_4__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_11)
-                                       1.21e-03 5.19e-02  358.879 5.35e-02   0.2
+                                       2.50e-03    0.104  358.972    0.107   0.2
     SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_12)
-                                       1.20e-03 5.19e-02  358.947 5.35e-02   0.2
+                                       2.49e-03    0.104  359.127    0.107   0.2
     SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_13)
-                                       9.81e-04 5.19e-02  358.987 5.32e-02   0.2
+                                       2.49e-03    0.104  359.028    0.107   0.2
     SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_14)
-                                       1.21e-03 5.19e-02  358.929 5.35e-02   0.2
+                                       2.49e-03    0.104  359.091    0.107   0.2
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_15)
-                                       5.15e-04 5.19e-02  357.440 5.27e-02   0.2
+                                       1.12e-03    0.104  357.503    0.105   0.2
   WEIGHTS_PONG_BUFFER (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH64_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_0)
-                                       4.83e-04    0.411 2.61e+03    0.415   1.3
+                                       1.00e-03    0.823 2.62e+03    0.827   1.3
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH64_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0)
-                                       4.67e-04    0.411 2.60e+03    0.414   1.3
+                                       9.60e-04    0.823 2.61e+03    0.826   1.3
   WEIGHTS_PING_BUFFER (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH64_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1)
-                                       5.53e-03    0.418 2.65e+03    0.426   1.3
+                                       1.12e-02    0.839 2.66e+03    0.853   1.3
     SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH64_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1)
-                                       5.46e-03    0.418 2.64e+03    0.426   1.3
+                                       1.09e-02    0.839 2.66e+03    0.852   1.3
 1

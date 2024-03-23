@@ -6,7 +6,7 @@ Report : timing
         -max_paths 1
 Design : lambda_top
 Version: U-2022.12-SP5
-Date   : Mon Nov 13 01:07:52 2023
+Date   : Thu Nov 16 01:14:03 2023
 ****************************************
 
  # A fanout number of 1000 was used for high fanout net computations.
@@ -14,9 +14,9 @@ Date   : Mon Nov 13 01:07:52 2023
 Operating Conditions: tt0p8v25c   Library: tcbn28hpcplusbwp30p140tt0p8v25c
 Wire Load Model Mode: segmented
 
-  Startpoint: AFFT_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_
+  Startpoint: LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_0_
               (rising edge-triggered flip-flop clocked by clk)
-  Endpoint: AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_
+  Endpoint: LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_31_
             (rising edge-triggered flip-flop clocked by clk)
   Path Group: clk
   Path Type: max
@@ -123,63 +123,59 @@ Wire Load Model Mode: segmented
   sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1
                      ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
 
-  Point                                                                                                                                                                                                                                                                                                                                       Incr       Path
-  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  clock clk (rise edge)                                                                                                                                                       0.00       0.00
-  clock network delay (ideal)                                                                                                                                                 0.00       0.00
-  AFFT_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_/CP (DFCNQD1BWP30P140)                                                                                   0.00 #     0.00 r
-  AFFT_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_/Q (DFCNQD1BWP30P140)                                                                                    0.05       0.05 f
-  AFFT_INST/first_stage_switch_0__first_stage/o_data_bus[0] (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1)                                    0.00       0.05 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/i_data_bus[0] (afft_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1)      0.00       0.05 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U8/ZN (INVD1BWP30P140)                                                                            0.01       0.07 r
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U9/ZN (NR2D1BWP30P140)                                                                            0.01       0.08 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U31/CO (FA1D1BWP30P140)                                                                0.04       0.12 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U30/CO (FA1D1BWP30P140)                                                                0.04       0.15 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U29/CO (FA1D1BWP30P140)                                                                0.04       0.19 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U28/CO (FA1D1BWP30P140)                                                                0.04       0.22 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U27/CO (FA1D1BWP30P140)                                                                0.04       0.26 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U26/CO (FA1D1BWP30P140)                                                                0.04       0.29 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U25/CO (FA1D1BWP30P140)                                                                0.04       0.33 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U24/CO (FA1D1BWP30P140)                                                                0.04       0.37 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U23/CO (FA1D1BWP30P140)                                                                0.04       0.40 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U22/CO (FA1D1BWP30P140)                                                                0.04       0.44 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U21/CO (FA1D1BWP30P140)                                                                0.04       0.47 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U20/CO (FA1D1BWP30P140)                                                                0.04       0.51 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U19/CO (FA1D1BWP30P140)                                                                0.04       0.55 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U18/CO (FA1D1BWP30P140)                                                                0.04       0.58 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U17/CO (FA1D1BWP30P140)                                                                0.04       0.62 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U16/CO (FA1D1BWP30P140)                                                                0.04       0.65 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U15/CO (FA1D1BWP30P140)                                                                0.04       0.69 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U14/CO (FA1D1BWP30P140)                                                                0.04       0.73 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U13/CO (FA1D1BWP30P140)                                                                0.04       0.76 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U12/CO (FA1D1BWP30P140)                                                                0.04       0.80 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U11/CO (FA1D1BWP30P140)                                                                0.04       0.83 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U10/CO (FA1D1BWP30P140)                                                                0.04       0.87 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U9/CO (FA1D1BWP30P140)                                                                 0.04       0.90 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U8/CO (FA1D1BWP30P140)                                                                 0.04       0.94 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U7/CO (FA1D1BWP30P140)                                                                 0.04       0.98 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U6/CO (FA1D1BWP30P140)                                                                 0.04       1.01 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U5/CO (FA1D1BWP30P140)                                                                 0.04       1.05 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U4/CO (FA1D1BWP30P140)                                                                 0.04       1.08 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U3/CO (FA1D1BWP30P140)                                                                 0.04       1.12 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U2/CO (FA1D1BWP30P140)                                                                 0.03       1.15 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U4/ZN (MUX2ND0BWP30P140)                                                                          0.03       1.18 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U3/ZN (MUX2ND0BWP30P140)                                                                          0.03       1.21 f
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U174/ZN (OAI222D1BWP30P140)                                                                       0.03       1.24 r
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_/D (DFCNQD1BWP30P140)                                                     0.00       1.24 r
-  data arrival time                                                                                                                                                                      1.24
+  Point                                                                                                                              Incr       Path
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  clock clk (rise edge)                                                                                                              0.00       0.00
+  clock network delay (ideal)                                                                                                        0.00       0.00
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_0_/CP (DFCNQD1BWP30P140)      0.00 #     0.00 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_0_/Q (DFCNQD1BWP30P140)       0.05       0.05 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U109/ZN (ND2D1BWP30P140)                0.02       0.07 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U111/ZN (OAI21D1BWP30P140)              0.02       0.09 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U115/ZN (AOI21D1BWP30P140)              0.02       0.11 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U118/ZN (OAI21D1BWP30P140)              0.02       0.13 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U122/ZN (AOI21D1BWP30P140)              0.02       0.15 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U39/ZN (OAI21D1BWP30P140)               0.02       0.17 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U126/ZN (AOI21D1BWP30P140)              0.02       0.19 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U15/ZN (OAI21D1BWP30P140)               0.02       0.22 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U133/ZN (AOI21D1BWP30P140)              0.02       0.24 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U10/ZN (OAI21D1BWP30P140)               0.02       0.26 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U181/ZN (AOI21D1BWP30P140)              0.02       0.28 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U4/ZN (OAI21D1BWP30P140)                0.02       0.30 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U204/ZN (AOI21D1BWP30P140)              0.02       0.32 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U14/ZN (OAI21D1BWP30P140)               0.02       0.34 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U214/CO (FA1D1BWP30P140)                0.04       0.38 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U218/CO (FA1OPTCD2BWP30P140)            0.02       0.40 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U221/CO (FA1D1BWP30P140)                0.03       0.43 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U40/CO (FA1D1BWP30P140)                 0.03       0.47 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U225/CO (HA1D1BWP30P140)                0.03       0.49 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U229/CO (HA1D1BWP30P140)                0.03       0.52 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U231/CO (HA1D1BWP30P140)                0.03       0.54 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U233/CO (HA1D1BWP30P140)                0.03       0.57 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U235/CO (HA1D1BWP30P140)                0.03       0.59 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U237/CO (HA1D1BWP30P140)                0.03       0.62 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U239/CO (HA1D1BWP30P140)                0.03       0.64 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U241/CO (HA1D1BWP30P140)                0.02       0.67 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U3/Z (AN2D1BWP30P140)                   0.03       0.70 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U7/CO (HA1D1BWP30P140)                  0.03       0.72 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U246/CO (HA1D1BWP30P140)                0.03       0.75 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U248/CO (HA1D1BWP30P140)                0.02       0.77 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U5/ZN (ND2OPTIBD1BWP30P140)             0.01       0.78 f
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U11/ZN (XNR2UD1BWP30P140)               0.01       0.80 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/U250/Z (AO22D0BWP30P140)                0.03       0.83 r
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_31_/D (DFCNQD1BWP30P140)      0.00       0.83 r
+  data arrival time                                                                                                                             0.83
 
-  clock clk (rise edge)                                                                                                                                                       2.00       2.00
-  clock network delay (ideal)                                                                                                                                                 0.00       2.00
-  clock uncertainty                                                                                                                                                          -0.15       1.85
-  AFFT_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_/CP (DFCNQD1BWP30P140)                                                    0.00       1.85 r
-  library setup time                                                                                                                                                         -0.03       1.82
-  data required time                                                                                                                                                                     1.82
-  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  data required time                                                                                                                                                                     1.82
-  data arrival time                                                                                                                                                                     -1.24
-  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  slack (MET)                                                                                                                                                                            0.58
+  clock clk (rise edge)                                                                                                              1.00       1.00
+  clock network delay (ideal)                                                                                                        0.00       1.00
+  clock uncertainty                                                                                                                 -0.15       0.85
+  LAMBDA_GENVAR_DPE_INST_COL_ITER_1__LAMBDA_GENVAR_DPE_INST_ROW_ITER_1__LAMBDA_PE_OTHER_ROWS/r_sum_reg_31_/CP (DFCNQD1BWP30P140)     0.00       0.85 r
+  library setup time                                                                                                                -0.02       0.83
+  data required time                                                                                                                            0.83
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  data required time                                                                                                                            0.83
+  data arrival time                                                                                                                            -0.83
+  -----------------------------------------------------------------------------------------------------------------------------------------------------
+  slack (MET)                                                                                                                                   0.00
 
 
 1

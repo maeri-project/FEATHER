@@ -3,7 +3,7 @@
 Report : area
 Design : lambda_top
 Version: U-2022.12-SP5
-Date   : Thu Nov  9 18:04:53 2023
+Date   : Thu Nov 16 02:06:53 2023
 ****************************************
 
 Library(s) Used:
@@ -11,21 +11,21 @@ Library(s) Used:
     tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
 
 Number of ports:                        57549
-Number of nets:                        487936
-Number of cells:                       411202
-Number of combinational cells:         292128
+Number of nets:                        502510
+Number of cells:                       430318
+Number of combinational cells:         311244
 Number of sequential cells:            118687
 Number of macros/black boxes:               0
-Number of buf/inv:                      44626
-Number of references:                     283
+Number of buf/inv:                      47656
+Number of references:                     284
 
-Combinational area:             198671.001636
-Buf/Inv area:                    11339.244171
-Noncombinational area:          269182.102644
+Combinational area:             206713.960482
+Buf/Inv area:                    12128.130182
+Noncombinational area:          269183.236644
 Macro/Black Box area:                0.000000
 Net Interconnect area:      undefined  (Wire load has zero net area)
 
-Total cell area:                467853.104280
+Total cell area:                475897.197126
 Total area:                 undefined
 
 Area of detected synthetic parts
@@ -37,32 +37,33 @@ Estimated area of ungrouped synthetic parts
                                          Estimated  Perc. of
   Module                Implem.  Count        Area cell area
   --------------------- -------  ----- ----------- ---------
-  DP_OP_428J23_122_8741     str      1     82.5756      0.0%
-  DP_OP_429J23_123_8741     str      1     82.5756      0.0%
-  DP_OP_430J23_124_8741     str      1     82.5756      0.0%
-  DP_OP_431J23_125_8741     str      1     82.5756      0.0%
-  DP_OP_432J23_126_8741     str      1     82.5756      0.0%
-  DP_OP_433J23_127_8741     str      1     82.5756      0.0%
-  DP_OP_434J23_128_8741     str      1     82.5756      0.0%
-  DP_OP_435J23_129_8741     str      1     82.5756      0.0%
-  DP_OP_436J23_130_8741     str      1     82.5756      0.0%
-  DP_OP_437J23_131_8741     str      1     82.5756      0.0%
-  DP_OP_438J23_132_8741     str      1     82.5756      0.0%
-  DP_OP_439J23_133_8741     str      1     82.5756      0.0%
-  DP_OP_440J23_134_8741     str      1     82.5756      0.0%
-  DP_OP_441J23_135_8741     str      1     82.5756      0.0%
-  DP_OP_442J23_136_8741     str      1     82.5756      0.0%
-  DP_OP_443J23_137_8741     str      1     82.5756      0.0%
-  DW01_add              apparch    328  19214.2642      4.1%
-  DW01_inc              apparch    515    462.6083      0.1%
-  DW01_sub              apparch    512   9296.2298      2.0%
+  DP_OP_428J23_122_8741     str      1    130.3126      0.0%
+  DP_OP_429J23_123_8741     str      1    130.7997      0.0%
+  DP_OP_430J23_124_8741     str      1    130.3126      0.0%
+  DP_OP_431J23_125_8741     str      1    130.1908      0.0%
+  DP_OP_432J23_126_8741     str      1    129.2165      0.0%
+  DP_OP_433J23_127_8741     str      1    130.3126      0.0%
+  DP_OP_434J23_128_8741     str      1    129.2165      0.0%
+  DP_OP_435J23_129_8741     str      1    129.2165      0.0%
+  DP_OP_436J23_130_8741     str      1    129.7037      0.0%
+  DP_OP_437J23_131_8741     str      1    129.2165      0.0%
+  DP_OP_438J23_132_8741     str      1    129.2165      0.0%
+  DP_OP_439J23_133_8741     str      1    129.7037      0.0%
+  DP_OP_440J23_134_8741     str      1    129.8255      0.0%
+  DP_OP_441J23_135_8741     str      1    130.1908      0.0%
+  DP_OP_442J23_136_8741     str      1    129.2165      0.0%
+  DP_OP_443J23_137_8741     str      1    129.2165      0.0%
+  DW01_add              apparch     16    260.0640      0.1%
+  DW01_add               pparch    312  24915.7399      5.2%
+  DW01_inc              apparch    515    462.7476      0.1%
+  DW01_sub              apparch    512   9418.7520      2.0%
   DW_cmp                apparch    517    662.7096      0.1%
-  DW_mult_uns           apparch    272  43066.6796      9.2%
+  DW_mult_uns           apparch    272  43634.2866      9.2%
   --------------------- -------  ----- ----------- ---------
-  DP_OP Subtotal:                   16   1321.2101      0.3%
-  Total:                          2160  74023.7017     15.8%
+  DP_OP Subtotal:                   16   2075.8676      0.4%
+  Total:                          2160  81430.1672     17.1%
 
-Subtotal of datapath(DP_OP) cell area:  1321.2101  0.3%  (estimated)
-Total synthetic cell area:              74023.7017  15.8%  (estimated)
+Subtotal of datapath(DP_OP) cell area:  2075.8676  0.4%  (estimated)
+Total synthetic cell area:              81430.1672  17.1%  (estimated)
 
 1

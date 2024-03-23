@@ -3,7 +3,7 @@
 Report : area
 Design : lambda_top
 Version: U-2022.12-SP5
-Date   : Thu Nov  9 17:12:41 2023
+Date   : Tue Nov 21 17:55:06 2023
 ****************************************
 
 Library(s) Used:
@@ -11,21 +11,21 @@ Library(s) Used:
     tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
 
 Number of ports:                        17734
-Number of nets:                        106094
-Number of cells:                        83464
-Number of combinational cells:          59796
+Number of nets:                        110998
+Number of cells:                        89721
+Number of combinational cells:          66053
 Number of sequential cells:             23541
 Number of macros/black boxes:               0
-Number of buf/inv:                      10341
-Number of references:                      81
+Number of buf/inv:                      11385
+Number of references:                      82
 
-Combinational area:              42259.265540
-Buf/Inv area:                     2628.360040
-Noncombinational area:           53390.985351
+Combinational area:              44584.217765
+Buf/Inv area:                     2901.150043
+Noncombinational area:           53392.245351
 Macro/Black Box area:                0.000000
 Net Interconnect area:      undefined  (Wire load has zero net area)
 
-Total cell area:                 95650.250891
+Total cell area:                 97976.463116
 Total area:                 undefined
 
 Area of detected synthetic parts
@@ -37,24 +37,25 @@ Estimated area of ungrouped synthetic parts
                                         Estimated  Perc. of
   Module               Implem.  Count        Area cell area
   -------------------- -------  ----- ----------- ---------
-  DP_OP_260J1_122_7125     str      1     82.2154      0.1%
-  DP_OP_261J1_123_7125     str      1     82.2154      0.1%
-  DP_OP_262J1_124_7125     str      1     82.2154      0.1%
-  DP_OP_263J1_125_7125     str      1     82.2154      0.1%
-  DP_OP_264J1_126_7125     str      1     82.2154      0.1%
-  DP_OP_265J1_127_7125     str      1     82.2154      0.1%
-  DP_OP_266J1_128_7125     str      1     82.2154      0.1%
-  DP_OP_267J1_129_7125     str      1     82.2154      0.1%
-  DW01_add             apparch     92   5245.4447      5.5%
-  DW01_inc             apparch    131     78.7221      0.1%
-  DW01_sub             apparch    128   2313.9194      2.4%
+  DP_OP_260J1_122_7125     str      1    128.1678      0.1%
+  DP_OP_261J1_123_7125     str      1    129.3780      0.1%
+  DP_OP_262J1_124_7125     str      1    128.7729      0.1%
+  DP_OP_263J1_125_7125     str      1    128.8939      0.1%
+  DP_OP_264J1_126_7125     str      1    128.1678      0.1%
+  DP_OP_265J1_127_7125     str      1    128.7729      0.1%
+  DP_OP_266J1_128_7125     str      1    128.1678      0.1%
+  DP_OP_267J1_129_7125     str      1    128.1678      0.1%
+  DW01_add             apparch      8    130.0320      0.1%
+  DW01_add              pparch     84   6774.7967      6.9%
+  DW01_inc             apparch    131     78.8508      0.1%
+  DW01_sub             apparch    128   2354.6880      2.4%
   DW_cmp               apparch    133    136.8360      0.1%
-  DW_mult_uns          apparch     72  10995.0749     11.5%
+  DW_mult_uns          apparch     72  11188.7957     11.4%
   -------------------- -------  ----- ----------- ---------
-  DP_OP Subtotal:                   8    657.7233      0.7%
-  Total:                          564  19427.7204     20.3%
+  DP_OP Subtotal:                   8   1028.4888      1.0%
+  Total:                          564  21692.4879     22.1%
 
-Subtotal of datapath(DP_OP) cell area:  657.7233  0.7%  (estimated)
-Total synthetic cell area:              19427.7204  20.3%  (estimated)
+Subtotal of datapath(DP_OP) cell area:  1028.4888  1.0%  (estimated)
+Total synthetic cell area:              21692.4879  22.1%  (estimated)
 
 1

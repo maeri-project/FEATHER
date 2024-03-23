@@ -1,0 +1,85 @@
+ 
+****************************************
+Report : area
+Design : lambda_top
+Version: U-2022.12-SP5
+Date   : Thu Nov 16 03:12:39 2023
+****************************************
+
+Library(s) Used:
+
+    tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
+
+Number of ports:                       121862
+Number of nets:                       1025831
+Number of cells:                       874582
+Number of combinational cells:         632971
+Number of sequential cells:            240816
+Number of macros/black boxes:               0
+Number of buf/inv:                      96659
+Number of references:                     559
+
+Combinational area:             419490.158998
+Buf/Inv area:                    24624.558373
+Noncombinational area:          546174.944901
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (Wire load has zero net area)
+
+Total cell area:                965665.103899
+Total area:                 undefined
+
+Area of detected synthetic parts
+--------------------------------
+  No DW parts to report!
+
+Estimated area of ungrouped synthetic parts
+-------------------------------------------
+                                         Estimated  Perc. of
+  Module               Implem.  Count         Area cell area
+  -------------------- -------  ----- ------------ ---------
+  DP_OP_764J24_122_439     str      1     129.2051      0.0%
+  DP_OP_765J24_123_439     str      1     129.6922      0.0%
+  DP_OP_766J24_124_439     str      1     129.6922      0.0%
+  DP_OP_767J24_125_439     str      1     129.2050      0.0%
+  DP_OP_768J24_126_439     str      1     129.6922      0.0%
+  DP_OP_769J24_127_439     str      1     129.6922      0.0%
+  DP_OP_770J24_128_439     str      1     129.6921      0.0%
+  DP_OP_771J24_129_439     str      1     129.6922      0.0%
+  DP_OP_772J24_130_439     str      1     129.6922      0.0%
+  DP_OP_773J24_131_439     str      1     129.2051      0.0%
+  DP_OP_774J24_132_439     str      1     129.6922      0.0%
+  DP_OP_775J24_133_439     str      1     129.8139      0.0%
+  DP_OP_776J24_134_439     str      1     129.6922      0.0%
+  DP_OP_777J24_135_439     str      1     129.2051      0.0%
+  DP_OP_778J24_136_439     str      1     129.6922      0.0%
+  DP_OP_779J24_137_439     str      1     130.1793      0.0%
+  DP_OP_780J24_138_439     str      1     129.2051      0.0%
+  DP_OP_781J24_139_439     str      1     129.2051      0.0%
+  DP_OP_782J24_140_439     str      1     130.1793      0.0%
+  DP_OP_783J24_141_439     str      1     129.2051      0.0%
+  DP_OP_784J24_142_439     str      1     129.6922      0.0%
+  DP_OP_785J24_143_439     str      1     129.8139      0.0%
+  DP_OP_786J24_144_439     str      1     130.3010      0.0%
+  DP_OP_787J24_145_439     str      1     130.1793      0.0%
+  DP_OP_788J24_146_439     str      1     129.6922      0.0%
+  DP_OP_789J24_147_439     str      1     129.6921      0.0%
+  DP_OP_790J24_148_439     str      1     129.8139      0.0%
+  DP_OP_791J24_149_439     str      1     130.3010      0.0%
+  DP_OP_792J24_150_439     str      1     130.1793      0.0%
+  DP_OP_793J24_151_439     str      1     130.3011      0.0%
+  DP_OP_794J24_152_439     str      1     130.1793      0.0%
+  DP_OP_795J24_153_439     str      1     129.2051      0.0%
+  DW01_add             apparch     32     520.1280      0.1%
+  DW01_add              pparch    656   52964.3961      5.5%
+  DW01_inc             apparch   1027     915.9696      0.1%
+  DW01_sub             apparch   1024   18837.5039      2.0%
+  DW_cmp               apparch   1029    1321.0596      0.1%
+  DW_mult_uns          apparch    544   87268.5732      9.0%
+  -------------------- -------  ----- ------------ ---------
+  DP_OP Subtotal:                  32    4150.8798      0.4%
+  Total:                         4344  165978.5102     17.2%
+
+Subtotal of datapath(DP_OP) cell area:  4150.8798  0.4%  (estimated)
+Total synthetic cell area:              165978.5102  17.2%  (estimated)
+
+1

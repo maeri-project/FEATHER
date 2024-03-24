@@ -5,7 +5,7 @@ First, we analyze the pre-run results, which are the synthesis and PnR logs from
 Second, we provide code base and detailed step-by-step ASIC synthesis and PnR flow to rerun Syn and PnR for FEATHER.
 Note that: Synthesis and PnR estimated times >192 hours for the largest design[64x128], and thus it's optional.
 
-## 0 !Pre-run Results Analysis! (Mandatory, reading takes 4 minutes)
+# 0 !Pre-run Results Analysis! (Mandatory, reading takes ~2 minutes)
 
 |Config |Area       |Power      |Frequency (GHz)|
 |-------|-----------|-----------|---------------|
@@ -17,6 +17,7 @@ Note that: Synthesis and PnR estimated times >192 hours for the largest design[6
 |8x8    |   97976.46|      65.25|    1.00       |
 |4x4    |   24693.98|      16.28|    1.00       |
 
+# Step-by-Step Synthesis and PnR flow for FEATHER (Optional, experiment takes ~ 5 days)
 ## 1. Dependency
 1. Synthesis    -   Synopsys Design Compiler
 2. PnR          -   Cadence Innovus
@@ -70,7 +71,6 @@ set link_library {absolute/path/to/tsmc_libfile.db}
     ```
 
 2. **:run_syn**
-
 
     This is the script to launch synthesis
 

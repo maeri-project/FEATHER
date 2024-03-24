@@ -4,7 +4,7 @@ import numpy as np
 
 import os, inspect, sys
 
-import lambda_utils
+import FEATHER.LayoutLoop.configurations.scripts.utils as utils
 
 
 

@@ -1,0 +1,8 @@
+"FEATHER":                     "edge_256"
+"SIGMA":      "edge_256" + best from the layout choices: layout_policy_list = ["HWC_C32","HWC_W32","HWC_H32","HWC_C4W8","HWC_C4H8","HWC_W4H8","HWC_C4W4H2","HWC_W32_W2","HWC_H32_H2"]
+"SIGMA_off_chip_reordering":   "edge_256" + configurations/sigma_like/mapspace_off_chip_reorder.yaml
+"MTIA_like":                   "edge_256" + 
+"TPU_like":                    "edge_256" + 
+"Medusa_like":                 "edge_256" + 3 lines bank conflict instead of 2 line bank conflict.
+"Eyeriss_like":                "eyeriss_256"
+"NVDLA_like":                  "simple_output_stationary"

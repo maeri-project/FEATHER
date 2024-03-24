@@ -11,6 +11,8 @@ In this repository, we include all three key results of the papers, including
 
 # Pre-run results and Figure Plot (Key results reproduction, Estimated 3 minutes)
 ```
+conda create -n <your_favoriate_name> python=3.8
+conda activate <your_favoriate_name>
 pip3 install matplotlib numpy pandas
 python results_generation.py
 ```

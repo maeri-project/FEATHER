@@ -4,10 +4,6 @@ import numpy as np
 
 import os, inspect, sys
 
-import lambda_utils
-
-
-
 
 ########### Must Change
 arch_name = "edge_256.yaml"

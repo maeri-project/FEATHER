@@ -1,0 +1,21 @@
+layout:
+  - target: MainMemory
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=24 M=1 N=1
+    permutation: SR CQP MN
+
+  - target: GlobalBuffer
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1
+    permutation: SR CQP MN
+
+  - target: GlobalBuffer
+    type: spatial
+    factors: R=1 S=1 P=1 Q=1 C=32 M=1 N=1
+    permutation: SR CQP MN
+
+  - target: RegisterFile
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1
+    permutation: SR CQP MN
+

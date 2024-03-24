@@ -18,10 +18,12 @@ View the image name from the all available docker images.
 ```
 docker run -it -rm <docker_img_name>
 git clone <provided_url>
-cd FEATHER/LayoutLoop/configurations/scripts
-python3 search_layoutloop_specific_arch.py ../test
+cd FEATHER/LayoutLoop/configurations
+make clean
+make conv_dse // launch dataflow-layout design space exploration for convolution layers in ResNet-50 and MobileNet-V3
+make gemm_dse // launch dataflow-layout design space exploration for Berts
 ```
 
-We'll update this readme.md with details setup to change for each individual design soon.
+The pre-searched results are listed in the pre_run_results, and the collected results are listed in the function named figure13() in `FEATHER/results_generation.py`.
 
-Enjoy XD
+Have fun! Enjoy XD

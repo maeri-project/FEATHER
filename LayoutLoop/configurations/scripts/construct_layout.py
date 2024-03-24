@@ -35,75 +35,84 @@ def prod (l):
 
 # We use P/Q in the timeloop to represent W/H.
 layout_policy_constraints_dict = {
-    "HWC_C32":  [1,0,0],
-    "HWC_W32":  [0,1,0],
-    "HWC_H32":  [0,0,1],
-    "HWC_C4W8":  [1,1,0],
-    "HWC_C4H8":  [1,0,1],
-    "HWC_W4H8":  [0,1,1],
-    "HWC_C4W4H2":  [1,1,1],
-    "HWC_W32_W2": [0,1,0],
-    "HWC_H32_H2": [0,0,1],
-    "gemmini_edge_256": [1,0,0],
-    "gemmini_edge_256_exhaustive": [1,0,0],
-    "gemmini": [1,0,0],
-    "eyeriss": [1,0,0],
-    "eyeriss_256": [1,0,0],
-    "simba": [1,0,0],
-    "medusa": [1,0,0],
-    "sigma_transpose": [1,0,0],
+    "SIGMA_HWC_C32":  [1,0,0],  # SIGMA
+    "SIGMA_HWC_W32":  [0,1,0],  # SIGMA
+    "SIGMA_HWC_H32":  [0,0,1],  # SIGMA
+    "SIGMA_HWC_C4W8":  [1,1,0],  # SIGMA
+    "SIGMA_HWC_C4H8":  [1,0,1],  # SIGMA
+    "SIGMA_HWC_W4H8":  [0,1,1],  # SIGMA
+    "SIGMA_HWC_C4W4H2":  [1,1,1],  # SIGMA
+    "SIGMA_HWC_W32_W2": [0,1,0],  # SIGMA
+    "SIGMA_HWC_H32_H2": [0,0,1],  # SIGMA
+    "TPU_like": [1,0,0],
     "simple_output_stationary": [0,1,0],
+    "MTIA_like": [1,0,0], 
+    "Medusa_like": [1,0,0], 
+    "eyeriss_like": [1,0,0], 
+    "simba_like": [1,0,0], 
 }
 
 layout_permutation_constraints_dict = {
-    "HWC_C32":  "SR CQP MN", #R=S=1
-    "HWC_W32":  "SR QPC MN", #R=S=1
-    "HWC_H32":  "SR PQC MN", #R=S=1
-    "HWC_C4W8":  "SR CQP MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
-    "HWC_C4H8":  "SR CPQ MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
-    "HWC_W4H8":  "SR QPC MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
-    "HWC_C4W4H2":  "SR QPC MN", #R=S=1 4&4&2
-    "HWC_W32_W2": "QSRPC MN",
-    "HWC_H32_H2": "PSRQC MN",
-    "gemmini_edge_256": "SR QP MNC", #R=S=1
-    "gemmini_edge_256_exhaustive": "SR QP MNC", #R=S=1
-    "gemmini": "SR QP MNC", #R=S=1
-    "eyeriss": "SR QP MNC", #R=S=1
-    "eyeriss_256": "SR QP MNC", #R=S=1
-    "simba": "SR QP MNC", #R=S=1
-    "medusa": "SR QP MNC", #R=S=1
-    "sigma_transpose": "SR CQP MN", #R=S=1
+    "SIGMA_HWC_C32":  "SR CQP MN", #R=S=1
+    "SIGMA_HWC_W32":  "SR QPC MN", #R=S=1
+    "SIGMA_HWC_H32":  "SR PQC MN", #R=S=1
+    "SIGMA_HWC_C4W8":  "SR CQP MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
+    "SIGMA_HWC_C4H8":  "SR CPQ MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
+    "SIGMA_HWC_W4H8":  "SR QPC MN", #R=S=1 each spatial=sqrt(spatial_block_size) 8&4
+    "SIGMA_HWC_C4W4H2":  "SR QPC MN", #R=S=1 4&4&2
+    "SIGMA_HWC_W32_W2": "QSRPC MN",
+    "SIGMA_HWC_H32_H2": "PSRQC MN",
+    "TPU_like": "SR CQP MN", #R=S=1
     "simple_output_stationary": "SR QPC MN", #R=S=1
+    "MTIA_like": "SR CQP MN", #R=S=1
+    "Medusa_like": "SR CQP MN", #R=S=1
+    "eyeriss_like": "SR CQP MN", #R=S=1
+    "simba_like": "SR CQP MN", #R=S=1
 }
 
 
 # num_line, line_size, reg_line_size
 blocksize_dict = {
-    "template":           [8, 32, 1],
-    "eyeriss":            [8, 32, 1],
-    "eyeriss_256":        [8, 32, 1],
-    "simba":              [8, 32, 1],
-    "edge_128":           [8, 16, 1],
-    "edge_256":           [8, 32, 1],
-    "edge_512":           [8, 64, 1],
-    "edge_256_zcu104":    [8, 32, 1],
-    "cloud_1024":         [8, 128, 1],
-    "cloud_2048_alveoU50":[8, 256, 1],
-    "cloud_4096":         [8, 512, 1],
-    "gemmini_edge_256":   [16, 32, 1],
-    "gemmini_edge_256_exhaustive":   [16, 32, 1],
-    "gemmini":            [16, 32, 1],
-    "medusa":             [16, 32, 1],
-    "sigma_transpose":     [16, 32, 1],
-    "simple_output_stationary": [8, 32, 1],
+    "SIGMA_HWC_C32":             [8, 32, 1],
+    "SIGMA_HWC_W32":             [8, 32, 1],
+    "SIGMA_HWC_H32":             [8, 32, 1],
+    "SIGMA_HWC_C4W8":            [8, 32, 1],
+    "SIGMA_HWC_C4H8":            [8, 32, 1],
+    "SIGMA_HWC_W4H8":            [8, 32, 1],
+    "SIGMA_HWC_C4W4H2":          [8, 32, 1],
+    "SIGMA_HWC_W32_W2":          [8, 32, 1],
+    "SIGMA_HWC_H32_H2":          [8, 32, 1],
+    "TPU_like":                  [8, 32, 1],
+    "simple_output_stationary":  [8, 32, 1],
+    "MTIA_like":                 [8, 32, 1],
+    "Medusa_like":               [8, 32, 1],
+    "eyeriss_like":              [8, 32, 1],
+    "simba_like":                [8, 32, 1],
 }
 
-use_specific_design = True
-arch_name_list = ["sigma_transpose"]
-# arch_name_list = ["template", "eyeriss", "simba", "edge_128", "edge_256", "edge_512", "edge_256_zcu104", "cloud_1024", "cloud_2048_alveoU50", "cloud_4096", "simple_output_stationary"]
-# layout_policy_list = ["HWC_C32"]
-layout_policy_list = ["HWC_C32","HWC_W32","HWC_H32","HWC_C4W8","HWC_C4H8","HWC_W4H8","HWC_C4W4H2","HWC_W32_W2","HWC_H32_H2"]
+layout_policy_list_dict = {
+    "SIGMA_HWC_C32":             "HWC_C32",
+    "SIGMA_HWC_W32":             "HWC_W32",
+    "SIGMA_HWC_H32":             "HWC_H32",
+    "SIGMA_HWC_C4W8":            "HWC_C4W8",
+    "SIGMA_HWC_C4H8":            "HWC_C4H8",
+    "SIGMA_HWC_W4H8":            "HWC_W4H8",
+    "SIGMA_HWC_C4W4H2":          "HWC_C4W4H2",
+    "SIGMA_HWC_W32_W2":          "HWC_W32_W2",
+    "SIGMA_HWC_H32_H2":          "HWC_H32_H2",
+    "TPU_like":                  "HWC_C32",
+    "simple_output_stationary":  "HWC_C32",
+    "MTIA_like":                 "HWC_C32",
+    "Medusa_like":               "HWC_C32",
+    "eyeriss_like":              "HWC_C32",
+    "simba_like":                "HWC_C32",
+}
 
+
+use_specific_design = True
+# FEATHER (arbitrary layout choice), SIGMA (arbitrary layout choice), SIGMA (off-chip reordering), MTIA-like (Transpose), TPU-like (Transpose + Shift), SIGMA-like (HWC_C4W8), SIGMA-like (HWC_C32), Medusa-like (Line Rotation), Eyeriss-like (HWC_C32), NVDLA-like (HWC_C32)
+arch_name_list = ["SIGMA_HWC_C32", "SIGMA_HWC_W32", "SIGMA_HWC_H32", "SIGMA_HWC_C4W8", "SIGMA_HWC_C4H8", "SIGMA_HWC_W4H8", "SIGMA_HWC_C4W4H2", "SIGMA_HWC_W32_W2", "SIGMA_HWC_H32_H2", "TPU_like", "simple_output_stationary", "MTIA_like", "Medusa_like", "eyeriss_like", "simba_like"]
+# arch_name_list = ["template", "eyeriss", "simba", "edge_128", "edge_256", "edge_512", "edge_256_zcu104", "cloud_1024", "cloud_2048_alveoU50", "cloud_4096", "simple_output_stationary"]
 
 def create_folder(directory):
     try:
@@ -172,6 +181,7 @@ def generate_layout(file_path, layout_policy, arch_name, workload_bounds):
 
         elif(layout_policy=="HWC_C4W8"):
             c_spatial = 4
+
             w_spatial = np.floor(line_size/c_spatial)
             w_temporal = np.ceil(w_post_padding/w_spatial)
             h_spatial, c_temporal, h_temporal = 1, np.ceil(c/c_spatial), h_post_padding
@@ -292,25 +302,17 @@ def python_call():
     sys.path.append(this_directory)
     # construct problem shapes for each layer
     for arch_name in arch_name_list:
-        if(use_specific_design):
-            layout_policy = ""
-            for net_id, cnn_layers in enumerate(net_dim_list):
-                for i in range(0, len(cnn_layers)):
-                    problem = cnn_layers[i]
-                    net_name = net_name_list[net_id]
-                    file_name = arch_name + "_" + str(i+1) + '.yaml'
-                    file_path = os.path.abspath(os.path.join(this_directory, '..', 'layout', net_name, file_name))
-                    generate_layout(file_path, layout_policy, arch_name, problem)
-        else:
-            for layout_policy in layout_policy_list:
-                for net_id, cnn_layers in enumerate(net_dim_list):
-                    for i in range(0, len(cnn_layers)):
-                        problem = cnn_layers[i]
-                        net_name = net_name_list[net_id]
-                        file_name = arch_name + "_" + layout_policy + '_' + str(i+1) + '.yaml'
-                        file_path = os.path.abspath(os.path.join(this_directory, '..', 'layout', net_name, file_name))
-                        generate_layout(file_path, layout_policy, arch_name, problem)
-
+        layout_policy = layout_policy_list_dict[arch_name]
+        for net_id, cnn_layers in enumerate(net_dim_list):
+            for i in range(0, len(cnn_layers)):
+                problem = cnn_layers[i]
+                net_name = net_name_list[net_id]
+                if "SIGMA" in arch_name:
+                    file_name = f"SIGMA_{layout_policy}_" + str(i+1) + '.yaml'
+                else:
+                    file_name = arch_name + f"_{layout_policy}_" + str(i+1) + '.yaml'
+                file_path = os.path.abspath(os.path.join(this_directory, '..', 'layout', net_name, file_name))
+                generate_layout(file_path, layout_policy, arch_name, problem)
 
 if __name__=="__main__":
     # cli_launch() # if wanna use from command line.

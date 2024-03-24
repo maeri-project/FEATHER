@@ -4,8 +4,6 @@ import numpy as np
 
 import os, inspect, sys
 
-import lambda_utils
-
 
 ########### Must Change
 sota_accel = "sigma_transpose.yaml"

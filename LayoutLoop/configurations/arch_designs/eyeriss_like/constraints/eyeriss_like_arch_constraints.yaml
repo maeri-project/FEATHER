@@ -5,7 +5,7 @@
 architecture_constraints:
   targets:
   # certain buffer only stores certain datatypes
-  - target: RegisterFile
+  - target: ofmap_spad
     type: bypass
     bypass: [Inputs, Weights]
     keep: [Outputs]
@@ -13,7 +13,7 @@ architecture_constraints:
     type: bypass
     bypass: [Inputs, Outputs]
     keep: [Weights]
-  - target: ifmap_spad
+  - target: RegisterFile
     type: bypass
     bypass: [Weights, Outputs]
     keep: [Inputs]
@@ -36,7 +36,7 @@ architecture_constraints:
     permutation: NCPRSQM
     factors: N=1 C=1 P=1 R=1 S=1
   # one ofmap position but of different output channels
-  - target: RegisterFile
+  - target: ofmap_spad
     type: temporal
     permutation: NCPQRS M
     factors: N=1 C=1 R=1 S=1 P=1 Q=1
@@ -45,7 +45,7 @@ architecture_constraints:
     type: temporal
     permutation: NMPQS CR
     factors: N=1 M=1 P=1 Q=1 S=1 R=0
-  - target: ifmap_spad
+  - target: RegisterFile
     type: temporal
     permutation: NMCPQRS
     factors: N=1 M=1 C=1 P=1 Q=1 R=1 S=1

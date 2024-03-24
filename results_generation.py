@@ -136,7 +136,7 @@ def figure_12():
     # plt.plot([5.5, 5], [geomean[0], 3], linewidth=1, color="k", linestyle="--")
     # plt.text(20, np.mean(normalized_latency_speedup[1]), 'SushiAccel GeoMean', horizontalalignment='center', color=color_list[0])
     # plt.text(20, np.mean(normalized_latency_speedup[0]), 'Xilinx GeoMean', horizontalalignment='center', color=color_list[1])
-    plt.savefig(r'Latency_Comparison_LAMBDA_DPU.pdf', bbox_inches="tight", transparent=True) 
+    plt.savefig(r'figure12.pdf', bbox_inches="tight", transparent=True) 
 
 
 def figure_13():
@@ -374,7 +374,7 @@ def figure_13():
     plt.subplots_adjust(hspace=.0)
     plt.subplots_adjust(wspace=.0)
     #
-    plt.savefig(r'LAMBDA_Cmp_SotA.pdf', bbox_inches="tight", transparent=True)
+    plt.savefig(r'figure13.pdf', bbox_inches="tight", transparent=True)
 
 
 
@@ -514,7 +514,7 @@ def figure_14():
     plt.text(-0.6,1.05, f"BIRRD (4% area and 3.3% power of entire die)", color='blue', fontsize=SMALL_SIZE)
     # plt.text(0.85,0.7, f"", color='red',  fontsize=MEDIUM_SIZE)
 
-    plt.savefig('resource_breakdown.pdf', bbox_inches="tight", transparent=True) 
+    plt.savefig('figure14.pdf', bbox_inches="tight", transparent=True) 
 
 if __name__ == "__main__":
     figure_12()

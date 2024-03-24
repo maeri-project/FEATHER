@@ -5,7 +5,7 @@ compound_components:
     attributes:
       technology: 45nm
       memory_depth: 12
-      memory_width: 16
+      memory_width: 8
       n_rdwr_ports: 2
       n_banks: 1
       n_buffets: 1

@@ -34,6 +34,7 @@ View the image name from the all available docker images.
 docker run -it -rm <docker_img_name>
 git clone <provided_url>
 cd FEATHER/LayoutLoop/configurations
+git pull
 make clean
 make conv_dse // launch dataflow-layout design space exploration for convolution layers in ResNet-50 and MobileNet-V3
 make gemm_dse // launch dataflow-layout design space exploration for Berts

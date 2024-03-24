@@ -25,6 +25,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+
+#define STANDARD // Comment out this for MEDUSA
+
+#ifndef STANDARD
+#define MEDUSA
+#endif
+
+// #define TRANSPOSE // Uncomment out this for enabling transpose analysis
+
+
+// #define ENABLE_TRANSPOSE
+
 #include <cassert>
 #include <numeric>
 #include <string>
@@ -832,9 +845,7 @@ EvalStatus BufferLevel::Evaluate(const tiling::CompoundTile& tile, const tiling:
                                  const bool break_on_failure)
 {
   std::cout << specs_.level_name << "\t";
-  // Added by JT
   ComputeBufferAccessNumber(tile.data_movement_info);
-  // Done Added by JT
   auto eval_status = ComputeScalarAccesses(tile.data_movement_info, mask, confidence_threshold, break_on_failure);
   if (!break_on_failure || eval_status.success){
     ComputeVectorAccesses(tile.data_movement_info);
@@ -1201,18 +1212,14 @@ EvalStatus BufferLevel::ComputeScalarAccesses(const tiling::CompoundDataMovement
     // Populate the individual fine_grained access stats
     // TODO: setup the serialize function and directly outputs the map version of the stats
     
-    // Added by JT
     if(tile[pvi].GetDataSpaceName()=="Inputs"){
       double temp_in = (double)stats_.fine_grained_scalar_accesses[pvi]["random_read"];
       double tmp_res = temp_in/overall_slowdown;
       stats_.random_reads[pv] = std::ceil(tmp_res);
-      // stats_.gated_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["gated_read"]/overall_slowdown;
-      // stats_.skipped_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["skipped_read"]/overall_slowdown;
     }
     else{
       stats_.random_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["random_read"];
     }
-    // Done added by JT
     stats_.gated_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["gated_read"]/overall_slowdown;
     stats_.random_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["random_read"]/overall_slowdown;
     stats_.skipped_reads[pv] = stats_.fine_grained_scalar_accesses[pvi]["skipped_read"]/overall_slowdown;
@@ -1378,7 +1385,6 @@ EvalStatus BufferLevel::ComputeScalarAccesses(const tiling::CompoundDataMovement
 
 
 void BufferLevel::ComputeVectorAccesses(const tiling::CompoundDataMovementInfo& tile){
-  //JTC std::cout << "[ComputeVectorAccesses]" << std::endl;
   // calculate fine-grained vector accesses
   auto block_size = specs_.block_size.Get();
   // auto metadata_block_size = specs_.default_md_block_size.Get();
@@ -1436,11 +1442,6 @@ void BufferLevel::ComputeVectorAccesses(const tiling::CompoundDataMovementInfo& 
       ratio = total/naive_total;
     }
 
-    //JTC std::cout << "tile[" << pvi << "].GetDataSpaceName()==" << tile[pvi].GetDataSpaceName() << "   tile[" << pvi << "]_shape: " << tile_shape << std::endl;
-
-    // Added by JT
-    // Done Added by JT --> test whether adding access to a tile will slowdown access latency as well, 
-
     // adjust the sparse modeling traffic based on the calculated ratio
     // metadata accesses are scaled similarly as they are also dependent on the number of nonzero values in the tile
     for (auto iter = tile[pvi].fine_grained_data_accesses.begin(); iter != tile[pvi].fine_grained_data_accesses.end(); ++iter)
@@ -1453,28 +1454,14 @@ void BufferLevel::ComputeVectorAccesses(const tiling::CompoundDataMovementInfo& 
           if (!metadata_action) {
           total_naive_accesses = (iter->second % block_size == 0) ? iter->second / block_size : iter->second / block_size + 1;
           
-          // Added by JT
           if(tile[pvi].GetDataSpaceName()=="Inputs" && iter->first == "random_read"){
             ratio=ratio/overall_slowdown;
           }
-          // Done added by JT
-
-          //JTC std::cout << "overall_slowdown=" << overall_slowdown << std::endl;
           stats_.fine_grained_vector_accesses[pvi][iter->first] = total_naive_accesses * ratio;
-            // JT: In the case of dense, only random fill and random_read is non_zero.
-            /* //JTC if(iter->first == "random_fill" || iter->first == "random_read" || iter->first == "random_update" ){
-              std::cout << "stats_.fine_grained_vector_accesses["<< pvi << "]["<< iter->first << "]" <<  "total_naive_accesses:" << total_naive_accesses << " = iter->second:" << iter->second << " / block_size:" << block_size << std::endl;
-            }*/
-            // Done added by JT
           } 
        } else {
           // decompression counts are not related to block size
           stats_.fine_grained_vector_accesses[pvi][iter->first] = iter->second;
-          // JT: In the case of dense, only random fill and random_read is non_zero.
-          /* //JTC if(iter->first == "random_fill" || iter->first == "random_read" || iter->first == "random_update" ){
-            std::cout << "stats_.fine_grained_vector_accesses["<< pvi << "]["<< iter->first << "]" <<  " = iter->second:" << iter->second << std::endl;
-          }*/
-          // Done added by JT
        }
     }
 
@@ -1501,10 +1488,6 @@ void BufferLevel::ComputeVectorAccesses(const tiling::CompoundDataMovementInfo& 
       }   
       stats_.fine_grained_fromat_accesses_bits[pvi][op_name] = accessed_bits_accumulator; 
       stats_.fine_grained_vector_accesses[pvi][op_name] = total_naive_accesses;
-      // JT: In the case of dense, no format data exist.
-      // std::cout << "stats_.fine_grained_vector_accesses["<<pvi<<"]" << "[" << op_name << "] =  total_naive_accesses:  " << total_naive_accesses << std::endl;
-      // std::cout << "stats_.fine_grained_fromat_accesses_bits["<<pvi<<"]" << "[" << op_name << "] =  accessed_bits_accumulator:  " << accessed_bits_accumulator << std::endl;
-      // Done added by JT
     }
   }
 }
@@ -1513,108 +1496,12 @@ void BufferLevel::ComputeVectorAccesses(const tiling::CompoundDataMovementInfo& 
 // Compute buffer access number.
 void BufferLevel::ComputeBufferAccessNumber(const tiling::CompoundDataMovementInfo& tile) {
   overall_slowdown=1; // Initialization
-
-  //JTC 
-  /*
-  std::cout << "[ComputeBufferAccessNumber]" << std::endl;
-  
-  std::cout << "#### print out spatial_access_current_buffer_level ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].spatial_access_current_buffer_level.size(); sub_loop_level++)
-  {
-  std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-        std::cout  << "  " << tile[0].spatial_access_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-  */
-/*
-  std::cout << "#### print out total_access_current_buffer_level ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].total_access_current_buffer_level.size(); sub_loop_level++)
-  {
-  std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-        std::cout  << "  " << tile[0].total_access_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-
-  std::cout << "#### print out total data sizes per buffer level ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].total_data_size_access_current_buffer_level.size(); sub_loop_level++)
-  {
-  std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-        std::cout  << "  " << tile[0].total_data_size_access_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-
-  std::cout << "#### print out data_related_dim ####" << std::endl;
-  for (unsigned i=0; i< tile[0].data_related_dim.size(); i++){
-    std::cout << "data_ID=" << i << "  dim:" << std::endl;
-    for (unsigned k=0; k< tile[0].data_related_dim[i].size(); k++){
-        std::cout << " " <<  tile[0].data_related_dim[i][k].first << " " <<  tile[0].data_related_dim[i][k].second << std::endl;
-    }  
-  }
-*/
-//JTC 
-/*
-  std::cout << "#### print out read_length_current_buffer_level (L) ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].read_length_current_buffer_level.size(); sub_loop_level++){
-    std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<tile[0].read_length_current_buffer_level[sub_loop_level].size(); i++)
-        std::cout  << "  " << tile[0].read_length_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-
-  std::cout << "#### print out reading_start_index_step_current_buffer_level (Δx) ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].reading_start_index_step_current_buffer_level.size(); sub_loop_level++){
-    std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<tile[0].reading_start_index_step_current_buffer_level[sub_loop_level].size(); i++)
-        std::cout  << "  " << tile[0].reading_start_index_step_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-
-  std::cout << "#### print out layout_data_length_per_buf_row_current_buffer_level (B) ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].layout_data_length_per_buf_row_current_buffer_level.size(); sub_loop_level++){
-    std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<tile[0].layout_data_length_per_buf_row_current_buffer_level[sub_loop_level].size(); i++)
-        std::cout  << "  " << tile[0].layout_data_length_per_buf_row_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-
-  std::cout << "#### print out layout_data_start_index_step_current_buffer_level (Δy) ####" << std::endl;
-  for (unsigned sub_loop_level = 0; sub_loop_level < tile[0].layout_data_start_index_step_current_buffer_level.size(); sub_loop_level++){
-    std::cout << "sub_loop_level=" << sub_loop_level;
-    for (unsigned i=0; i<tile[0].layout_data_start_index_step_current_buffer_level[sub_loop_level].size(); i++)
-        std::cout  << "  " << tile[0].layout_data_start_index_step_current_buffer_level[sub_loop_level][i];
-    std::cout << std::endl;
-  }
-*/
   unsigned iacts_data_id=0; 
   for (unsigned i=0; i<problem::GetShape()->NumDataSpaces; i++){
     if(problem::GetShape()->DataSpaceIDToName.at(i) == "Inputs"){
       iacts_data_id=i;
     }
   }
-
-//JTC 
-/*
-  for(auto loop = subnest_.rbegin(); loop != subnest_.rend(); loop++)
-  {
-    std::cout << "loop->dimension=" << loop->dimension << " for " << problem::GetShape()->FlattenedDimensionIDToName.at(loop->dimension) << " in [" << loop->start << ", " << loop->end << ", " << loop->stride << ");  loop->residual_end=" << loop->residual_end << std::endl;
-    assert(loop->spacetime_dimension < spacetime::Dimension::Num);
-
-    if (loop->spacetime_dimension != spacetime::Dimension::Time)
-    {
-      if (loop->spacetime_dimension != spacetime::Dimension::SpaceX)
-        std::cout << problem::GetShape()->FlattenedDimensionIDToName.at(loop->dimension) <<"  (Spatial-X) ID:" << loop->dimension << std::endl;
-      else
-        std::cout << problem::GetShape()->FlattenedDimensionIDToName.at(loop->dimension) <<"  (Spatial-Y) ID:" << loop->dimension << std::endl;
-    }
-    else{
-      std::cout << problem::GetShape()->FlattenedDimensionIDToName.at(loop->dimension) <<"  ID:" << loop->dimension << std::endl;
-    }
-    // Do not print loop if it's a trivial factor.
-  }
-*/
 
   // dataflow data demand: iActs[x, x+L] -- Δx; buffer data providing: iActs[y, y+B] Δy
   double number_row_read=1.0;
@@ -1623,11 +1510,9 @@ void BufferLevel::ComputeBufferAccessNumber(const tiling::CompoundDataMovementIn
     uint64_t L = tile[0].read_length_current_buffer_level.back()[multiplicative_dim_id];
     uint64_t B = tile[0].layout_data_length_per_buf_row_current_buffer_level.back()[multiplicative_dim_id];
     uint64_t delta_y = tile[0].layout_data_start_index_step_current_buffer_level.back()[multiplicative_dim_id];
-    // std::cout << "L=" << L << " B=" << B << " Δy=" << delta_y << std::endl;
     if(B==delta_y){
       double temp = (double)L/(double)B;
       number_row_read *= std::ceil(temp);
-      // std::cout << "number_row_read (B==Δy):" << number_row_read << std::endl;
     }
     else if(B>delta_y && L<=B){}
     else if(B>delta_y && L>B){
@@ -1642,30 +1527,33 @@ void BufferLevel::ComputeBufferAccessNumber(const tiling::CompoundDataMovementIn
         }
       }
       number_row_read *= std::min(number_row_from_read_length, (double)spatial_access);
-      // std::cout << "number_row_from_read_length=" <<number_row_from_read_length << "  spatial_access=" << spatial_access << std::endl;
     }
 
+#ifdef ENABLE_TRANSPOSE
     if(enable_matrix_transpose){
       if (L == number_row_read){
         number_row_read = 2; // Using Matrix Multiplication unit to transpose input matrix, which does NOT take extra latency.
       }
     }
+#endif
   }
   if(number_row_read > 1){
-    number_row_read = number_row_read ; // @Jianming modelling medusa by resolving one bank conflict through line rotation.
+    number_row_read = number_row_read ; 
   }
+#ifdef MEDUSA
+  double cycle_inverse=(3.0/number_row_read);
+#elif defined STANDARD
   double cycle_inverse=(2.0/number_row_read);
+#endif
+
   double slowd = std::min(cycle_inverse, 1.0);
   statistic_number_row_read_per_cycle_access = number_row_read;
   overall_slowdown *= slowd;
-  // std::cout << "number_row_read=" << number_row_read << "  cycle_inverse=" << cycle_inverse << "  overall_slowdown=" << overall_slowdown << std::endl;
 }
 
 
 // Compute buffer energy.
 void BufferLevel::ComputeBufferEnergy(const tiling::CompoundDataMovementInfo& data_movement_info) {
-  //JTC std::cout << "[ComputeBufferEnergy]" << std::endl;
-
   // NOTE! Stats are always maintained per-DataSpaceID
   for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++) {
     auto pv = problem::Shape::DataSpaceID(pvi);
@@ -1804,7 +1692,6 @@ void BufferLevel::ComputeAddrGenEnergy()
 //
 void BufferLevel::ComputePerformance(const std::uint64_t compute_cycles)
 {
-  //JTC std::cout << "[ComputePerformance]" << std::endl; //JTC
   //
   // Step 1: Compute unconstrained bandwidth demand.
   //
@@ -1904,19 +1791,16 @@ void BufferLevel::ComputePerformance(const std::uint64_t compute_cycles)
     // std::cout << "unconstrained_read_bandwidth.at(" << pv << ") : " << unconstrained_read_bandwidth.at(pv) << std::endl;
     // std::cout << "unconstrained_write_bandwidth.at(" << pv << "): " << unconstrained_write_bandwidth.at(pv) << std::endl;
   }
-  //JTC std::cout << "stats_.read_bandwidth: " << stats_.read_bandwidth <<  "  stats_.write_bandwidth: " << stats_.write_bandwidth << "  specs_.shared_bandwidth: " << specs_.shared_bandwidth << std::endl;
 
   //
   // Step 4: Calculate execution cycles.
   //
-  //JTC std::cout << "computer_cycles before slow down: " << compute_cycles << std::endl;
 
   //
   // Step 4 (added): Data Layout Consideration
   //
   stats_.slowdown *= overall_slowdown;
   stats_.cycles = std::uint64_t(ceil(compute_cycles / stats_.slowdown));
-  //JTC std::cout << "computer_cycles after slow down: " << stats_.cycles << std::endl;
 
   //
   // Step 5: Update arch specs.
@@ -1931,11 +1815,7 @@ void BufferLevel::ComputePerformance(const std::uint64_t compute_cycles)
                               + std::accumulate(stats_.write_bandwidth.begin(), stats_.write_bandwidth.end(), 0.0) ;
 #endif
 
-  // std::cout << "num_loops = " << subnest_.size() << std::endl; 
   std::cout << "stats_.slowdown: " << stats_.slowdown << std::endl;
-  // std::cout << "Data storage size            : " << specs_.size << std::endl;
-  // std::cout << "Data word bits               : " << specs_.word_bits << std::endl;
-  // std::cout << "Data block size              : " << specs_.block_size << std::endl;
 }
 
 //

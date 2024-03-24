@@ -1502,7 +1502,6 @@ void BufferLevel::ComputeBufferAccessNumber(const tiling::CompoundDataMovementIn
 
   // dataflow data demand: iActs[x, x+L] -- Δx; buffer data providing: iActs[y, y+B] Δy
   double number_row_read=1.0;
-  bool enable_matrix_transpose = true;
   for(unsigned multiplicative_dim_id=0; multiplicative_dim_id<tile[0].read_length_current_buffer_level.back().size(); multiplicative_dim_id++){
     uint64_t L = tile[0].read_length_current_buffer_level.back()[multiplicative_dim_id];
     uint64_t B = tile[0].layout_data_length_per_buf_row_current_buffer_level.back()[multiplicative_dim_id];
@@ -1527,10 +1526,8 @@ void BufferLevel::ComputeBufferAccessNumber(const tiling::CompoundDataMovementIn
     }
 
 #ifdef ENABLE_TRANSPOSE
-    if(enable_matrix_transpose){
-      if (L == number_row_read){
-        number_row_read = 2; // Using Matrix Multiplication unit to transpose input matrix, which does NOT take extra latency.
-      }
+    if (L == number_row_read){
+      number_row_read = 2; // Using Matrix Multiplication unit to transpose input matrix, which does NOT take extra latency.
     }
 #endif
   }

@@ -27,16 +27,13 @@
 
 
 
-#define STANDARD // Comment out this for MEDUSA
+#define STANDARD // Comment out this for MEDUSA to enable row rotation among banks
 
 #ifndef STANDARD
 #define MEDUSA
 #endif
 
 // #define TRANSPOSE // Uncomment out this for enabling transpose analysis
-
-
-// #define ENABLE_TRANSPOSE
 
 #include <cassert>
 #include <numeric>

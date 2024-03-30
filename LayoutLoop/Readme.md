@@ -21,8 +21,8 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 ```
 ### 2.2 Download and Setup prebuilt docker.
 Steps: download the docker [link](https://drive.google.com/file/d/1-BdCdKI00gXY8GKtNpwHVtn4b-r_vNCC/view?usp=sharing) and install it
-```
-docker load -i feather_docker.tar 
+```bash
+docker load -i feather_layoutloop_docker.tar.gz 
 docker image ls
 ```
 View the image name from the all available docker images.
@@ -30,14 +30,15 @@ View the image name from the all available docker images.
 
 ## 3. Experiment: Launch the run for different accelerators setup (Optional, > 24 hours)
 
-```
-docker run -it -rm <docker_img_name>
+```bash
+#docker run -it <docker_img_name>
+docker run -it feather_layoutloop
 git clone <provided_url>
 cd FEATHER/LayoutLoop/configurations
 git pull
 make clean
-make conv_dse // launch dataflow-layout design space exploration for convolution layers in ResNet-50 and MobileNet-V3
-make gemm_dse // launch dataflow-layout design space exploration for Berts
+make conv_dse # launch dataflow-layout design space exploration for convolution layers in ResNet-50 and MobileNet-V3
+make gemm_dse # launch dataflow-layout design space exploration for Berts
 ```
 
 The pre-searched results are listed in the pre_run_results, and the collected results are listed in the function named figure13() in `FEATHER/results_generation.py`.

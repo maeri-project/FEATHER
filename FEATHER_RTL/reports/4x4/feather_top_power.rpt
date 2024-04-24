@@ -1,0 +1,238 @@
+Information: Propagating switching activity (low effort zero delay simulation). (PWR-6)
+Warning: Design has unannotated primary inputs. (PWR-414)
+Warning: Design has unannotated sequential cell outputs. (PWR-415)
+ 
+****************************************
+Report : power
+        -hier
+        -analysis_effort low
+Design : feather_top
+Version: V-2023.12-SP2
+Date   : Sun Apr 21 14:35:35 2024
+****************************************
+
+
+Library(s) Used:
+
+    tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
+
+
+Operating Conditions: tt0p8v25c   Library: tcbn28hpcplusbwp30p140tt0p8v25c
+Wire Load Model Mode: segmented
+
+Design        Wire Load Model            Library
+------------------------------------------------
+feather_top            ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_controller_WEIGHTS_DATA_WIDTH32_WEIGHTS_NUM_BANKS1_WEIGHTS_SRAM_DATA_WIDTH32_WEIGHTS_SRAM_BANK_ADDR_WIDTH2_WEIGHTS_SRAM_ADDR_WIDTH2_IACTS_DATA_WIDTH8_IACTS_NUM_BANKS4_IACTS_SRAM_DATA_WIDTH32_IACTS_SRAM_BANK_ADDR_WIDTH2_IACTS_SRAM_ADDR_WIDTH8_SCALE_VALUE_WIDTH32_PE_OUTPUT_WIDTH32_DPE_COL_NUM4_DPE_ROW_NUM4_LOG2_DPE_COL_NUM2_LOG2_DPE_ROW_NUM2_OACTS_DATA_WIDTH8_OUTBUF_DATA_WIDTH32_OUTBUF_NUM_BANKS4_OUTBUF_SRAM_DATA_WIDTH128_OUTBUF_SRAM_BANK_ADDR_WIDTH2_OUTBUF_SRAM_ADDR_WIDTH8_INSTR_SRAM_BANK_ADDR_WIDTH2
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID0_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID1_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID2_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID3_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_3
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID4_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID5_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID6_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID7_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID8_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID9_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID10_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID11_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID12_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID13_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID14_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+feather_pe_THIS_PE_ID15_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_NUM_INPUT_DATA4_IN_COMMAND_WIDTH6
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_1
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_2
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_0
+                       ZeroWireload      tcbn28hpcplusbwp30p140tt0p8v25c
+
+
+Global Operating Voltage = 0.8  
+Power-specific unit information :
+    Voltage Units = 1V
+    Capacitance Units = 1.000000pf
+    Time Units = 1ns
+    Dynamic Power Units = 1mW    (derived from V,C,T units)
+    Leakage Power Units = 1nW
+
+
+--------------------------------------------------------------------------------
+                                       Switch   Int      Leak     Total
+Hierarchy                              Power    Power    Power    Power    %
+--------------------------------------------------------------------------------
+feather_top                               0.191    7.882 5.80e+04    8.131 100.0
+  birrd_INST (birrd_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_NUM_INPUT_DATA4_IN_COMMAND_WIDTH6)
+                                       1.06e-02    0.535 4.19e+03    0.550   6.8
+    last_stage_1__group_first_half_0__switch_first_half_1__last_stage (birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_0)
+                                       3.97e-04 8.64e-02  684.197 8.74e-02   1.1
+    last_stage_1__group_first_half_0__switch_first_half_0__last_stage (birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_1)
+                                       1.52e-03 8.63e-02  685.505 8.85e-02   1.1
+    first_half_0__group_sec_half_0__switch_sec_half_1__second_stage (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_0)
+                                       1.30e-03 8.94e-02  698.350 9.14e-02   1.1
+    first_half_0__group_sec_half_0__switch_sec_half_0__second_stage (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1)
+                                       1.74e-03 8.90e-02  697.021 9.15e-02   1.1
+    first_stage_switch_1__first_stage (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_0)
+                                       1.88e-03 9.21e-02  710.047 9.46e-02   1.2
+    first_stage_switch_0__first_stage (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1)
+                                       1.86e-03 9.18e-02  708.742 9.44e-02   1.2
+  feather_GENVAR_DPE_INST_COL_ITER_3__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_0)
+                                       3.65e-04 4.31e-02  253.968 4.37e-02   0.5
+  feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID15_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.03e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID14_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.31e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID13_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.46e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID12_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.70e-03    0.295 2.16e+03    0.306   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_2__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_1)
+                                       2.69e-04 4.28e-02  253.139 4.34e-02   0.5
+  feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID11_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.04e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID10_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.27e-03    0.294 2.16e+03    0.305   3.7
+  feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID9_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.41e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID8_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.68e-03    0.295 2.16e+03    0.306   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_1__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_2)
+                                       3.66e-04 4.31e-02  253.719 4.37e-02   0.5
+  feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID7_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.08e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID6_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.31e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID5_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.47e-03    0.295 2.16e+03    0.306   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID4_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.73e-03    0.295 2.16e+03    0.306   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_0__COL_WISE_O_DATA_BUS (o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_3)
+                                       2.82e-04 4.28e-02  253.290 4.34e-02   0.5
+  feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID3_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.00e-03    0.295 2.16e+03    0.305   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID2_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.21e-03    0.294 2.16e+03    0.305   3.7
+  feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID1_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.48e-03    0.295 2.16e+03    0.306   3.8
+  feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS (feather_pe_THIS_PE_ID0_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32)
+                                       8.66e-03    0.295 2.17e+03    0.306   3.8
+  feather_CONTROLLER_INST (feather_controller_WEIGHTS_DATA_WIDTH32_WEIGHTS_NUM_BANKS1_WEIGHTS_SRAM_DATA_WIDTH32_WEIGHTS_SRAM_BANK_ADDR_WIDTH2_WEIGHTS_SRAM_ADDR_WIDTH2_IACTS_DATA_WIDTH8_IACTS_NUM_BANKS4_IACTS_SRAM_DATA_WIDTH32_IACTS_SRAM_BANK_ADDR_WIDTH2_IACTS_SRAM_ADDR_WIDTH8_SCALE_VALUE_WIDTH32_PE_OUTPUT_WIDTH32_DPE_COL_NUM4_DPE_ROW_NUM4_LOG2_DPE_COL_NUM2_LOG2_DPE_ROW_NUM2_OACTS_DATA_WIDTH8_OUTBUF_DATA_WIDTH32_OUTBUF_NUM_BANKS4_OUTBUF_SRAM_DATA_WIDTH128_OUTBUF_SRAM_BANK_ADDR_WIDTH2_OUTBUF_SRAM_ADDR_WIDTH8_INSTR_SRAM_BANK_ADDR_WIDTH2)
+                                       1.52e-02    0.718 6.86e+03    0.741   9.1
+  OUTPUT_BUFFER_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4)
+                                       1.60e-02    0.824 5.27e+03    0.845  10.4
+    SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0)
+                                       3.94e-03    0.206 1.31e+03    0.211   2.6
+    SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1)
+                                       3.92e-03    0.206 1.31e+03    0.211   2.6
+    SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2)
+                                       3.95e-03    0.206 1.31e+03    0.211   2.6
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3)
+                                       2.57e-03    0.206 1.31e+03    0.210   2.6
+  INSTR_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1)
+                                       2.35e-03 8.36e-02  531.960 8.65e-02   1.1
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4)
+                                       2.22e-03 8.35e-02  525.449 8.63e-02   1.1
+  IACTS_PONG_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_0)
+                                       3.43e-03    0.206 1.46e+03    0.211   2.6
+    SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0)
+                                       1.56e-04 5.15e-02  356.466 5.20e-02   0.6
+    SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1)
+                                       8.43e-04 5.15e-02  357.966 5.27e-02   0.6
+    SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2)
+                                       6.18e-04 5.15e-02  357.976 5.25e-02   0.6
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3)
+                                       1.52e-04 5.15e-02  356.457 5.20e-02   0.6
+  IACTS_PING_SRAM (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_1)
+                                       5.12e-03    0.208 1.46e+03    0.215   2.6
+    SP_SRAM_BANKS_3__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4)
+                                       1.25e-03 5.20e-02  358.975 5.36e-02   0.7
+    SP_SRAM_BANKS_2__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5)
+                                       1.02e-03 5.20e-02  358.935 5.34e-02   0.7
+    SP_SRAM_BANKS_1__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6)
+                                       5.52e-04 5.19e-02  357.384 5.29e-02   0.7
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7)
+                                       5.66e-04 5.20e-02  357.426 5.29e-02   0.7
+  WEIGHTS_PONG_BUFFER (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_0)
+                                       2.25e-04    0.206 1.31e+03    0.207   2.5
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4)
+                                       2.11e-04    0.206 1.31e+03    0.207   2.5
+  WEIGHTS_PING_BUFFER (sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1)
+                                       2.73e-03    0.210 1.34e+03    0.214   2.6
+    SP_SRAM_BANKS_0__sram_bank_sp_inst (sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5)
+                                       2.68e-03    0.210 1.33e+03    0.214   2.6
+1

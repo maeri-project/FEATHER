@@ -1,0 +1,226 @@
+ 
+****************************************
+Report : timing
+        -path full
+        -delay max
+        -max_paths 1
+Design : feather_top
+Version: V-2023.12-SP2
+Date   : Sun Apr 21 14:35:34 2024
+****************************************
+
+ # A fanout number of 1000 was used for high fanout net computations.
+
+Operating Conditions: tt0p8v25c   Library: tcbn28hpcplusbwp30p140tt0p8v25c
+Wire Load Model Mode: segmented
+
+  Startpoint: birrd_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_
+              (rising edge-triggered flip-flop clocked by clk)
+  Endpoint: birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_
+            (rising edge-triggered flip-flop clocked by clk)
+  Path Group: clk
+  Path Type: max
+
+  Des/Clust/Port     Wire Load Model       Library
+  ------------------------------------------------
+  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_2
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  birrd_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_NUM_INPUT_DATA4_IN_COMMAND_WIDTH6
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID15_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID14_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID13_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID12_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID11_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID10_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID9_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID8_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID7_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID6_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID5_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID4_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_3
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID3_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID2_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID1_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_pe_THIS_PE_ID0_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_controller_WEIGHTS_DATA_WIDTH32_WEIGHTS_NUM_BANKS1_WEIGHTS_SRAM_DATA_WIDTH32_WEIGHTS_SRAM_BANK_ADDR_WIDTH2_WEIGHTS_SRAM_ADDR_WIDTH2_IACTS_DATA_WIDTH8_IACTS_NUM_BANKS4_IACTS_SRAM_DATA_WIDTH32_IACTS_SRAM_BANK_ADDR_WIDTH2_IACTS_SRAM_ADDR_WIDTH8_SCALE_VALUE_WIDTH32_PE_OUTPUT_WIDTH32_DPE_COL_NUM4_DPE_ROW_NUM4_LOG2_DPE_COL_NUM2_LOG2_DPE_ROW_NUM2_OACTS_DATA_WIDTH8_OUTBUF_DATA_WIDTH32_OUTBUF_NUM_BANKS4_OUTBUF_SRAM_DATA_WIDTH128_OUTBUF_SRAM_BANK_ADDR_WIDTH2_OUTBUF_SRAM_ADDR_WIDTH8_INSTR_SRAM_BANK_ADDR_WIDTH2
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_0
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  feather_top        ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1
+                     ZeroWireload          tcbn28hpcplusbwp30p140tt0p8v25c
+
+  Point                                                   Incr       Path
+  --------------------------------------------------------------------------
+  clock clk (rise edge)                                   0.00       0.00
+  clock network delay (ideal)                             0.00       0.00
+  birrd_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_/CP (DFCNQD1BWP30P140)
+                                                          0.00 #     0.00 r
+  birrd_INST/first_stage_switch_0__first_stage/o_data_bus_inner_reg_0_/Q (DFCNQD1BWP30P140)
+                                                          0.05       0.05 f
+  birrd_INST/first_stage_switch_0__first_stage/o_data_bus[0] (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1)
+                                                          0.00       0.05 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/i_data_bus[0] (birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1)
+                                                          0.00       0.05 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U8/ZN (INVD1BWP30P140)
+                                                          0.01       0.07 r
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U9/ZN (NR2D1BWP30P140)
+                                                          0.01       0.08 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U31/CO (FA1D1BWP30P140)
+                                                          0.04       0.12 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U30/CO (FA1D1BWP30P140)
+                                                          0.04       0.15 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U29/CO (FA1D1BWP30P140)
+                                                          0.04       0.19 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U28/CO (FA1D1BWP30P140)
+                                                          0.04       0.22 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U27/CO (FA1D1BWP30P140)
+                                                          0.04       0.26 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U26/CO (FA1D1BWP30P140)
+                                                          0.04       0.29 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U25/CO (FA1D1BWP30P140)
+                                                          0.04       0.33 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U24/CO (FA1D1BWP30P140)
+                                                          0.04       0.37 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U23/CO (FA1D1BWP30P140)
+                                                          0.04       0.40 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U22/CO (FA1D1BWP30P140)
+                                                          0.04       0.44 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U21/CO (FA1D1BWP30P140)
+                                                          0.04       0.47 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U20/CO (FA1D1BWP30P140)
+                                                          0.04       0.51 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U19/CO (FA1D1BWP30P140)
+                                                          0.04       0.55 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U18/CO (FA1D1BWP30P140)
+                                                          0.04       0.58 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U17/CO (FA1D1BWP30P140)
+                                                          0.04       0.62 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U16/CO (FA1D1BWP30P140)
+                                                          0.04       0.65 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U15/CO (FA1D1BWP30P140)
+                                                          0.04       0.69 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U14/CO (FA1D1BWP30P140)
+                                                          0.04       0.73 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U13/CO (FA1D1BWP30P140)
+                                                          0.04       0.76 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U12/CO (FA1D1BWP30P140)
+                                                          0.04       0.80 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U11/CO (FA1D1BWP30P140)
+                                                          0.04       0.83 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U10/CO (FA1D1BWP30P140)
+                                                          0.04       0.87 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U9/CO (FA1D1BWP30P140)
+                                                          0.04       0.90 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U8/CO (FA1D1BWP30P140)
+                                                          0.04       0.94 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U7/CO (FA1D1BWP30P140)
+                                                          0.04       0.98 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U6/CO (FA1D1BWP30P140)
+                                                          0.04       1.01 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U5/CO (FA1D1BWP30P140)
+                                                          0.04       1.05 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U4/CO (FA1D1BWP30P140)
+                                                          0.04       1.08 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U3/CO (FA1D1BWP30P140)
+                                                          0.04       1.12 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/intadd_137_U2/CO (FA1D1BWP30P140)
+                                                          0.03       1.15 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U4/ZN (MUX2ND0BWP30P140)
+                                                          0.03       1.18 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U3/ZN (MUX2ND0BWP30P140)
+                                                          0.03       1.21 f
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/U174/ZN (OAI222D1BWP30P140)
+                                                          0.03       1.24 r
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_/D (DFCNQD1BWP30P140)
+                                                          0.00       1.24 r
+  data arrival time                                                  1.24
+
+  clock clk (rise edge)                                   2.00       2.00
+  clock network delay (ideal)                             0.00       2.00
+  clock uncertainty                                      -0.15       1.85
+  birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage/o_data_bus_inner_reg_63_/CP (DFCNQD1BWP30P140)
+                                                          0.00       1.85 r
+  library setup time                                     -0.03       1.82
+  data required time                                                 1.82
+  --------------------------------------------------------------------------
+  data required time                                                 1.82
+  data arrival time                                                 -1.24
+  --------------------------------------------------------------------------
+  slack (MET)                                                        0.58
+
+
+1

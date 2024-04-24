@@ -1,0 +1,133 @@
+ 
+****************************************
+Report : area
+Design : feather_top
+Version: V-2023.12-SP2
+Date   : Sun Apr 21 14:35:34 2024
+****************************************
+
+Library(s) Used:
+
+    tcbn28hpcplusbwp30p140tt0p8v25c (File: /usr/scratch/TSMC_LIB/tcbn28hpcplusbwp30p140_190a/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p8v25c.db)
+
+Number of ports:                         5965
+Number of nets:                         29082
+Number of cells:                        21971
+Number of combinational cells:          16091
+Number of sequential cells:              5831
+Number of macros/black boxes:               0
+Number of buf/inv:                       3452
+Number of references:                      29
+
+Combinational area:              10905.803903
+Buf/Inv area:                      877.338013
+Noncombinational area:           13224.707344
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (Wire load has zero net area)
+
+Total cell area:                 24130.511247
+Total area:                 undefined
+
+Hierarchical area distribution
+------------------------------
+
+                                  Global cell area            Local cell area
+                                  -------------------  ------------------------------ 
+Hierarchical cell                 Absolute    Percent  Combi-      Noncombi-   Black-
+                                  Total       Total    national    national    boxes   Design
+--------------------------------  ----------  -------  ----------  ----------  ------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+feather_top                       24130.5112    100.0      0.2520      0.0000  0.0000  feather_top
+IACTS_PING_SRAM                     565.7400      2.3      7.5600      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_1
+IACTS_PING_SRAM/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    139.3560      0.6     48.6360     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_7
+IACTS_PING_SRAM/SP_SRAM_BANKS_1__sram_bank_sp_inst
+                                    139.3560      0.6     48.6360     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_6
+IACTS_PING_SRAM/SP_SRAM_BANKS_2__sram_bank_sp_inst
+                                    139.7340      0.6     49.0140     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+IACTS_PING_SRAM/SP_SRAM_BANKS_3__sram_bank_sp_inst
+                                    139.7340      0.6     49.0140     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+IACTS_PONG_SRAM                     565.7400      2.3      7.5600      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4_0
+IACTS_PONG_SRAM/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    139.3560      0.6     48.6360     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+IACTS_PONG_SRAM/SP_SRAM_BANKS_1__sram_bank_sp_inst
+                                    139.7340      0.6     49.0140     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+IACTS_PONG_SRAM/SP_SRAM_BANKS_2__sram_bank_sp_inst
+                                    139.7340      0.6     49.0140     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+IACTS_PONG_SRAM/SP_SRAM_BANKS_3__sram_bank_sp_inst
+                                    139.3560      0.6     48.6360     90.7200  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH8_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+INSTR_SRAM                          206.6400      0.9      1.7640      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1
+INSTR_SRAM/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    204.8760      0.8     68.7960    136.0800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH12_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4
+OUTPUT_BUFFER_SRAM                 2160.8999      9.0      7.5600      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK4
+OUTPUT_BUFFER_SRAM/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    538.1460      2.2    175.2660    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_3
+OUTPUT_BUFFER_SRAM/SP_SRAM_BANKS_1__sram_bank_sp_inst
+                                    538.3980      2.2    175.5180    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_2
+OUTPUT_BUFFER_SRAM/SP_SRAM_BANKS_2__sram_bank_sp_inst
+                                    538.3980      2.2    175.5180    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_1
+OUTPUT_BUFFER_SRAM/SP_SRAM_BANKS_3__sram_bank_sp_inst
+                                    538.3980      2.2    175.5180    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_0
+WEIGHTS_PING_BUFFER                 539.4060      2.2      1.7640      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_1
+WEIGHTS_PING_BUFFER/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    537.6420      2.2    174.7620    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_5
+WEIGHTS_PONG_BUFFER                 539.4060      2.2      1.7640      0.0000  0.0000  sram_sp_2d_array_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_NUM_BANK1_0
+WEIGHTS_PONG_BUFFER/SP_SRAM_BANKS_0__sram_bank_sp_inst
+                                    537.6420      2.2    174.7620    362.8800  0.0000  sram_bank_sp_SRAM_BANK_DATA_WIDTH32_SRAM_BANK_ADDR_WIDTH2_SRAM_BANK_DEPTH4_4
+birrd_INST                         1840.8599      7.6      0.7560      0.0000  0.0000  birrd_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_NUM_INPUT_DATA4_IN_COMMAND_WIDTH6
+birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_0__second_stage
+                                    306.6840      1.3    152.4600    154.2240  0.0000  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_1
+birrd_INST/first_half_0__group_sec_half_0__switch_sec_half_1__second_stage
+                                    306.8100      1.3    152.5860    154.2240  0.0000  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH4_0
+birrd_INST/first_stage_switch_0__first_stage
+                                    311.2200      1.3    152.4600    158.7600  0.0000  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_1
+birrd_INST/first_stage_switch_1__first_stage
+                                    311.3460      1.3    152.5860    158.7600  0.0000  birrd_2x2_simple_cmd_flow_seq_DATA_WIDTH32_COMMAND_WIDTH2_IN_COMMAND_WIDTH6_0
+birrd_INST/last_stage_1__group_first_half_0__switch_first_half_0__last_stage
+                                    302.2740      1.3    152.5860    149.6880  0.0000  birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_1
+birrd_INST/last_stage_1__group_first_half_0__switch_first_half_1__last_stage
+                                    301.7700      1.3    152.0820    149.6880  0.0000  birrd_2x2_simple_last_cmd_flow_seq_32_2_00000002_0
+feather_CONTROLLER_INST            2665.1519     11.0   1442.7000   1222.4519  0.0000  feather_controller_WEIGHTS_DATA_WIDTH32_WEIGHTS_NUM_BANKS1_WEIGHTS_SRAM_DATA_WIDTH32_WEIGHTS_SRAM_BANK_ADDR_WIDTH2_WEIGHTS_SRAM_ADDR_WIDTH2_IACTS_DATA_WIDTH8_IACTS_NUM_BANKS4_IACTS_SRAM_DATA_WIDTH32_IACTS_SRAM_BANK_ADDR_WIDTH2_IACTS_SRAM_ADDR_WIDTH8_SCALE_VALUE_WIDTH32_PE_OUTPUT_WIDTH32_DPE_COL_NUM4_DPE_ROW_NUM4_LOG2_DPE_COL_NUM2_LOG2_DPE_ROW_NUM2_OACTS_DATA_WIDTH8_OUTBUF_DATA_WIDTH32_OUTBUF_NUM_BANKS4_OUTBUF_SRAM_DATA_WIDTH128_OUTBUF_SRAM_BANK_ADDR_WIDTH2_OUTBUF_SRAM_ADDR_WIDTH8_INSTR_SRAM_BANK_ADDR_WIDTH2
+feather_GENVAR_DPE_INST_COL_ITER_0__COL_WISE_O_DATA_BUS
+                                    129.9060      0.5     55.0620     74.8440  0.0000  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_3
+feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID0_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID1_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID2_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_0__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS
+                                    909.3420      3.8    423.9900    485.3520  0.0000  feather_pe_THIS_PE_ID3_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_1__COL_WISE_O_DATA_BUS
+                                    129.9060      0.5     55.0620     74.8440  0.0000  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_2
+feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID4_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID5_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID6_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_1__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS
+                                    909.3420      3.8    423.9900    485.3520  0.0000  feather_pe_THIS_PE_ID7_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_2__COL_WISE_O_DATA_BUS
+                                    129.9060      0.5     55.0620     74.8440  0.0000  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_1
+feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID8_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID9_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID10_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_2__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS
+                                    909.3420      3.8    423.9900    485.3520  0.0000  feather_pe_THIS_PE_ID11_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_3__COL_WISE_O_DATA_BUS
+                                    129.9060      0.5     55.0620     74.8440  0.0000  o_bus_autopick_seq_NUM_INPUT_DATA4_DATA_WIDTH32_0
+feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_0__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID12_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_1__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID13_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_2__feather_PE_OTHER_ROWS
+                                    907.4520      3.8    424.3680    483.0840  0.0000  feather_pe_THIS_PE_ID14_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+feather_GENVAR_DPE_INST_COL_ITER_3__feather_GENVAR_DPE_INST_ROW_ITER_3__feather_PE_OTHER_ROWS
+                                    909.3420      3.8    423.9900    485.3520  0.0000  feather_pe_THIS_PE_ID15_IACTS_DATA_WIDTH8_WEIGHTS_DATA_WIDTH8_WEIGHTS_DEPTH4_LOG2_WEIGHTS_DEPTH2_PE_SEL_WIDTH4_PE_OUTPUT_WIDTH32
+--------------------------------  ----------  -------  ----------  ----------  ------  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                  10905.8039  13224.7073  0.0000
+
+1

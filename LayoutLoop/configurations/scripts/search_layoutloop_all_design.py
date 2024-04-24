@@ -27,12 +27,18 @@ arch_prefix_dict = {
 }
 
 mapper_policy_dict = {
-    "SIGMA":             "mapper_original_timeloop.yaml",
-    "TPU_like":          "mapper_original_timeloop.yaml",
-    "MTIA_like":         "mapper_original_timeloop.yaml",
-    "Medusa_like":       "mapper_original_timeloop.yaml",
-    "eyeriss_like":      "mapper_original_timeloop.yaml",
-    "simba_like":        "mapper_original_timeloop.yaml",
+    # "SIGMA":             "mapper_original_timeloop.yaml",
+    # "TPU_like":          "mapper_original_timeloop.yaml",
+    # "MTIA_like":         "mapper_original_timeloop.yaml",
+    # "Medusa_like":       "mapper_original_timeloop.yaml",
+    # "eyeriss_like":      "mapper_original_timeloop.yaml",
+    # "simba_like":        "mapper_original_timeloop.yaml",
+    "SIGMA":             "mapper_test.yaml",
+    "TPU_like":          "mapper_test.yaml",
+    "MTIA_like":         "mapper_test.yaml",
+    "Medusa_like":       "mapper_test.yaml",
+    "eyeriss_like":      "mapper_test.yaml",
+    "simba_like":        "mapper_test.yaml",
 }
 
 layout_policy_dict = {

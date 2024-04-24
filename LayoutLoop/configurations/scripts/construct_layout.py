@@ -70,7 +70,6 @@ layout_permutation_constraints_dict = {
     "simba_like": "SR CQP MN", #R=S=1
 }
 
-
 # num_line, line_size, reg_line_size
 blocksize_dict = {
     "SIGMA_HWC_C32":             [8, 32, 1],
@@ -107,7 +106,6 @@ layout_policy_list_dict = {
     "eyeriss_like":              "HWC_C32",
     "simba_like":                "HWC_C32",
 }
-
 
 use_specific_design = True
 # FEATHER (arbitrary layout choice), SIGMA (arbitrary layout choice), SIGMA (off-chip reordering), MTIA-like (Transpose), TPU-like (Transpose + Shift), SIGMA-like (HWC_C4W8), SIGMA-like (HWC_C32), Medusa-like (Line Rotation), Eyeriss-like (HWC_C32), NVDLA-like (HWC_C32)

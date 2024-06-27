@@ -31,7 +31,7 @@ SOFTWARE.
     Dummy Data:  {DATA_WIDTH{1'b0}}
 
     Unicast Function:
-                              Through                                        Switch
+                               Pass                                           Swap
 
             i_data_bus(high)          i_data_bus(low)      i_data_bus(high)          i_data_bus(low)
        [DATA_WIDTH+:DATA_WIDTH]    [DATA_WIDTH-1:0]    [DATA_WIDTH+:DATA_WIDTH]    [DATA_WIDTH-1:0]
@@ -109,8 +109,8 @@ module birrd_2x2_simple_cmd_flow_seq#(
     input  [IN_COMMAND_WIDTH-1:0]      i_cmd;
 
     output [OUT_COMMAND_WIDTH-1:0]     o_cmd;
-        // 11 --> Switch
-        // 00 --> Through
+        // 11 --> Swap
+        // 00 --> Pass
         // 10 --> Add-Left
         // 01 --> Add-Right
 

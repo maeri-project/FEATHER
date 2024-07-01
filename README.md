@@ -1,4 +1,14 @@
-# FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching
+# FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching [[arXiv]](https://arxiv.org/abs/2405.13170) [[Slides]](https://docs.google.com/presentation/d/1i5jPQ9XK964oEhLqXkZdEt094bnd_4vm/edit?usp=sharing&ouid=105409439591814518444&rtpof=true&sd=true) [[Video]](https://youtu.be/FgTaYiEArrI)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
+# What's FEATHER?
+FEATHER is the first reconfigurable AI Accelerator that supports (dataflow, layout) co-switching per layer. 
+- For dataflow switching, FEATHER proposes a reconfigurable 2D compute array, termed NEST (Neural Engine for Spatial forwarding and Temporal reduction)
+- For layout switching, FEATHER proposes a reconfigurable NoC, termed BIRRD (Butterfly Interconnect for Reordering in Reduction of Dataflow)
+1. BIRRD supports arbitrary reoredering in functionality.
+2. BIIRD implements data reordering in data reduction (RIR) to hide reordering latency behind the critical path.
+
+# Repository Overview.
 
 In this repository, we include all three key results of the papers, including
 - Figure 12: end-to-end deployment on FPGA to run ResNet-50, check `End2end_Deployment` folder
@@ -34,14 +44,7 @@ Jianming Tong (jianming.tong@gatech.edu)
 
 Anirudh Itagi (aitagi7@gatech.edu)
 
-Tushar Krishna (tushar@ece.gatech.edu)
-
-# Technical Contributors
-Jianming Tong (jianming.tong@gatech.edu)
-
-Anirudh Itagi (aitagi7@gatech.edu)
-
-Tushar Krishna (tushar@ece.gatech.edu)
+Tushar Krishna 
 
 # Citations
 ```

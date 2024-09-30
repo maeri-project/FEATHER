@@ -28,6 +28,8 @@ SOFTWARE.
     Reset:       Asynchronized Reset [Low Reset]
 
     Function:    Contains all the BIRRD, NEST, SRAMs and Feather controller instantiations
+    Note:        This template is designed for FEATHER with DPE_COL_NUM>4. 
+                 When DPE_COL_NUM=DPE_ROW_NUM=4, BIRRD only has "2log(DPE_COL_NUM) - 1" stages instead of "2log(DPE_COL_NUM)" stage.
 */
 
 `timescale 1ns / 1ps
@@ -35,12 +37,14 @@ SOFTWARE.
 module feather_top #(
 //    parameter DPE_COL_NUM                       =   64,
 //    parameter DPE_ROW_NUM                       =   64,
-//
-//    parameter DPE_COL_NUM                       =   16,
-//    parameter DPE_ROW_NUM                       =   16,
 
-    parameter DPE_COL_NUM                       =   32,
-    parameter DPE_ROW_NUM                       =   32,
+   parameter DPE_COL_NUM                       =   16,
+   parameter DPE_ROW_NUM                       =   16,
+
+//    parameter DPE_COL_NUM                       =   32,
+//    parameter DPE_ROW_NUM                       =   32,
+    // parameter DPE_COL_NUM                       =   8,
+    // parameter DPE_ROW_NUM                       =   8,
     parameter LOG2_DPE_COL_NUM                  =   $clog2(DPE_COL_NUM),
     parameter LOG2_DPE_ROW_NUM                  =   $clog2(DPE_ROW_NUM),
 
@@ -115,7 +119,7 @@ module feather_top #(
 
 );
 
-    localparam NUM_STAGE                        =   2*(LOG2_DPE_COL_NUM) - 1;                           // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
+    localparam NUM_STAGE                        =   2*(LOG2_DPE_COL_NUM);                               // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
     localparam birrd_COMMAND_WIDTH_PER_ROW      =   2*NUM_STAGE ;                                       // 2_BIT_CMD * (Number of stages-1)
     localparam birrd_IN_COMMAND_WIDTH           =   birrd_COMMAND_WIDTH_PER_ROW * DPE_COL_NUM >> 1 ;    // 2_BIT_CMD * (Number of stages-1) *(birrd_INPUTS/2)
     localparam INSTR_SRAM_BANK_DATA_WIDTH       =   birrd_IN_COMMAND_WIDTH;                             //  instruction is only birrd instruction here

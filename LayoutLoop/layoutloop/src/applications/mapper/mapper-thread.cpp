@@ -67,7 +67,7 @@ static double Cost(const model::Topology::Stats& stats, const std::string metric
   {
     cost = stats.energy;
   }
-  else if (metric == "last-level-accesses")
+  else if (metric == "last_level_accesses")
   {
     cost = stats.last_level_accesses;
   }
@@ -143,11 +143,32 @@ static inline bool IsBetter(const model::Topology::Stats& candidate, const model
   return (b == Betterness::Better || b == Betterness::SlightlyBetter);
 }
 
+static inline bool IsEqual(const model::Topology::Stats& candidate, const model::Topology::Stats& incumbent,
+                            const std::vector<std::string>& metrics)
+{
+  Betterness b = IsBetterRecursive_(candidate, incumbent, metrics.begin(), metrics.end());
+  return (b == Betterness::SlightlyWorse);
+}
+
 bool EvaluationResult::UpdateIfBetter(const EvaluationResult& other, const std::vector<std::string>& metrics)
 {
   bool updated = false;
   if (other.valid &&
       (!valid || IsBetter(other.stats, stats, metrics)))
+  {
+    valid = true;
+    mapping = other.mapping;
+    stats = other.stats;
+    updated = true;
+  }
+  return updated;
+}
+
+bool EvaluationResult::UpdateIfEqual(const EvaluationResult& other, const std::vector<std::string>& metrics)
+{
+  bool updated = false;
+  if (other.valid &&
+      (!valid || IsEqual(other.stats, stats, metrics)))
   {
     valid = true;
     mapping = other.mapping;
@@ -190,7 +211,9 @@ void MapperThread::Stats::UpdateFails(FailClass fail_class, std::string fail_rea
   {
     // We've never seen this fail class before.
     std::map<unsigned, FailInfo> fail_bucket;
-    fail_bucket[level] = { .count = 1, .mapping = mapping, .reason = fail_reason };
+    fail_bucket[level].count = 1;
+    fail_bucket[level].mapping = mapping;
+    fail_bucket[level].reason = fail_reason;
     fail_stats[fail_class] = fail_bucket;
   }
   else
@@ -203,7 +226,9 @@ void MapperThread::Stats::UpdateFails(FailClass fail_class, std::string fail_rea
     {
       // No, this is the first time this level has failed in
       // this fail class, create a new entry.
-      fail_bucket[level] = { .count = 1, .mapping = mapping, .reason = fail_reason };
+      fail_bucket[level].count = 1;
+      fail_bucket[level].mapping = mapping;
+      fail_bucket[level].reason = fail_reason;
     }
     else
     {
@@ -246,25 +271,30 @@ MapperThread::MapperThread(
   uint128_t search_size,
   std::uint32_t timeout,
   std::uint32_t victory_condition,
+  std::int32_t max_temporal_loops_in_a_mapping,
   uint128_t sync_interval,
   uint128_t log_interval,
-  bool log_oaves,
-  bool log_oaves_mappings,
+  bool log_orojenesis_mappings,
+  bool log_mappings_yaml,
+  bool log_mappings_verbose,
+  bool log_all_mappings,
   bool log_stats,
   bool log_suboptimal,
   std::ostream& log_stream,
-  std::ostream& oaves_csv_file,
-  std::string oaves_prefix,
+  std::ostream& orojenesis_csv_file,
+  std::string orojenesis_prefix,
   bool live_status,
   bool diagnostics_on,
   bool penalize_consecutive_bypass_fails,
   std::vector<std::string> optimization_metrics,
   model::Engine::Specs arch_specs,
   problem::Workload &workload,
-  Layout* layout,
+  layout::Layouts layout,
+  bool layout_initialized,
   sparse::SparseOptimizationInfo* sparse_optimizations,
+  crypto::CryptoConfig* crypto,
   EvaluationResult* best
-  ) :
+  ):
     thread_id_(thread_id),
     search_(search),
     mapspace_(mapspace),
@@ -272,15 +302,18 @@ MapperThread::MapperThread(
     search_size_(search_size),
     timeout_(timeout),
     victory_condition_(victory_condition),
+    max_temporal_loops_in_a_mapping_(max_temporal_loops_in_a_mapping),
     sync_interval_(sync_interval),
     log_interval_(log_interval),
-    log_oaves_(log_oaves),
-    log_oaves_mappings_(log_oaves_mappings),
+    log_orojenesis_mappings_(log_orojenesis_mappings),
+    log_all_mappings_(log_all_mappings),
+    log_mappings_yaml_(log_mappings_yaml),
+    log_mappings_verbose_(log_mappings_verbose),
     log_stats_(log_stats),
     log_suboptimal_(log_suboptimal),
     log_stream_(log_stream),
-    oaves_csv_file_(oaves_csv_file),
-    oaves_prefix_(oaves_prefix),
+    orojenesis_csv_file_(orojenesis_csv_file),
+    orojenesis_prefix_(orojenesis_prefix),
     live_status_(live_status),
     diagnostics_on_(diagnostics_on),
     penalize_consecutive_bypass_fails_(penalize_consecutive_bypass_fails),
@@ -288,7 +321,9 @@ MapperThread::MapperThread(
     arch_specs_(arch_specs),
     workload_(workload),
     layout_(layout),
+    layout_initialized_(layout_initialized),
     sparse_optimizations_(sparse_optimizations),
+    crypto_(crypto),
     best_(best),
     thread_(),
     stats_()
@@ -321,6 +356,7 @@ void MapperThread::Run()
 
   const int ncurses_line_offset = 6;
 
+  std::vector<EvaluationResult> index_factor_best_vec;
   model::Engine engine;
   engine.Spec(arch_specs_);
 
@@ -342,7 +378,7 @@ void MapperThread::Run()
 
       if (valid_mappings > 0)
       {
-        msg << std::setw(10) << OUT_FLOAT_FORMAT << std::setprecision(2) << (stats_.thread_best.stats.utilization * 100) << "%"
+        msg << std::setw(10) << OUT_FLOAT_FORMAT << std::setprecision(2) << OUT_PERCENT(stats_.thread_best.stats.utilization)
             << std::setw(11) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats_.thread_best.stats.energy /
           stats_.thread_best.stats.algorithmic_computes;
       }
@@ -366,7 +402,7 @@ void MapperThread::Run()
       terminate = true;
     }
 
-    if (search_size_ > 0 && valid_mappings == search_size_)
+    if (search_size_ > 0 && valid_mappings >= search_size_)
     {
       mutex_->lock();
       log_stream_ << "[" << std::setw(3) << thread_id_ << "] STATEMENT: " << search_size_
@@ -376,7 +412,7 @@ void MapperThread::Run()
       terminate = true;
     }
 
-    if (victory_condition_ > 0 && mappings_since_last_best_update == victory_condition_)
+    if (victory_condition_ > 0 && mappings_since_last_best_update >= victory_condition_)
     {
       mutex_->lock();
       log_stream_ << "[" << std::setw(3) << thread_id_ << "] STATEMENT: " << victory_condition_
@@ -387,7 +423,7 @@ void MapperThread::Run()
     }
 
     if ((invalid_mappings_mapcnstr + invalid_mappings_eval) > 0 &&
-        (invalid_mappings_mapcnstr + invalid_mappings_eval) == timeout_)
+        (invalid_mappings_mapcnstr + invalid_mappings_eval) >= timeout_)
     {
       mutex_->lock();
       log_stream_ << "[" << std::setw(3) << thread_id_ << "] STATEMENT: " << timeout_
@@ -410,20 +446,30 @@ void MapperThread::Run()
       terminate = true;
     }
 
-    if (log_oaves_ && terminate && stats_.index_factor_best.valid)
-    {
-      mutex_->lock();
-      // Reevaluate the index_fact_best mapping to update the topology
-      engine.Evaluate(stats_.index_factor_best.mapping, layout_, workload_, sparse_optimizations_, !diagnostics_on_);
-      // engine.Evaluate(stats_.index_factor_best.mapping, workload_, sparse_optimizations_, !diagnostics_on_);
-      auto topology = engine.GetTopology();
 
-      // Print performance
-      topology.PrintOAVES(oaves_csv_file_, stats_.index_factor_best.mapping, log_oaves_mappings_, oaves_prefix_, thread_id_);
+    if ((log_orojenesis_mappings_ || log_all_mappings_) && terminate)
+    {
+      for (auto &index_factor_best : index_factor_best_vec)
+      {
+
+        // Re-evaluate the mapping
+        if (layout_initialized_){
+          engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+        }else
+          engine.Evaluate(index_factor_best.mapping, workload_, sparse_optimizations_, crypto_, !diagnostics_on_);
+          
+        if (index_factor_best.valid) {
+            auto topology = engine.GetTopology();
+            mutex_->lock();
+            // Print performance and log the optimal mappings
+            topology.PrintOrojenesis(&workload_, orojenesis_csv_file_, index_factor_best.mapping, log_mappings_yaml_, log_mappings_verbose_, orojenesis_prefix_, thread_id_);
+            mutex_->unlock();
+        }
+      }
 
       // Reset the best for next permutation/bypassing
       stats_.index_factor_best.valid = false;
-      mutex_->unlock();
+      index_factor_best_vec.clear();
     }
 
     // Terminate.
@@ -472,13 +518,18 @@ void MapperThread::Run()
     bool only_bypass_changed = false;
     if (total_mappings > 1)
     {
-      bool match = true;
+      // Match ON if the bypass changed
+      for (unsigned idim = 0; idim < unsigned(mapspace::Dimension::Num); idim++)
+      {
+        if (mapspace::Dimension(idim) == mapspace::Dimension::DatatypeBypass)
+          only_bypass_changed |= (mapping_id[idim] != prev_mapping_id[idim]);
+      }
+      // OFF if anything else changed
       for (unsigned idim = 0; idim < unsigned(mapspace::Dimension::Num); idim++)
       {
         if (mapspace::Dimension(idim) != mapspace::Dimension::DatatypeBypass)
-          match &= (mapping_id[idim] == prev_mapping_id[idim]);
+          only_bypass_changed &= (mapping_id[idim] == prev_mapping_id[idim]);
       }
-      only_bypass_changed = match;
     }
     prev_mapping_id = mapping_id;
 
@@ -491,7 +542,7 @@ void MapperThread::Run()
     // Stage 1: Construct a mapping from the mapping ID. This step can fail
     //          because the space of *legal* mappings isn't dense (unfortunately),
     //          so a mapping ID may point to an illegal mapping.
-    Mapping mapping;
+    Mapping mapping(&workload_);
 
     auto construction_status = mapspace_->ConstructMapping(mapping_id, &mapping, !diagnostics_on_);
     success &= std::accumulate(construction_status.begin(), construction_status.end(), true,
@@ -499,6 +550,17 @@ void MapperThread::Run()
                                { return cur && status.success; });
 
     total_mappings++;
+    if(success && max_temporal_loops_in_a_mapping_ > 0)
+    { // Count the number of temporal loops
+      int temporal_loops = 0;
+      for(auto& maploop: mapping.loop_nest.loops)
+      {
+        if(loop::IsSpatial(maploop.spacetime_dimension)) continue;
+        temporal_loops += (maploop.end - maploop.start) > maploop.stride;
+      }
+      if(temporal_loops > max_temporal_loops_in_a_mapping_) success = false;
+    }
+
 
     if (!success)
     {
@@ -544,13 +606,18 @@ void MapperThread::Run()
     }
 
     // Stage 3: Heavyweight evaluation.
-    // Added by JT
-    status_per_level = engine.Evaluate(mapping, layout_, workload_, sparse_optimizations_, !diagnostics_on_);
-    // Done by JT
-    // status_per_level = engine.Evaluate(mapping, workload_, sparse_optimizations_, !diagnostics_on_);
-    success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
+    if (layout_initialized_){ // ToDo: @Jianming modify here
+      status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+      success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
                                [](bool cur, const model::EvalStatus& status)
                                { return cur && status.success; });
+    }else{
+      status_per_level = engine.Evaluate(mapping, workload_, sparse_optimizations_, crypto_, !diagnostics_on_);
+      success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
+                               [](bool cur, const model::EvalStatus& status)
+                               { return cur && status.success; });
+    }
+
     if (!success)
     {
       // Evaluation failed.
@@ -578,22 +645,41 @@ void MapperThread::Run()
     auto stats = topology.GetStats();
     EvaluationResult result = { true, mapping, stats };
 
-    if (log_oaves_ && total_mappings != 0 && (stats_.index_factor_best.valid && (SumStats(stats_.index_factor_best.stats.tile_sizes[0]) != SumStats(stats.tile_sizes[0]))))
+    if(log_all_mappings_)
     {
+        mutex_->lock(); // Print performance and log the optimal mappings
+        topology.PrintOrojenesis(&workload_, orojenesis_csv_file_, mapping, log_mappings_yaml_, log_mappings_verbose_, orojenesis_prefix_, thread_id_);
+        mutex_->unlock();
+    }
+    // Log the equally optimal mappings stats from the previous index factor and clear the index_factor_best_vec
+    // Need to have one valid mapping in order to get the SumStats run
+    else if (log_orojenesis_mappings_ && total_mappings != 0 && stats_.index_factor_best.valid && SumStats(stats_.index_factor_best.stats.tile_sizes[0]) != SumStats(stats.tile_sizes[0]))
+    {
+      for (auto &index_factor_best : index_factor_best_vec)
+      {
 
-      mutex_->lock();
-      // Added by JT
-      engine.Evaluate(stats_.index_factor_best.mapping, layout_, workload_, sparse_optimizations_, !diagnostics_on_);
-      // engine.Evaluate(stats_.index_factor_best.mapping,workload_, sparse_optimizations_, !diagnostics_on_);
-      // Done added  by JT
-      auto topology = engine.GetTopology();
+        // Re-evaluate the mapping
+        if (layout_initialized_){
+          engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+        }else
+          engine.Evaluate(index_factor_best.mapping, workload_, sparse_optimizations_, crypto_, !diagnostics_on_);
 
-      // Print performance
-      topology.PrintOAVES(oaves_csv_file_, stats_.index_factor_best.mapping, log_oaves_mappings_, oaves_prefix_, thread_id_);
+        auto topology = engine.GetTopology();
+
+        mutex_->lock();
+
+        // Print performance and log the optimal mappings
+        topology.PrintOrojenesis(&workload_, orojenesis_csv_file_, stats_.index_factor_best.mapping, log_mappings_yaml_, log_mappings_verbose_, orojenesis_prefix_, thread_id_);
+        mutex_->unlock();
+
+        // Only print one valid mapping stat if the tiling size is 0 in the inner level
+        if (SumStats(stats_.index_factor_best.stats.tile_sizes[0]) == 0)
+          break;
+      }
 
       // Reset the best for next permutation/bypassing
       stats_.index_factor_best.valid = false;
-      mutex_->unlock();
+      index_factor_best_vec.clear();
     }
 
     valid_mappings++;
@@ -615,27 +701,38 @@ void MapperThread::Run()
       if (is_sparse_topology)
       {
         log_stream_ << "[" << std::setw(3) << thread_id_ << "]"
-                  << " Utilization = " << std::setw(4) << OUT_FLOAT_FORMAT << std::setprecision(2) << stats.utilization
+                  << " Utilization = " << std::setw(4) << OUT_PERCENT(stats.utilization)
                   << " | pJ/Algorithmic-Compute = " << std::setw(4) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.algorithmic_computes
                   << " | pJ/Compute = " << std::setw(4) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.actual_computes
-                  << " | Cycles = " << stats.cycles
                   << " | " << mapping.PrintCompact()
+                  << " | Cycles = " << stats.cycles
                   << std::endl;
       }
       else
       {
         log_stream_ << "[" << std::setw(3) << thread_id_ << "]"
-                  << " Utilization = " << std::setw(4) << OUT_FLOAT_FORMAT << std::setprecision(2) << stats.utilization
+                  << " Utilization = " << std::setw(4) << OUT_PERCENT(stats.utilization)
                   << " | pJ/Compute = " << std::setw(4) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.actual_computes
-                  << " | Cycles = " << stats.cycles
                   << " | " << mapping.PrintCompact()
+                  << " | Cycles = " << stats.cycles
                   << std::endl;
       }
       mutex_->unlock();
     }
 
-    // update index factor best
-    stats_.index_factor_best.UpdateIfBetter(result, optimization_metrics_);
+    // Update index factor best
+    if (log_orojenesis_mappings_)
+    {
+      if (stats_.index_factor_best.UpdateIfBetter(result, optimization_metrics_))
+      {
+        index_factor_best_vec.clear();
+        index_factor_best_vec.push_back(stats_.index_factor_best);
+      }
+      else if (stats_.index_factor_best.UpdateIfEqual(result, optimization_metrics_))
+      {
+        index_factor_best_vec.push_back(stats_.index_factor_best);
+      }
+    }
 
     // Is the new mapping "better" than the previous best mapping?
     if (stats_.thread_best.UpdateIfBetter(result, optimization_metrics_))
@@ -661,8 +758,8 @@ void MapperThread::Run()
                     << " Utilization = " << std::setw(4) << OUT_FLOAT_FORMAT << std::setprecision(2) << stats.utilization
                     << " | pJ/Algorithmic-Compute = " << std::setw(8) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.algorithmic_computes
                     << " | pJ/Compute = " << std::setw(8) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.actual_computes
-                    << " | Cycles = " << stats.cycles
                     << " | " << mapping.PrintCompact()
+                    << " | Cycles = " << stats.cycles
                     << std::endl;
         }
         else
@@ -670,8 +767,8 @@ void MapperThread::Run()
           log_stream_ << "[" << std::setw(3) << thread_id_ << "]"
                     << " Utilization = " << std::setw(4) << OUT_FLOAT_FORMAT << std::setprecision(2) << stats.utilization
                     << " | pJ/Compute = " << std::setw(8) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats.energy / stats.actual_computes
-                    << " | Cycles = " << stats.cycles
                     << " | " << mapping.PrintCompact()
+                    << " | Cycles = " << stats.cycles
                     << std::endl;
         }        mutex_->unlock();
       }

@@ -41,15 +41,17 @@
 #include "mapping/constraints.hpp"
 #include "compound-config/compound-config.hpp"
 #include "model/sparse-optimization-parser.hpp"
-// Added by JT
-#include "layout/parser.hpp"
-// Done by JT
 
+#include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
 //--------------------------------------------//
 //                Application                 //
 //--------------------------------------------//
 
-class Application
+namespace application
+{
+
+class Model
 {
  public:
   std::string name_;
@@ -58,6 +60,11 @@ class Application
   {
     double energy;
     double cycles;
+
+    std::string stats_string;
+    std::string map_string;
+    std::string xml_map_and_stats_string;
+    std::string tensella_string;
   };
 
  protected:
@@ -68,12 +75,15 @@ class Application
   // Many of the following submodules are dynamic objects because
   // we can only instantiate them after certain config files have
   // been parsed.
-  
-  // Added by JT
-  // The layout.
-  Layout* layout_;
-  // Done Added by JT
 
+  // The layout modeling
+  crypto::CryptoConfig* crypto_; 
+  bool crypto_initialized_ = false;
+
+  // The layout modeling
+  layout::Layouts layout_; 
+  bool layout_initialized_ = false;
+  
   // The mapping.
   Mapping* mapping_;
 
@@ -100,17 +110,19 @@ class Application
 
  public:
 
-  Application(config::CompoundConfig* config,
-              std::string output_dir = ".",
-              std::string name = "timeloop-model");
+  Model(config::CompoundConfig* config,
+        std::string output_dir = ".",
+        std::string name = "timeloop-model");
 
   // This class does not support being copied
-  Application(const Application&) = delete;
-  Application& operator=(const Application&) = delete;
+  Model(const Model&) = delete;
+  Model& operator=(const Model&) = delete;
 
-  ~Application();
+  ~Model();
 
   // Run the evaluation.
   Stats Run();
 };
 
+
+} // namespace application

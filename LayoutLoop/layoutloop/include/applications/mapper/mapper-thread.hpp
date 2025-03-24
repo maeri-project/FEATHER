@@ -34,7 +34,9 @@
 #include "model/engine.hpp"
 #include "model/sparse-optimization-info.hpp"
 #include "search/search.hpp"
-#include "layout/parser.hpp"
+#include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
+
 
 struct EvaluationResult
 {
@@ -43,6 +45,7 @@ struct EvaluationResult
   model::Topology::Stats stats;
 
   bool UpdateIfBetter(const EvaluationResult& other, const std::vector<std::string>& metrics);
+  bool UpdateIfEqual(const EvaluationResult& other, const std::vector<std::string>& metrics);
 };
 
 //--------------------------------------------//
@@ -94,23 +97,28 @@ class MapperThread
   uint128_t search_size_;
   std::uint32_t timeout_;
   std::uint32_t victory_condition_;
+  std::int32_t max_temporal_loops_in_a_mapping_;
   uint128_t sync_interval_;
   uint128_t log_interval_;
-  bool log_oaves_;
-  bool log_oaves_mappings_;
+  bool log_orojenesis_mappings_;
+  bool log_all_mappings_;
+  bool log_mappings_yaml_;
+  bool log_mappings_verbose_;
   bool log_stats_;
   bool log_suboptimal_;
   std::ostream& log_stream_;
-  std::ostream& oaves_csv_file_;
-  std::string oaves_prefix_;
+  std::ostream& orojenesis_csv_file_;
+  std::string orojenesis_prefix_;
   bool live_status_;
   bool diagnostics_on_;
   bool penalize_consecutive_bypass_fails_;
   std::vector<std::string> optimization_metrics_;
   model::Engine::Specs arch_specs_;
   problem::Workload &workload_;
-  Layout* layout_;
+  layout::Layouts layout_;
+  bool layout_initialized_;
   sparse::SparseOptimizationInfo* sparse_optimizations_;
+  crypto::CryptoConfig* crypto_;
   EvaluationResult* best_;
 
   // Thread-local data (stats etc.).
@@ -126,23 +134,28 @@ class MapperThread
     uint128_t search_size,
     std::uint32_t timeout,
     std::uint32_t victory_condition,
+    std::int32_t max_temporal_loops_in_a_mapping,
     uint128_t sync_interval,
     uint128_t log_interval,
-    bool log_oaves,
-    bool log_oaves_mappings,
+    bool log_orojenesis_mappings,
+    bool log_mappings_yaml,
+    bool log_mappings_verbose,
+    bool log_all_mappings,
     bool log_stats,
     bool log_suboptimal,
     std::ostream& log_stream,
-    std::ostream& oaves_csv_file,
-    std::string oaves_prefix,
+    std::ostream& orojenesis_csv_file,
+    std::string orojenesis_prefix,
     bool live_status,
     bool diagnostics_on,
     bool penalize_consecutive_bypass_fails,
     std::vector<std::string> optimization_metrics,
     model::Engine::Specs arch_specs,
     problem::Workload &workload,
-    Layout* layout,
+    layout::Layouts layout,
+    bool layout_initialized,
     sparse::SparseOptimizationInfo* sparse_optimizations,
+    crypto::CryptoConfig* crypto,
     EvaluationResult* best
   );
 

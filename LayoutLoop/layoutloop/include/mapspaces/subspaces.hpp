@@ -47,18 +47,48 @@ class IndexFactorizationSpace
  private:
   problem::PerFlattenedDimension<Factors> dimension_factors_;
   CartesianCounterDynamic tiling_counter_;
+  const problem::Workload& workload_;
 
  public:
-  IndexFactorizationSpace();
+  IndexFactorizationSpace() = delete;
+  IndexFactorizationSpace(const problem::Workload& workload);
 
-  void Init(const problem::Workload &workload,
-            std::map<problem::Shape::FlattenedDimensionID, std::uint64_t> cofactors_order,
+  void Init(std::map<problem::Shape::FlattenedDimensionID, std::uint64_t> cofactors_order,
             std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> prefactors =
             std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>>(),
             std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> maxfactors =
+            std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>>(),
+            std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> minfactors =
             std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>>());
 
   unsigned long GetFactor(uint128_t nest_id, problem::Shape::FlattenedDimensionID dim, unsigned level);
+
+  uint128_t Size() const;
+};
+
+//--------------------------------------------//
+//      ResidualIndexFactorizationSpace       //
+//--------------------------------------------//
+
+class ResidualIndexFactorizationSpace
+{
+ private:
+  problem::PerFlattenedDimension<ResidualFactors> dimension_factors_;
+  CartesianCounterDynamic tiling_counter_;
+
+ public:
+  ResidualIndexFactorizationSpace();
+
+  void Init(const problem::Workload &workload,
+            std::map<problem::Shape::FlattenedDimensionID, std::uint64_t> cofactors_order,
+            std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> prefactors,
+            std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> maxfactors,
+            std::map<problem::Shape::FlattenedDimensionID, std::map<unsigned, unsigned long>> minfactors,
+            std::vector<unsigned long int> remainders = {},
+            std::vector<unsigned long int> remainders_ix = {}
+            );
+
+  std::vector<unsigned long> GetFactor(uint128_t nest_id, problem::Shape::FlattenedDimensionID dim, unsigned level);
 
   uint128_t Size() const;
 };
@@ -70,31 +100,62 @@ class IndexFactorizationSpace
 class PermutationSpace
 {
  private:
-  std::uint64_t num_levels_;
   struct Pattern
   {
     std::vector<problem::Shape::FlattenedDimensionID> baked_prefix;
     std::vector<problem::Shape::FlattenedDimensionID> permutable_infix;
     std::vector<problem::Shape::FlattenedDimensionID> baked_suffix;
   };
-  std::map<unsigned, Pattern> patterns_;
   std::vector<problem::Shape::FlattenedDimensionID> canonical_pattern_;
+
+ protected:
+  std::uint64_t num_levels_;
+  std::map<unsigned, Pattern> patterns_;
   std::map<unsigned, std::uint64_t> size_;    
   Factoradic<problem::Shape::FlattenedDimensionID> factoradic_;
+  const problem::Workload& workload_;
 
  public:
-  PermutationSpace();
+  PermutationSpace() = delete;
+  PermutationSpace(const problem::Workload& workload);
 
   void Init(uint64_t num_levels);
-  void InitLevelCanonical(uint64_t level);
-  void InitLevel(uint64_t level,
-                 std::vector<problem::Shape::FlattenedDimensionID> user_prefix,
-                 std::vector<problem::Shape::FlattenedDimensionID> user_suffix,
-                 std::vector<problem::Shape::FlattenedDimensionID> pruned_dimensions = {});
+  virtual void InitLevelCanonical(uint64_t level);
+  virtual void InitLevel(uint64_t level,
+                         std::vector<problem::Shape::FlattenedDimensionID> user_prefix,
+                         std::vector<problem::Shape::FlattenedDimensionID> user_suffix,
+                         std::vector<problem::Shape::FlattenedDimensionID> pruned_dimensions = {});
 
-  std::vector<std::vector<problem::Shape::FlattenedDimensionID>> GetPatterns(uint128_t id);
+  virtual std::vector<std::vector<problem::Shape::FlattenedDimensionID>> GetPatterns(uint128_t id);
 
   uint128_t Size() const;
+};
+
+//--------------------------------------------//
+//             RubyPermutationSpace           //
+//--------------------------------------------//
+class RubyPermutationSpace : public PermutationSpace
+{
+  private:
+   struct RubyPattern
+    {
+      std::vector<problem::Shape::FlattenedDimensionID> baked_prefix;
+      std::vector<problem::Shape::FlattenedDimensionID> permutable_suffix;
+    };
+
+    std::map<unsigned, RubyPattern> ruby_patterns_;
+
+  public:
+    RubyPermutationSpace() = delete;
+    RubyPermutationSpace(const problem::Workload& workload);
+
+    void InitLevel(uint64_t level,
+                  std::vector<problem::Shape::FlattenedDimensionID> user_prefix,
+                  std::vector<problem::Shape::FlattenedDimensionID> user_suffix,
+                  std::vector<problem::Shape::FlattenedDimensionID> pruned_dimensions = {});
+
+    std::vector<std::vector<problem::Shape::FlattenedDimensionID>> GetPatterns(uint128_t id);
+
 };
 
 //--------------------------------------------//
@@ -114,8 +175,11 @@ class SpatialSplitSpace
   std::map<unsigned, std::size_t> size_;
   std::map<unsigned, unsigned> unit_factors_;
 
+  const problem::Workload& workload_;
+  
  public:
-  SpatialSplitSpace();
+  SpatialSplitSpace() = delete;
+  SpatialSplitSpace(const problem::Workload& workload);
 
   void Init(uint64_t num_levels);
   void InitLevel(uint64_t level, unsigned unit_factors = 0);

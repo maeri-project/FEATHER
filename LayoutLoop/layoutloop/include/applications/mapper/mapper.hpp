@@ -39,27 +39,45 @@
 #include "compound-config/compound-config.hpp"
 #include "applications/mapper/mapper-thread.hpp"
 #include "model/sparse-optimization-parser.hpp"
+#include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
 
-// Added by JT
-#include "layout/parser.hpp"
-// Done added by JT
 
 //--------------------------------------------//
 //                Application                 //
 //--------------------------------------------//
 
-class Application
+namespace application
+{
+
+class Mapper
 {
  public:
   std::string name_;
 
+  /**
+   * @brief Contains string versions of the output that used to print to file
+   *   during a call to `Run()`. Instead, this is returned so that `main()` can
+   *   print to file instead.
+   */
+  struct Result
+  {
+    std::string mapping_cpp_string;
+    std::string mapping_yaml_string;
+    std::string mapping_string;
+    std::string stats_string;
+    std::string tensella_string;
+    std::string xml_mapping_stats_string;
+    std::string orojenesis_string;
+  };
+
  protected:
 
   problem::Workload workload_;
-  // Added by JT
-  Layout* layout_;
-  // Done added by JT
-  
+  layout::Layouts layout_; // layout modeling
+  bool layout_initialized_ = false;
+  crypto::CryptoConfig* crypto_; // authentication engines
+
   model::Engine::Specs arch_specs_;
   mapspace::MapSpace* mapspace_;
   std::vector<mapspace::MapSpace*> split_mapspaces_;
@@ -70,12 +88,15 @@ class Application
   std::uint32_t num_threads_;
   std::uint32_t timeout_;
   std::uint32_t victory_condition_;
+  std::int32_t max_temporal_loops_in_a_mapping_;
   uint128_t sync_interval_;
   uint128_t log_interval_;
 
   bool log_stats_;
-  bool log_oaves_;
-  bool log_oaves_mappings_;
+  bool log_orojenesis_mappings_;
+  bool log_all_mappings_;
+  bool log_mappings_yaml_;
+  bool log_mappings_verbose_;
   bool log_suboptimal_;
   bool live_status_;
   bool diagnostics_on_;
@@ -99,18 +120,19 @@ class Application
 
  public:
 
-  Application(config::CompoundConfig* config,
-              std::string output_dir = ".",
-              std::string name = "timeloop-mapper");
+  Mapper(config::CompoundConfig* config,
+         std::string output_dir = ".",
+         std::string name = "timeloop-mapper");
 
   // This class does not support being copied
-  Application(const Application&) = delete;
-  Application& operator=(const Application&) = delete;
+  Mapper(const Mapper&) = delete;
+  Mapper& operator=(const Mapper&) = delete;
 
-  ~Application();
+  ~Mapper();
 
   EvaluationResult GetGlobalBest();
 
-  void Run();
+  Mapper::Result Run();
 };
 
+} // namespace application

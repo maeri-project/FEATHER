@@ -39,7 +39,11 @@ namespace mapping
 Constraints::Constraints(const ArchProperties& arch_props,
                          const problem::Workload& workload) :
     arch_props_(arch_props),
-    workload_(workload)
+    workload_(workload),
+    bypass_strings_(workload.GetShape()->NumDataSpaces),
+    no_link_transfer_(workload.GetShape()->NumDataSpaces),
+    no_multicast_(workload.GetShape()->NumDataSpaces),
+    no_temporal_reuse_(workload.GetShape()->NumDataSpaces)
 {
   factors_.clear();
   max_factors_.clear();
@@ -47,15 +51,18 @@ Constraints::Constraints(const ArchProperties& arch_props,
   spatial_splits_.clear();
   confidence_thresholds_.clear();
   bypass_strings_.clear();
+  max_remainders_.clear();
   min_parallelism_ = 0.0;
   min_parallelism_isset_ = false;
   skews_.clear();
   no_multicast_.clear();
   no_link_transfer_.clear();
   no_temporal_reuse_.clear();
+  rmw_first_update_.clear();
+  no_coalesce_.clear();
 
   // Initialize user bypass strings to "XXXXX...1" (note the 1 at the end).
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload_.GetShape()->NumDataSpaces); pvi++)
   {
     std::string xxx(arch_props_.StorageLevels(), 'X');
     xxx.back() = '1';
@@ -80,6 +87,18 @@ const std::map<unsigned, std::map<problem::Shape::FlattenedDimensionID, int>>&
   Constraints::MaxFactors() const
 {
   return max_factors_;
+}
+
+const std::map<unsigned, std::map<problem::Shape::FlattenedDimensionID, int>>&
+  Constraints::MinFactors() const
+{
+  return min_factors_;
+}
+
+const std::map<unsigned, std::uint32_t>& 
+  Constraints::MaxRemainders() const
+{
+  return max_remainders_;
 }
 
 const std::map<unsigned, std::pair<std::vector<problem::Shape::FlattenedDimensionID>,
@@ -136,6 +155,18 @@ Constraints::NoTemporalReuse() const
   return no_temporal_reuse_;
 }
 
+const std::unordered_map<unsigned, problem::PerDataSpace<bool>>
+Constraints::RMWOnFirstWriteback() const
+{
+  return rmw_first_update_;
+}
+
+const std::unordered_map<unsigned, problem::PerDataSpace<bool>>
+Constraints::no_coalesce() const
+{
+  return no_coalesce_;
+}
+
 //
 // Create a constraints object from a given mapping object. The resultant
 // constraints will *only* be satisfied by that mapping.
@@ -145,12 +176,12 @@ void Constraints::Generate(Mapping* mapping)
   auto num_storage_levels = mapping->loop_nest.storage_tiling_boundaries.size();
     
   // Data-space Bypass.
-  auto mask_nest = tiling::TransposeMasks(mapping->datatype_bypass_nest);
+  auto mask_nest = tiling::TransposeMasks(mapping->datatype_bypass_nest, &workload_);
     
   for (unsigned storage_level = 0; storage_level < num_storage_levels; storage_level++)
   {
     auto& compound_mask = mask_nest.at(storage_level);
-    for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+    for (unsigned pvi = 0; pvi < unsigned(workload_.GetShape()->NumDataSpaces); pvi++)
     {
       problem::Shape::DataSpaceID pv = problem::Shape::DataSpaceID(pvi);
       if (compound_mask.at(pv))
@@ -173,7 +204,7 @@ void Constraints::Generate(Mapping* mapping)
     {
       auto sd = spacetime::Dimension(sdi);
       permutations[sd] = { };
-      for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+      for (unsigned idim = 0; idim < unsigned(workload_.GetShape()->NumFlattenedDimensions); idim++)
         factors[sd][problem::Shape::FlattenedDimensionID(idim)] = 1;
     }
 
@@ -201,7 +232,7 @@ void Constraints::Generate(Mapping* mapping)
     if (spatial_permutation.size() > 0)
     {
       std::map<problem::Shape::FlattenedDimensionID, int> spatial_factors;
-      for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+      for (unsigned idim = 0; idim < unsigned(workload_.GetShape()->NumFlattenedDimensions); idim++)
       {
         auto dim = problem::Shape::FlattenedDimensionID(idim);
         spatial_factors[dim] =
@@ -224,7 +255,7 @@ void Constraints::Generate(Mapping* mapping)
     auto& temporal_factors = factors.at(spacetime::Dimension::Time);
     
     // Temporal factors: if the factor is 1, concatenate it into the permutation.
-    for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+    for (unsigned idim = 0; idim < unsigned(workload_.GetShape()->NumFlattenedDimensions); idim++)
     {
       auto dim = problem::Shape::FlattenedDimensionID(idim);
       if (temporal_factors.at(dim) == 1)
@@ -456,7 +487,7 @@ bool Constraints::SatisfiedBy(Mapping* mapping) const
   }
 
   // --- Bypass strings ---
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload_.GetShape()->NumDataSpaces); pvi++)
   {
     auto& my_str = bypass_strings_.at(problem::Shape::DataSpaceID(pvi));
     auto& other_str = other.bypass_strings_.at(problem::Shape::DataSpaceID(pvi));
@@ -589,7 +620,7 @@ void Constraints::ParseSingleConstraint(
       if (factors_[level_id].find(factor.first) != factors_[level_id].end())
       {
         std::cerr << "ERROR: re-specification of factor for dimension "
-                  << problem::GetShape()->FlattenedDimensionIDToName.at(factor.first)
+                  << workload_.GetShape()->FlattenedDimensionIDToName.at(factor.first)
                   << " at level " << arch_props_.TilingLevelName(level_id)
                   << ". This may imply a conflict between architecture and "
                   << "mapspace constraints." << std::endl;
@@ -597,7 +628,7 @@ void Constraints::ParseSingleConstraint(
       }
       factors_[level_id][factor.first] = factor.second;
       // std::cout << "Parsing factor level = " << arch_props_.TilingLevelName(level_id)
-      //           << " dim = " << problem::GetShape()->FlattenedDimensionIDToName.at(factor.first)
+      //           << " dim = " << workload_.GetShape()->FlattenedDimensionIDToName.at(factor.first)
       //           << " factor = " << factor.second << std::endl;
     }
 
@@ -607,13 +638,28 @@ void Constraints::ParseSingleConstraint(
       if (max_factors_[level_id].find(max_factor.first) != max_factors_[level_id].end())
       {
         std::cerr << "ERROR: re-specification of max factor for dimension "
-                  << problem::GetShape()->FlattenedDimensionIDToName.at(max_factor.first)
+                  << workload_.GetShape()->FlattenedDimensionIDToName.at(max_factor.first)
                   << " at level " << arch_props_.TilingLevelName(level_id)
                   << ". This may imply a conflict between architecture and "
                   << "mapspace constraints." << std::endl;
         exit(1);
       }
       max_factors_[level_id][max_factor.first] = max_factor.second;
+    }
+
+    auto level_min_factors = ParseMinFactors(attributes);
+    for (auto& min_factor: level_min_factors)
+    {
+      if (min_factors_[level_id].find(min_factor.first) != min_factors_[level_id].end())
+      {
+        std::cerr << "ERROR: re-specification of min factor for dimension "
+                  << problem::GetShape()->FlattenedDimensionIDToName.at(min_factor.first)
+                  << " at level " << arch_props_.TilingLevelName(level_id)
+                  << ". This may imply a conflict between architecture and "
+                  << "mapspace constraints." << std::endl;
+        exit(1);
+      }
+      min_factors_[level_id][min_factor.first] = min_factor.second;
     }
 
     auto level_permutations = ParsePermutations(attributes);
@@ -630,6 +676,7 @@ void Constraints::ParseSingleConstraint(
       permutations_[level_id] = level_permutations;
     }
 
+    std::vector<std::string> datatype_strings;
     if (type == "spatial")
     {
       std::uint32_t split;
@@ -650,7 +697,6 @@ void Constraints::ParseSingleConstraint(
       if (constraint.exists("no_link_transfer"))
       {
         auto storage_level = arch_props_.TilingToStorage(level_id);
-        std::vector<std::string> datatype_strings;
         constraint.lookupArrayValue("no_link_transfer", datatype_strings);
         if (no_link_transfer_.find(storage_level) != no_link_transfer_.end())
         {
@@ -661,14 +707,14 @@ void Constraints::ParseSingleConstraint(
           exit(1);
         }
         no_link_transfer_[storage_level] = problem::PerDataSpace<bool>();
-        for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        for(unsigned pv = 0; pv < workload_.GetShape()->NumDataSpaces; pv++)
           no_link_transfer_[storage_level][pv] = 0;        
         for (const std::string& datatype_string: datatype_strings)
         {
           try
           {
             no_link_transfer_[storage_level].at(
-              problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+              workload_.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
           }
           catch (std::out_of_range& oor)
           {
@@ -678,12 +724,18 @@ void Constraints::ParseSingleConstraint(
           }
         }
       }
+
       // No multicast no reduction
-      if (constraint.exists("no_multicast_no_reduction"))
+      bool found = false;
+      datatype_strings.clear();
+      if (constraint.exists("no_reuse"))
+        found = constraint.lookupArrayValue("no_reuse", datatype_strings);
+      if (!found && constraint.exists("no_multicast_no_reduction"))
+        found = constraint.lookupArrayValue("no_multicast_no_reduction", datatype_strings);
+
+      if (found)
       {
         auto storage_level = arch_props_.TilingToStorage(level_id);
-        std::vector<std::string> datatype_strings;
-        constraint.lookupArrayValue("no_multicast_no_reduction", datatype_strings);
         if (no_multicast_.find(storage_level) != no_multicast_.end())
         {
           std::cerr << "ERROR: re-specification of no_multicast_no_reduction at level "
@@ -693,14 +745,14 @@ void Constraints::ParseSingleConstraint(
           exit(1);
         }
         no_multicast_ [storage_level] = problem::PerDataSpace<bool>();
-        for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        for(unsigned pv = 0; pv < workload_.GetShape()->NumDataSpaces; pv++)
           no_multicast_[storage_level][pv] = 0;
         for (const std::string& datatype_string: datatype_strings)
         {
           try
           {
             no_multicast_[storage_level].at(
-              problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+              workload_.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
           }
           catch (std::out_of_range& oor)
           {
@@ -713,12 +765,17 @@ void Constraints::ParseSingleConstraint(
     }
     if (type == "temporal")
     {
+      bool found = false;
+      datatype_strings.clear();
+      if (constraint.exists("no_reuse"))
+        found = constraint.lookupArrayValue("no_reuse", datatype_strings);
+      if (!found && constraint.exists("no_temporal_reuse"))
+        found = constraint.lookupArrayValue("no_temporal_reuse", datatype_strings);
+
       // No temporal reuse
-      if (constraint.exists("no_temporal_reuse"))
+      if (found)
       {
         auto storage_level = arch_props_.TilingToStorage(level_id);
-        std::vector<std::string> datatype_strings;
-        constraint.lookupArrayValue("no_temporal_reuse", datatype_strings);
         if (no_temporal_reuse_.find(storage_level) != no_temporal_reuse_.end())
         {
           std::cerr << "ERROR: re-specification of no_temporal_reuse at level "
@@ -728,14 +785,14 @@ void Constraints::ParseSingleConstraint(
           exit(1);
         }
         no_temporal_reuse_ [storage_level] = problem::PerDataSpace<bool>();
-        for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        for(unsigned pv = 0; pv < workload_.GetShape()->NumDataSpaces; pv++)
           no_temporal_reuse_[storage_level][pv] = 0;
         for (const std::string& datatype_string: datatype_strings)
         {
           try
           {
             no_temporal_reuse_[storage_level].at(
-              problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+              workload_.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
           }
           catch (std::out_of_range& oor)
           {
@@ -745,8 +802,45 @@ void Constraints::ParseSingleConstraint(
           }
         }
       }
-
+      if (constraint.exists("rmw_first_update"))
+      {
+        auto storage_level = arch_props_.TilingToStorage(level_id);
+        std::vector<std::string> datatype_strings;
+        constraint.lookupArrayValue("rmw_first_update", datatype_strings);
+        if (rmw_first_update_.find(storage_level) != rmw_first_update_.end())
+        {
+          std::cerr << "ERROR: re-specification of rmw_first_update at level "
+                    << arch_props_.TilingLevelName(level_id)
+                    << ". This may imply a conflict between architecture and "
+                    << "mapspace constraints." << std::endl;
+          exit(1);
+        }
+        rmw_first_update_ [storage_level] = problem::PerDataSpace<bool>();
+        for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+          rmw_first_update_[storage_level][pv] = 0;
+        for (const std::string& datatype_string: datatype_strings)
+        {
+          try
+          {
+            rmw_first_update_[storage_level].at(
+              problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+          }
+          catch (std::out_of_range& oor)
+          {
+            std::cerr << "ERROR: parsing rmw_first_update setting: data-space " << datatype_string
+                      << " not found in problem shape." << std::endl;
+            exit(1);
+          }
+        }
+      }
     }
+
+    std::uint32_t maxremainder;
+    if (constraint.lookupValue("remainders", maxremainder))
+    {
+      max_remainders_[level_id] = maxremainder;
+    }
+    
   }
   else if (type == "max_overbooked_proportion")
   {
@@ -754,10 +848,41 @@ void Constraints::ParseSingleConstraint(
     assert(constraint.lookupValue("proportion", max_overbooked_proportion));
     confidence_thresholds_[level_id] =  1 - max_overbooked_proportion;
   }
-  else if (type == "datatype" || type == "bypass" || type == "bypassing")
+  else if (type == "datatype" || type == "bypass" || type == "bypassing" || type == "dataspace")
   {
     // Error handling for re-spec conflicts are inside the parse function.
     ParseDatatypeBypassSettings(attributes, arch_props_.TilingToStorage(level_id));
+    if (constraint.exists("no_coalesce"))
+    {
+      auto storage_level = arch_props_.TilingToStorage(level_id);
+      std::vector<std::string> datatype_strings;
+      constraint.lookupArrayValue("no_coalesce", datatype_strings);
+      if (no_coalesce_.find(storage_level) != no_coalesce_.end())
+      {
+        std::cerr << "ERROR: re-specification of no_coalesce at level "
+                  << arch_props_.TilingLevelName(level_id)
+                  << ". This may imply a conflict between architecture and "
+                  << "mapspace constraints." << std::endl;
+        exit(1);
+      }
+      no_coalesce_ [storage_level] = problem::PerDataSpace<bool>();
+      for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        no_coalesce_[storage_level][pv] = 0;
+      for (const std::string& datatype_string: datatype_strings)
+      {
+        try
+        {
+          no_coalesce_[storage_level].at(
+            problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+        }
+        catch (std::out_of_range& oor)
+        {
+          std::cerr << "ERROR: parsing no_coalesce setting: data-space " << datatype_string
+                    << " not found in problem shape." << std::endl;
+          exit(1);
+        }
+      }
+    }
   }
   else if (type == "utilization" || type == "parallelism")
   {
@@ -825,7 +950,7 @@ unsigned Constraints::FindTargetTilingLevel(config::CompoundConfigNode constrain
   // Translate this storage ID to a tiling ID.
   //
   unsigned tiling_level_id;
-  if (type == "temporal" || type == "datatype" || type == "bypass" || type == "bypassing" || type == "max_overbooked_proportion")
+  if (type == "temporal" || type == "datatype" || type == "bypass" || type == "bypassing" || type == "max_overbooked_proportion" || type == "dataspace")
   {
     // This should always succeed.
     tiling_level_id = arch_props_.TemporalToTiling(storage_level_id);
@@ -902,7 +1027,7 @@ Constraints::ParseFactors(config::CompoundConfigNode constraint)
       problem::Shape::FlattenedDimensionID dimension;
       try
       {
-        dimension = problem::GetShape()->FlattenedDimensionNameToID.at(dimension_name);
+        dimension = workload_.GetShape()->FlattenedDimensionNameToID.at(dimension_name);
       }
       catch (const std::out_of_range& oor)
       {
@@ -971,7 +1096,7 @@ Constraints::ParseMaxFactors(config::CompoundConfigNode constraint)
       problem::Shape::FlattenedDimensionID dimension;
       try
       {
-        dimension = problem::GetShape()->FlattenedDimensionNameToID.at(dimension_name);
+        dimension = workload_.GetShape()->FlattenedDimensionNameToID.at(dimension_name);
       }
       catch (const std::out_of_range& oor)
       {
@@ -996,11 +1121,70 @@ Constraints::ParseMaxFactors(config::CompoundConfigNode constraint)
   if (constraint.lookupValue("default_max_factor", buffer))
   {
       int max = std::stoi(buffer);
-      for(auto& it : problem::GetShape()->FlattenedDimensionNameToID)
+      for(auto& it : workload_.GetShape()->FlattenedDimensionNameToID)
       {
         if(retval.find(it.second) == retval.end())
         {
           retval[it.second] = max;
+        }
+      }
+  }
+  return retval;
+}
+
+//
+// Parse user min factors.
+//
+std::map<problem::Shape::FlattenedDimensionID, int>
+Constraints::ParseMinFactors(config::CompoundConfigNode constraint)
+{
+  std::map<problem::Shape::FlattenedDimensionID, int> retval;
+
+  std::string buffer;
+  if (constraint.lookupValue("factors", buffer))
+  {
+    buffer = buffer.substr(0, buffer.find("#"));
+
+    std::regex re("([A-Za-z]+)[[:space:]]*>=[[:space:]]*([0-9]+)", std::regex::extended);
+    std::smatch sm;
+    std::string str = std::string(buffer);
+
+    while (std::regex_search(str, sm, re))
+    {
+      std::string dimension_name = sm[1];
+      problem::Shape::FlattenedDimensionID dimension;
+      try
+      {
+        dimension = problem::GetShape()->FlattenedDimensionNameToID.at(dimension_name);
+      }
+      catch (const std::out_of_range& oor)
+      {
+        std::cerr << "ERROR: parsing factors: " << buffer << ": dimension " << dimension_name
+                  << " not found in problem shape." << std::endl;
+        exit(1);
+      }
+
+      int min = std::stoi(sm[2]);
+      if (min <= 0)
+      {
+        std::cerr << "ERROR: min factor must be positive in constraint: " << buffer << std::endl;
+        exit(1);
+      }
+
+      // Found all the information we need to setup a factor!
+      retval[dimension] = min;
+
+      str = sm.suffix().str();
+    }
+  }
+  if (constraint.lookupValue("default_min_factor", buffer))
+  {
+      int min = std::stoi(buffer);
+      for(auto& it : problem::GetShape()->FlattenedDimensionNameToID)
+      {
+        if(retval.find(it.second) == retval.end())
+        {
+          retval[it.second] = min;
         }
       }
   }
@@ -1037,7 +1221,7 @@ Constraints::ParsePermutations(config::CompoundConfigNode constraint)
       problem::Shape::FlattenedDimensionID dimension;
       try
       {
-        dimension = problem::GetShape()->FlattenedDimensionNameToID.at(std::string(1, token));
+        dimension = workload_.GetShape()->FlattenedDimensionNameToID.at(std::string(1, token));
       }
       catch (const std::out_of_range& oor)
       {
@@ -1071,7 +1255,7 @@ void Constraints::ParseDatatypeBypassSettings(config::CompoundConfigNode constra
       problem::Shape::DataSpaceID datatype;
       try
       {
-        datatype = problem::GetShape()->DataSpaceNameToID.at(datatype_string);
+        datatype = workload_.GetShape()->DataSpaceNameToID.at(datatype_string);
       }
       catch (std::out_of_range& oor)
       {
@@ -1103,7 +1287,7 @@ void Constraints::ParseDatatypeBypassSettings(config::CompoundConfigNode constra
       problem::Shape::DataSpaceID datatype;
       try
       {
-        datatype = problem::GetShape()->DataSpaceNameToID.at(datatype_string);
+        datatype = workload_.GetShape()->DataSpaceNameToID.at(datatype_string);
       }
       catch (std::out_of_range& oor)
       {

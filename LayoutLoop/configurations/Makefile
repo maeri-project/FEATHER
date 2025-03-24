@@ -1,10 +1,11 @@
 clean:
-	rm -rf results
+	rm -rf results_bw_layout_modeling
+	rm -rf results_precise_layout_modeling
 
-gemm_dse:
-	export PYTHONPATH="./scripts_gemm:$PYTHONPATH"
-	python3 ./scripts_gemm/search_layoutloop_all_design.py results
+timeloop_dse:
+	export PYTHONPATH="./script:$PYTHONPATH"
+	python3 ./script/timeloop_mapper_all_arch.py results_bw_layout_modeling
 
-conv_dse:
-	export PYTHONPATH="./scripts:$PYTHONPATH"
-	python3 ./scripts/search_layoutloop_all_design.py results
+layoutloop_dse:
+	export PYTHONPATH="./script:$PYTHONPATH"
+	python3 ./script/layoutloop_mapper_all_arch.py results_precise_layout_modeling

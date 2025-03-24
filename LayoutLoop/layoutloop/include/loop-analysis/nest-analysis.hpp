@@ -31,28 +31,31 @@
 #include <map>
 #include <unordered_set>
 
+#include <isl/map.h>
+#include <isl/set.h>
+
 #include "mapping/nest.hpp"
+#include "layout/layout.hpp"
 #include "workload/util/per-problem-dimension.hpp"
 #include "nest-analysis-tile-info.hpp"
 
 namespace analysis
 {
-
 class NestAnalysis
 {
  private:
   // Cached copy of loop nest under evaluation (used for speedup).
   loop::Nest cached_nest;
-  loop::Nest layout_loop_nest;
   
+  // layout modeling
+  layout::Layouts layout_;
+  bool layout_initialized_ = false;
+
   // Properties of the nest being analyzed (copied over during construction).
   std::vector<uint64_t> storage_tiling_boundaries_;
 
   // Live state.
   std::vector<analysis::LoopState> nest_state_;
-  // Added by JT
-  std::vector<analysis::LoopState> layout_nest_state_;
-  // Done added by JT
   std::vector<int> indices_;
   std::uint64_t num_epochs_;
   
@@ -73,6 +76,7 @@ class NestAnalysis
   problem::OperationPoint cur_transform_;
 
   // per-level properties.
+  std::vector<double> utilized_spatial_elems_; // with imperfect factorization.
   std::vector<uint64_t> num_spatial_elems_;
   std::vector<uint64_t> logical_fanouts_;
 
@@ -80,40 +84,6 @@ class NestAnalysis
   // relevant only for master spatial levels.
   std::vector<uint64_t> logical_fanoutX_;
   std::vector<uint64_t> logical_fanoutY_;
-  
-  // Added by JT --- The following codes are for mapping. 
-  std::vector<std::vector<std::vector<uint64_t> > > spatial_access_buffer_level; 
-  std::vector<std::vector<uint64_t> >               temporal_access_below_loop_level; 
-  std::vector<std::vector<uint64_t> >               spatial_access_loop_level; 
-  std::vector<std::vector<uint64_t> >               total_access_loop_level; 
-  std::vector<std::vector<std::vector<uint64_t> > > total_access_buffer_level; 
-      // The outer vector contains number of loop dimension.
-      // The inner vector contains number of data in need of access for all loop dimensions, initialized by 1.
-  std::vector<std::vector<uint64_t > >              total_data_size_access_loop_level; 
-  std::vector<std::vector<std::pair<uint64_t, uint64_t> > > data_related_dim; 
-  std::vector<std::vector<std::vector<uint64_t> > > total_data_size_access_buffer_level; 
-  std::vector<std::vector<uint64_t > >              read_length_loop_level;                     //   L in the iActs[x,x+L] Δx
-  std::vector<std::vector<uint64_t > >              reading_start_index_step_loop_level;        //   L in the iActs[x,x+L] Δx
-  std::vector<std::vector<std::vector<uint64_t> > > reading_start_index_step_buffer_level;        //   L in the iActs[x,x+L] Δx
-  std::vector<std::vector<std::vector<uint64_t> > > read_length_buffer_level;           //  Δx in the iActs[x,x+L] Δx
-  std::vector<unsigned> oActs_height_width_dim_id;
-  std::vector<unsigned> weights_height_dim_id;
-  std::vector<uint64_t> stride_list; // We assume stride for height and width to be exactly the same.
-  std::vector<std::vector<uint64_t> > read_length_loop_level_related_dim_id;
-  unsigned iacts_data_id;
-  unsigned weights_data_id;
-  unsigned oacts_data_id;
-  // Done added by JT --- The following codes are for mapping. 
-  
-  // Added by JT --- The following codes are for layout
-  std::vector<std::vector<uint64_t> >               layout_data_length_per_buf_loop_level_related_dim_id;
-  std::vector<std::vector<uint64_t > >              layout_data_start_index_step_loop_level;    //  Δx in the iActs[x,x+L] Δx
-  std::vector<std::vector<uint64_t > >              layout_data_length_per_buf_row_loop_level;  //   L in the iActs[x,x+L] Δx
-  std::vector<std::vector<std::vector<uint64_t> > > layout_data_start_index_step_buffer_level;        //   L in the iActs[x,x+L] Δx
-  std::vector<std::vector<std::vector<uint64_t> > > layout_data_length_per_buf_row_buffer_level;           //  Δx in the iActs[x,x+L] Δx
-  std::vector<std::pair<uint64_t, uint64_t> >       storage_boundary_loop_index_map;           //  Δx in the iActs[x,x+L] Δx
-  
-  // Done added by JT --- The following codes are for layout
 
   // records if a level corresponds to the starting
   // point of a new storage tile.
@@ -166,11 +136,14 @@ class NestAnalysis
   std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_link_transfer_;
   std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_multicast_;
   std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_temporal_reuse_;
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> rmw_first_update_;
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_coalesce_;
 
   // Other state.
 
   bool working_sets_computed_ = false;
   bool imperfectly_factorized_ = false;
+  std::unordered_map<problem::Shape::FlattenedDimensionID, int> dim_imperfectly_factorized_at_;
 
   problem::Workload* workload_ = nullptr;
 
@@ -180,13 +153,8 @@ class NestAnalysis
   // Internal helper methods.
   void ComputeWorkingSets();
 
-  void InitNumSpatialAccessEveryBufferLevel();
-  void InitDimAccessEveryBufferLevel();
-  void InitRunLengthEveryBufferLevel();
-  void InitStartIndexStepEveryBufferLevel();
-  void InitLayoutNestEveryBufferLevel();
-  void TestElementState();
   void DetectImperfectFactorization();
+  bool NeedsToRunImperfectIteration(std::vector<analysis::LoopState>::reverse_iterator cur);
   void InitializeNestProperties();
   void InitNumSpatialElems();
   void InitStorageBoundaries();
@@ -246,11 +214,9 @@ class NestAnalysis
   void Init(problem::Workload* wc, const loop::Nest* nest,
             std::map<unsigned, std::uint64_t> fanoutX_map,
             std::map<unsigned, std::uint64_t> fanoutY_map);
-
-  void Init(problem::Workload* wc, const loop::Nest* layout_nest, const loop::Nest* nest,
+  void Init(problem::Workload* wc, const loop::Nest* nest, const layout::Layouts layout,
             std::map<unsigned, std::uint64_t> fanoutX_map,
             std::map<unsigned, std::uint64_t> fanoutY_map);
-
   void Reset();
  
   std::vector<problem::PerDataSpace<std::size_t>> GetWorkingSetSizes_LTW() const;
@@ -258,7 +224,8 @@ class NestAnalysis
   CompoundDataMovementNest GetWorkingSets();
   CompoundComputeNest GetComputeInfo();
   problem::Workload* GetWorkload();
-  
+  layout::Layouts GetLayout();
+  bool IsLayoutInitialized();
 
   // Serialization.
   friend class boost::serialization::access;
@@ -277,5 +244,8 @@ class NestAnalysis
 
   friend std::ostream& operator << (std::ostream& out, const NestAnalysis& n);  
 };
+
+NestAnalysis ComputeWorkingSets(const problem::Workload& workload,
+                                const loop::Nest& nest);
 
 } // namespace analysis

@@ -34,31 +34,100 @@
 #include "util/accelergy_interface.hpp"
 
 #include "applications/mapper/mapper.hpp"
+#include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
 
 //--------------------------------------------//
 //                Application                 //
 //--------------------------------------------//
 
-template <class Archive>
-void Application::serialize(Archive& ar, const unsigned int version)
+namespace application
 {
-  if(version == 0)
+
+template <class Archive>
+void Mapper::serialize(Archive& ar, const unsigned int version)
+{
+  if (version == 0)
   {
     ar& BOOST_SERIALIZATION_NVP(workload_);
   }
 }
 
-Application::Application(config::CompoundConfig* config,
-                         std::string output_dir,
-                         std::string name) :
+Mapper::Mapper(config::CompoundConfig* config,
+               std::string output_dir,
+               std::string name) :
     name_(name)
 {
   auto rootNode = config->getRoot();
+
+  // Version check
+  if (rootNode.exists("architecture") && rootNode.lookup("architecture").exists("nodes"))
+  {
+    std::cerr << "ERROR: 'nodes' found as a sub-key in the architecture. The 'nodes' key is used by "
+              << "the v0.4 timeloop front-end format, and will not be recognized by 'timeloop-...' "
+              << "commands. Please use the timeloopfe front-end, which is documented at "
+              << "https://github.com/Accelergy-Project/timeloop-accelergy-exercises and "
+              << "https://timeloop.csail.mit.edu." << std::endl;
+    exit(1);
+  }
 
   // Problem configuration.
   auto problem = rootNode.lookup("problem");
   problem::ParseWorkload(problem, workload_);
   std::cout << "Problem configuration complete." << std::endl;
+  std::cout << "Print out overall CoefficientIDToName of the given problem" << std::endl;
+  for (auto pro: workload_.GetShape()->CoefficientIDToName){
+    std::cout << pro.first << " " << pro.second  << " " ;
+  }
+  std::cout << std::endl;
+  for (auto pro: workload_.GetShape()->DefaultCoefficients){
+    std::cout << pro.first << " " << pro.second  << " " ;
+  }
+  std::cout << std::endl;
+
+  std::cout << "Print out overall FactorizedDimensionNameToID of the given problem" << std::endl;
+  for (auto pro: workload_.GetShape()->FactorizedDimensionNameToID){
+    std::cout << pro.first << ":" << pro.second << " ";
+  }
+  std::cout << std::endl;
+  std::cout << "Print out overall workload_.GetFactorizedBounds()->GetCoordinates from problem" << std::endl;
+  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
+  {
+    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " ";
+  }
+  std::cout << std::endl;
+  for (auto pro: workload_.GetFactorizedBounds().GetCoordinates()){
+    std::cout << pro << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Print out DataSpaceIDToDimensionIDVector from problem" << std::endl;
+  for (unsigned index =0; index < workload_.GetShape()->NumDataSpaces; index++){
+    std::cout << workload_.GetShape()->DataSpaceIDToName.at(index) << ":";
+    for(auto pro2: workload_.GetShape()->DataSpaceIDToDimensionIDVector[index]){
+      std::cout << pro2  << " ";
+    }
+    std::cout << std::endl;
+    index++;
+  }
+  std::cout << std::endl;
+  std::cout << "Overall Workload Dimension" << std::endl;
+  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
+  {
+    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " = "
+              << workload_.GetFlattenedBound(dim) << std::endl;
+  }
+  std::cout << std::endl;
+  std::cout << "Print out overall DataSpaceIDToName of the given problem" << std::endl;
+  for (auto pro:  workload_.GetShape()->DataSpaceIDToName){
+    std::cout << pro.first << " " << pro.second << " ";
+  }
+  std::cout << std::endl;
+
+  // std::cout << "Print out overall GetCoIteratedDimensions of the given problem" << std::endl;
+  // for (const auto& pro: shape_problem->GetCoIteratedDimensions()){
+  //   std::cout << pro << " ";
+  // }
 
   // Mapper (this application) configuration.
   auto mapper = rootNode.lookup("mapper");
@@ -129,7 +198,7 @@ Application::Application(config::CompoundConfig* config,
   // Mapper (this application) configuration. (the rest)
 
   num_threads_ = std::thread::hardware_concurrency();
-  if (mapper.lookupValue("num-threads", num_threads_))
+  if (mapper.lookupValue("num_threads", num_threads_))
   {
     std::cout << "Using threads = " << num_threads_ << std::endl;
   }
@@ -140,13 +209,13 @@ Application::Application(config::CompoundConfig* config,
 
   std::string metric;
   std::vector<std::string> raw_metrics;
-  if (mapper.lookupValue("optimization-metric", metric))
+  if (mapper.lookupValue("optimization_metric", metric))
   {
     raw_metrics = { metric };
   }
-  else if (mapper.exists("optimization-metrics"))
+  else if (mapper.exists("optimization_metrics"))
   {
-    mapper.lookupArrayValue("optimization-metrics", raw_metrics);
+    mapper.lookupArrayValue("optimization_metrics", raw_metrics);
   }
   else
   {
@@ -156,9 +225,9 @@ Application::Application(config::CompoundConfig* config,
 
   for (auto& metric: raw_metrics)
   {
-    // Special-case: if any metric is "ordered-accesses" expand it into a list
-    // of "access-X" strings.
-    if (metric == "ordered-accesses")
+    // Special-case: if any metric is "ordered_accesses" expand it into a list
+    // of "access_X" strings.
+    if (metric == "ordered_accesses")
     {
       auto num_levels = arch_specs_.topology.NumStorageLevels();
       for (unsigned i = num_levels-1; i < num_levels; i--)
@@ -174,7 +243,7 @@ Application::Application(config::CompoundConfig* config,
 
   // Search size (divide between threads).
   std::uint32_t search_size = 0;
-  mapper.lookupValue("search-size", search_size);
+  mapper.lookupValue("search_size", search_size);
   mapper.lookupValue("search_size", search_size); // backwards compatibility.
   if (search_size > 0)
     search_size = 1 + (search_size - 1) / num_threads_;
@@ -188,43 +257,54 @@ Application::Application(config::CompoundConfig* config,
   // Number of suboptimal valid mappings to trigger victory
   // (do NOT divide between threads).
   victory_condition_ = 500;
-  mapper.lookupValue("victory-condition", victory_condition_);
+  mapper.lookupValue("victory_condition", victory_condition_);
 
   // Inter-thread sync interval.
   std::uint32_t sync_interval = 0;
-  mapper.lookupValue("sync-interval", sync_interval);
+  mapper.lookupValue("sync_interval", sync_interval);
   sync_interval_ = static_cast<uint128_t>(sync_interval);
 
   // Inter-thread sync interval.
   std::uint32_t log_interval = 1;
-  mapper.lookupValue("log-interval", log_interval);
+  mapper.lookupValue("log_interval", log_interval);
   log_interval_ = static_cast<uint128_t>(log_interval);
 
-  // Misc.
-  log_oaves_ = false;
-  mapper.lookupValue("log-oaves", log_oaves_);
+  int32_t max_temporal_loops_in_a_mapping = -1;
+  mapper.lookupValue("max_temporal_loops_in_a_mapping", max_temporal_loops_in_a_mapping);
+  max_temporal_loops_in_a_mapping_ = static_cast<int32_t>(max_temporal_loops_in_a_mapping);
 
-  log_oaves_mappings_ = false;
-  mapper.lookupValue("log-oaves-mappings", log_oaves_mappings_);
+  // Misc.
+  log_orojenesis_mappings_ = false;
+  mapper.lookupValue("log_orojenesis_mappings", log_orojenesis_mappings_);
+
+  log_mappings_yaml_ = false;
+  mapper.lookupValue("log_mappings_yaml", log_mappings_yaml_);
+
+  log_mappings_verbose_ = false;
+  mapper.lookupValue("log_mappings_verbose", log_mappings_verbose_);
+
+  // Misc.
+  log_all_mappings_ = false;
+  mapper.lookupValue("log_all_mappings", log_all_mappings_);
 
   log_stats_ = false;
-  mapper.lookupValue("log-stats", log_stats_);
+  mapper.lookupValue("log_stats", log_stats_);
 
   log_suboptimal_ = false;
-  mapper.lookupValue("log-suboptimal", log_suboptimal_);
-  mapper.lookupValue("log-all", log_suboptimal_); // backwards compatibility.
+  mapper.lookupValue("log_suboptimal", log_suboptimal_);
+  mapper.lookupValue("log_all", log_suboptimal_); // backwards compatibility.
 
   live_status_ = false;
-  mapper.lookupValue("live-status", live_status_);
+  mapper.lookupValue("live_status", live_status_);
 
   diagnostics_on_ = false;
   mapper.lookupValue("diagnostics", diagnostics_on_);
 
   penalize_consecutive_bypass_fails_ = false;
-  mapper.lookupValue("penalize-consecutive-bypass-fails", penalize_consecutive_bypass_fails_);
+  mapper.lookupValue("penalize_consecutive_bypass_fails", penalize_consecutive_bypass_fails_);
 
   emit_whoop_nest_ = false;
-  mapper.lookupValue("emit-whoop-nest", emit_whoop_nest_);
+  mapper.lookupValue("emit_whoop_nest", emit_whoop_nest_);
 
   std::cout << "Mapper configuration complete." << std::endl;
 
@@ -241,6 +321,14 @@ Application::Application(config::CompoundConfig* config,
     arch_constraints = rootNode.lookup("architecture_constraints");
 
   // Mapspace constraints.
+  if (rootNode.exists("mapspace") && rootNode.exists("mapspace_constraints"))
+  {
+    std::cerr << "ERROR: found both \"mapspace\" and \"mapspace_constraints\" "
+              << "directive. Please use either for specifying "
+              << "mapspace constraints." << std::endl;
+    exit(1);
+  }
+ 
   if (rootNode.exists("mapspace"))
     mapspace = rootNode.lookup("mapspace");
   else if (rootNode.exists("mapspace_constraints"))
@@ -280,13 +368,59 @@ Application::Application(config::CompoundConfig* config,
     cfg_string_ = nullptr;
   }
 
-  // optional
-  auto layout = rootNode.lookup("layout");
-  layout_ = new Layout(layout::ParseAndConstruct(layout, arch_specs_, workload_));
+  // crypto modeling
+  std::cout << "Start Parsering Crypto" << std::endl;
+  config::CompoundConfigNode compound_config_node_crypto;
+  bool existing_crypto = rootNode.lookup("crypto", compound_config_node_crypto);
+  crypto_ = new crypto::CryptoConfig();
+
+  if (existing_crypto){
+    crypto_ = crypto::ParseAndConstruct(compound_config_node_crypto);
+    
+    crypto_->crypto_initialized_ = true;
+
+    std::cout << "Crypto Configuration:\n";
+    std::cout << "  Name: " << crypto_->name << "\n";
+    std::cout << "  Family: " << crypto_->family << "\n";
+    std::cout << "  Datapath: " << crypto_->datapath << "\n";
+    std::cout << "  Auth Additional Cycle Per Block: " << crypto_->auth_additional_cycle_per_block << "\n";
+    std::cout << "  Auth Additional Energy Per Block: " << crypto_->auth_additional_energy_per_block << "\n";
+    std::cout << "  Auth Cycle Per Datapath: " << crypto_->auth_cycle_per_datapath << "\n";
+    std::cout << "  Auth Enc Parallel: " << (crypto_->auth_enc_parallel ? "true" : "false") << "\n";
+    std::cout << "  Auth Energy Per Datapath: " << crypto_->auth_energy_per_datapath << "\n";
+    std::cout << "  Enc Cycle Per Datapath: " << crypto_->enc_cycle_per_datapath << "\n";
+    std::cout << "  Enc Energy Per Datapath: " << crypto_->enc_energy_per_datapath << "\n";
+    std::cout << "  Hash Size: " << crypto_->hash_size << "\n";
+    std::cout << "  Xor Cycle: " << crypto_->xor_cycle << "\n";
+    std::cout << "  Xor Energy Per Datapath: " << crypto_->xor_energy_per_datapath << "\n";
+  }
+  else{
+    std::cout << "No Crypto specified" << std::endl;
+  }
+  
+  // layout modeling
+  std::cout << "Start Parsering Layout" << std::endl;
+  config::CompoundConfigNode compound_config_node_layout;
+  bool existing_layout = rootNode.lookup("layout", compound_config_node_layout);
+  // ToDo: 
+  if (existing_layout){
+    std::map<std::string, std::pair<uint32_t, uint32_t>> externalPortMapping;
+    for (auto i: arch_specs_.topology.LevelNames())
+        externalPortMapping[i] = {arch_specs_.topology.GetStorageLevel(i)->num_ports.Get(), arch_specs_.topology.GetStorageLevel(i)->num_ports.Get()};
+
+    layout_ = layout::ParseAndConstruct(compound_config_node_layout, workload_, externalPortMapping);
+    
+    layout_initialized_ = true;
+    layout::PrintOverallLayout(layout_);
+  }
+  else{
+    layout_initialized_ = false;
+    std::cout << "No Layout specified, so using bandwidth based modeling" << std::endl;
+  }
 
 }
 
-Application::~Application()
+Mapper::~Mapper()
 {
   if (mapspace_)
   {
@@ -297,12 +431,7 @@ Application::~Application()
   {
     delete sparse_optimizations_;
   }
-
-  if (layout_)
-  {
-    delete layout_;
-  }
-
+  
   for (auto& search: search_)
   {
     if (search)
@@ -312,7 +441,7 @@ Application::~Application()
   }
 }
 
-EvaluationResult Application::GetGlobalBest()
+EvaluationResult Mapper::GetGlobalBest()
 {
   return global_best_;
 }
@@ -320,22 +449,16 @@ EvaluationResult Application::GetGlobalBest()
 // ---------------
 // Run the mapper.
 // ---------------
-void Application::Run()
+Mapper::Result Mapper::Run()
 {
   // Output file names.
   std::string log_file_name = out_prefix_ + ".log";
-  std::string stats_file_name = out_prefix_ + ".stats.txt";
-  std::string xml_file_name = out_prefix_ + ".map+stats.xml";
-  std::string map_txt_file_name = out_prefix_ + ".map.txt";
-  std::string map_yaml_file_name = out_prefix_ + ".map.yaml";
   std::string map_cfg_file_name = out_prefix_ + ".map.cfg";
-  std::string map_cpp_file_name = out_prefix_ + ".map.cpp";
-  std::string oaves_prefix = out_prefix_ + ".oaves";
-  std::string oaves_csv_file_name = oaves_prefix + ".csv";
+  std::string orojenesis_prefix = out_prefix_ + ".orojenesis";
 
   // Prepare live status/log stream.
   std::ofstream log_file;
-  std::ofstream oaves_csv_file(oaves_csv_file_name);
+  std::stringstream orojenesis_stream;
 
   // std::streambuf* streambuf_cout = std::cout.rdbuf();
   std::streambuf* streambuf_cerr = std::cerr.rdbuf();
@@ -381,15 +504,18 @@ void Application::Run()
                                         search_size_,
                                         timeout_,
                                         victory_condition_,
+                                        max_temporal_loops_in_a_mapping_,
                                         sync_interval_,
                                         log_interval_,
-                                        log_oaves_,
-                                        log_oaves_mappings_,
+                                        log_orojenesis_mappings_,
+                                        log_mappings_yaml_,
+                                        log_mappings_verbose_,
+                                        log_all_mappings_,
                                         log_stats_,
                                         log_suboptimal_,
                                         live_status_ ? log_file : std::cerr,
-                                        oaves_csv_file,
-                                        oaves_prefix,
+                                        orojenesis_stream,
+                                        orojenesis_prefix,
                                         live_status_,
                                         diagnostics_on_,
                                         penalize_consecutive_bypass_fails_,
@@ -397,11 +523,11 @@ void Application::Run()
                                         arch_specs_,
                                         workload_,
                                         layout_,
+                                        layout_initialized_,
                                         sparse_optimizations_,
+                                        crypto_,
                                         &best_));
   }
-  
-  auto & pointer_layout = layout_;
 
   // Launch the threads.
   for (unsigned t = 0; t < num_threads_; t++)
@@ -426,7 +552,6 @@ void Application::Run()
     getch();
     endwin();
   }
-
 
   // Diagnostics.
   if (diagnostics_on_)
@@ -479,6 +604,7 @@ void Application::Run()
     std::cout << "===============================================" << std::endl;
     std::cout << "               BEGIN DIAGNOSTICS               " << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
+
     for (auto& i: fail_stats)
     {
       auto& fail_class = i.first;
@@ -496,7 +622,12 @@ void Application::Run()
 
         model::Engine engine;
         engine.Spec(arch_specs_);
-        engine.Evaluate(mapping, pointer_layout, workload_, sparse_optimizations_);
+
+        if (layout_initialized_){ // ToDo: @Jianming modify here
+          engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, false);
+        }else
+          engine.Evaluate(mapping, workload_, sparse_optimizations_, crypto_, false);
+
         mapping.PrettyPrint(std::cout, arch_specs_.topology.StorageLevelNames(),
                             engine.GetTopology().GetStats().utilized_capacities,
                             engine.GetTopology().GetStats().tile_sizes, "      ");
@@ -526,13 +657,17 @@ void Application::Run()
     threads_.at(t) = nullptr;
   }
 
+  std::stringstream map_txt_str;
+  std::stringstream map_yaml_str;
+  std::stringstream map_cpp_str;
+  std::stringstream stats_str;
+  std::stringstream xml_map_stats_str;
+  std::stringstream tensella_str;
   if (global_best_.valid)
   {
-    std::ofstream map_txt_file(map_txt_file_name);
-    global_best_.mapping.PrettyPrint(map_txt_file, arch_specs_.topology.StorageLevelNames(),
+    global_best_.mapping.PrettyPrint(map_txt_str, arch_specs_.topology.StorageLevelNames(),
                                      global_best_.stats.utilized_capacities,
                                      global_best_.stats.tile_sizes);
-    map_txt_file.close();
 
     // std::ofstream map_yaml_file(map_yaml_file_name);
     // global_best_.mapping.PrintAsConstraints(map_yaml_file_name);
@@ -542,20 +677,19 @@ void Application::Run()
     // that can be printed out hierarchically.
     model::Engine engine;
     engine.Spec(arch_specs_);
-    engine.Evaluate(global_best_.mapping, pointer_layout, workload_, sparse_optimizations_, false);
+    
+    if (layout_initialized_){
+      engine.Evaluate(global_best_.mapping, workload_, layout_, sparse_optimizations_, crypto_);
+    }else
+      engine.Evaluate(global_best_.mapping, workload_, sparse_optimizations_, crypto_);
 
-    std::ofstream stats_file(stats_file_name);
-    stats_file << engine << std::endl;
-    stats_file.close();
-    oaves_csv_file.close();
+    stats_str << engine << std::endl;
 
     if (emit_whoop_nest_)
     {
-      std::ofstream map_cpp_file(map_cpp_file_name);
-      global_best_.mapping.PrintWhoopNest(map_cpp_file, arch_specs_.topology.StorageLevelNames(),
+      global_best_.mapping.PrintWhoopNest(map_cpp_str, arch_specs_.topology.StorageLevelNames(),
                                           global_best_.stats.tile_sizes,
                                           global_best_.stats.utilized_instances);
-      map_cpp_file.close();
     }
 
     std::cout << std::endl;
@@ -568,7 +702,8 @@ void Application::Run()
         global_best_.stats.algorithmic_computes
                 << " | pJ/Compute = " << std::setw(8)
                 << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << global_best_.stats.energy /
-        global_best_.stats.actual_computes << " | Cycles = " << engine.Cycles() << std::endl;
+        global_best_.stats.actual_computes 
+                << " | Cycles = " << global_best_.stats.cycles << std::endl;
     }
     else
     {
@@ -577,16 +712,19 @@ void Application::Run()
                 << global_best_.stats.utilization
                 << " | pJ/Compute = " << std::setw(8)
                 << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << global_best_.stats.energy /
-        global_best_.stats.actual_computes << " | Cycles = " << engine.Cycles() << std::endl;
+        global_best_.stats.actual_computes
+                << " | Cycles = " << global_best_.stats.cycles << std::endl;
     }
 
     // Print the engine stats and mapping to an XML file
-    std::ofstream ofs(xml_file_name);
-    boost::archive::xml_oarchive ar(ofs);
+    boost::archive::xml_oarchive ar(xml_map_stats_str);
     ar << boost::serialization::make_nvp("engine", engine);
     ar << boost::serialization::make_nvp("mapping", global_best_.mapping);
-    const Application* a = this;
+    const Mapper* a = this;
     ar << BOOST_SERIALIZATION_NVP(a);
+
+    // Print the mapping in Tenssella input format.
+    global_best_.mapping.PrintTenssella(tensella_str);
   }
   else
   {
@@ -599,7 +737,7 @@ void Application::Run()
               << "    Try to find the offending constraints that are likely to have caused the" << std::endl
               << "    above violations, and disable those constraints." << std::endl;
     std::cout << "(3) Try other search algorithms, and relax the termination criteria:" << std::endl
-              << "    victory-condition, timeout and/or search-size." << std::endl;
+              << "    victory_condition, timeout and/or search_size." << std::endl;
     if (!diagnostics_on_)
     {
       std::cout << "(4) Enable mapper's diagnostics (mapper.diagnostics = True) to track and emit " << std::endl
@@ -627,18 +765,18 @@ void Application::Run()
   else
     mapper.add("algorithm", libconfig::Setting::TypeString) = "exhaustive";
 
-  if (mapper.exists("num-threads"))
-    mapper["num-threads"] = 1;
+  if (mapper.exists("num_threads"))
+    mapper["num_threads"] = 1;
   else
-    mapper.add("num-threads", libconfig::Setting::TypeInt) = 1;
+    mapper.add("num_threads", libconfig::Setting::TypeInt) = 1;
 
   if (mapper.exists("search_size"))
     mapper.remove("search_size");
 
-  if (mapper.exists("search-size"))
-    mapper["search-size"] = 1;
+  if (mapper.exists("search_size"))
+    mapper["search_size"] = 1;
   else
-    mapper.add("search-size", libconfig::Setting::TypeInt) = 1;
+    mapper.add("search_size", libconfig::Setting::TypeInt) = 1;
 
   // Delete the mapspace constraint.
   if (root.exists("mapspace"))
@@ -680,11 +818,21 @@ void Application::Run()
   }
 #endif
   if (!cfg_string_) {
-    std::ofstream mapping_output_file;
-    mapping_output_file.open(map_yaml_file_name.c_str());
-    mapping_output_file << yaml_out.c_str();
-    mapping_output_file.close();
+    map_yaml_str << yaml_out.c_str();
   } else {
     config.writeFile(map_cfg_file_name.c_str());
   }
+
+  Result result;
+  result.mapping_cpp_string = map_cpp_str.str();
+  result.mapping_yaml_string = map_yaml_str.str();
+  result.mapping_string = map_txt_str.str();
+  result.stats_string = stats_str.str();
+  result.tensella_string = tensella_str.str();
+  result.xml_mapping_stats_string = xml_map_stats_str.str();
+  result.orojenesis_string = orojenesis_stream.str();
+
+  return result;
 }
+
+} // namespace application

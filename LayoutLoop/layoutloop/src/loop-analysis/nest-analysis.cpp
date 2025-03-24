@@ -29,6 +29,11 @@
 #include <functional>
 #include <stdexcept>
 #include <unordered_map>
+#include <barvinok/isl.h>
+#include <isl/aff.h>
+#include <isl/cpp.h>
+#include <isl/set.h>
+#include <isl/space.h>
 
 // FIXME: num_spatial_elems, spatial_fanouts, replication_factor etc. are
 //        all maintained across datatypes. They should be per-datatype at
@@ -41,8 +46,15 @@
 //        limited to the ComputeNetworkLinkTransfers() function.
 
 #include "util/misc.hpp"
-
+#include "isl-wrapper/ctx-manager.hpp"
+#include "isl-wrapper/isl-functions.hpp"
+#include "loop-analysis/isl-ir.hpp"
+#include "loop-analysis/mapping-to-isl/mapping-to-isl.hpp"
 #include "loop-analysis/nest-analysis.hpp"
+#include "loop-analysis/spatial-analysis.hpp"
+#include "loop-analysis/temporal-analysis.hpp"
+#include "loop-analysis/isl-analysis/isl-to-legacy-adaptor.hpp"
+#include "mapping/fused-mapping.hpp"
 
 bool gTerminateEval = false;
 
@@ -67,6 +79,13 @@ bool gEnableTracing =
 bool gRunLastIteration =
   (getenv("TIMELOOP_RUN_LAST_ITERATION") != NULL) &&
   (strcmp(getenv("TIMELOOP_RUN_LAST_ITERATION"), "0") != 0);
+bool gUseIslAnalysis =
+  (getenv("TIMELOOP_USE_ISL") != NULL) &&
+  (strcmp(getenv("TIMELOOP_USE_ISL"), "0") != 0);
+bool gPrintNestAnalysisResult =
+  (getenv("TIMELOOP_PRINT_NEST_ANALYSIS_RESULT") != NULL) &&
+  (strcmp(getenv("TIMELOOP_PRINT_NEST_ANALYSIS_RESULT"), "0") != 0);
+
 
 // Flattening => Multi-AAHRs
 // => Can't use per-AAHR reset-on-stride-change logic
@@ -74,32 +93,42 @@ bool gRunLastIteration =
 //    over from iteration 1 back to iteration 0 is incorrect).
 bool gResetOnStrideChange = false;
 
+// Alternative cycle count computation hack for imperfect factorization.
+bool gEnableImperfectCycleCount = false;
+
 namespace analysis
 {
+
 
 NestAnalysis::NestAnalysis()
 {
 }
 
-void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest,
+
+void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest, layout::Layouts layout,
                         std::map<unsigned, std::uint64_t> fanoutX_map,
                         std::map<unsigned, std::uint64_t> fanoutY_map)
 {
-  // std::cout << "NestAnalysis::Init" << std::endl;
   ASSERT(nest != NULL);
   ASSERT(wc != NULL);
 
   ASSERT(fanoutX_map.size() == nest->storage_tiling_boundaries.size());
   ASSERT(fanoutY_map.size() == nest->storage_tiling_boundaries.size());
-  // for( auto iter = nest->loops.rbegin(); iter < nest->loops.rend(); iter++){
-  //   std::cout << "iter->dimension=" << iter->dimension << "-" << problem::GetShape()->FlattenedDimensionIDToName.at(iter->dimension) <<" in [" << iter->start  << ", " << iter->end << ", " << iter->stride << ") iter->residual_end=" << iter->residual_end  << std::endl;
-  // }
 
-  // for( unsigned iter = 0; iter < nest->storage_tiling_boundaries.size(); iter++){
-  //   std::cout << "nest->storage_tiling_boundaries["<< iter <<"]=" << nest->storage_tiling_boundaries[iter] << std::endl;
-  // }
+#ifdef DEBUG
+  std::cout << "mapping analysis" << std::endl;
+  for( auto iter = nest->loops.rbegin(); iter < nest->loops.rend(); iter++){
+   std::cout << "iter->dimension=" << iter->dimension << "-" << problem::GetShape()->FlattenedDimensionIDToName.at(iter->dimension) <<" in [" << iter->start  << ", " << iter->end << ", " << iter->stride << ") iter->residual_end=" << iter->residual_end  << std::endl;
+  }
+
+  for( unsigned iter = 0; iter < nest->storage_tiling_boundaries.size(); iter++){
+   std::cout << "nest->storage_tiling_boundaries["<< iter <<"]=" << nest->storage_tiling_boundaries[iter] << std::endl;
+  }
+#endif
 
   workload_ = wc;
+  layout_ = layout;
+  layout_initialized_ = true;
 
   if (working_sets_computed_ && cached_nest == *nest)
   {
@@ -116,7 +145,8 @@ void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest,
     no_link_transfer_ = nest->no_link_transfer;
     no_multicast_ = nest->no_multicast;
     no_temporal_reuse_ = nest->no_temporal_reuse;
-
+    rmw_first_update_ = nest->rmw_first_update;
+    no_coalesce_ = nest->no_coalesce;
     physical_fanoutX_ = fanoutX_map;
     physical_fanoutY_ = fanoutY_map;
 
@@ -135,37 +165,26 @@ void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest,
       cur.descriptor = descriptor;
       nest_state_.push_back(cur);    
     }
+
+    // Properly size working_sets_ by re-constructing it based on now-available
+    // parsed workload information.
+    working_sets_ = decltype(working_sets_)(workload_->GetShape()->NumDataSpaces);
   }
 
-  gResetOnStrideChange = !problem::GetShape()->UsesFlattening;
-  
+  gResetOnStrideChange = !workload_->GetShape()->UsesFlattening; 
 }
 
 
 
-void NestAnalysis::Init(problem::Workload* wc,  const loop::Nest* layout_nest, const loop::Nest* nest,
+void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest,
                         std::map<unsigned, std::uint64_t> fanoutX_map,
                         std::map<unsigned, std::uint64_t> fanoutY_map)
 {
-  //JTC std::cout << "NestAnalysis::Init" << std::endl;
   ASSERT(nest != NULL);
   ASSERT(wc != NULL);
 
-  //JTC std::cout << "print out layout loop nest" << std::endl;
-  //JTC for( auto iter = layout_nest->loops.rbegin(); iter < layout_nest->loops.rend(); iter++){
-  //JTC   std::cout << "iter->dimension=" << iter->dimension << "-" << problem::GetShape()->FlattenedDimensionIDToName.at(iter->dimension) <<" in [" << iter->start  << ", " << iter->end << ", " << iter->stride << ") iter->residual_end=" << iter->residual_end  << std::endl;
-  //JTC }
-
-  //JTC std::cout << "print out mapping loop nest" << std::endl;
   ASSERT(fanoutX_map.size() == nest->storage_tiling_boundaries.size());
   ASSERT(fanoutY_map.size() == nest->storage_tiling_boundaries.size());
-  //JTC for( auto iter = nest->loops.rbegin(); iter < nest->loops.rend(); iter++){
-  //JTC   std::cout << "iter->dimension=" << iter->dimension << "-" << problem::GetShape()->FlattenedDimensionIDToName.at(iter->dimension) <<" in [" << iter->start  << ", " << iter->end << ", " << iter->stride << ") iter->residual_end=" << iter->residual_end  << std::endl;
-  //JTC }
-
-  //JTC for( unsigned iter = 0; iter < nest->storage_tiling_boundaries.size(); iter++){
-  //JTC   std::cout << "nest->storage_tiling_boundaries["<< iter <<"]=" << nest->storage_tiling_boundaries[iter] << std::endl;
-  //JTC }
 
   workload_ = wc;
 
@@ -177,13 +196,15 @@ void NestAnalysis::Init(problem::Workload* wc,  const loop::Nest* layout_nest, c
   {
     Reset();
     cached_nest = *nest;
+
     // Copy over everything we need from the nest.
     storage_tiling_boundaries_ = nest->storage_tiling_boundaries;
     packed_skew_descriptors_ = nest->skew_descriptors;
     no_link_transfer_ = nest->no_link_transfer;
     no_multicast_ = nest->no_multicast;
     no_temporal_reuse_ = nest->no_temporal_reuse;
-
+    rmw_first_update_ = nest->rmw_first_update;
+    no_coalesce_ = nest->no_coalesce;
     physical_fanoutX_ = fanoutX_map;
     physical_fanoutY_ = fanoutY_map;
 
@@ -203,14 +224,12 @@ void NestAnalysis::Init(problem::Workload* wc,  const loop::Nest* layout_nest, c
       nest_state_.push_back(cur);    
     }
 
-
-    // Added by JT
-    layout_loop_nest = *layout_nest;
-    // Done added by JT
+    // Properly size working_sets_ by re-constructing it based on now-available
+    // parsed workload information.
+    working_sets_ = decltype(working_sets_)(workload_->GetShape()->NumDataSpaces);
   }
 
-  gResetOnStrideChange = !problem::GetShape()->UsesFlattening;
-  
+  gResetOnStrideChange = !workload_->GetShape()->UsesFlattening; 
 }
 
 //
@@ -221,7 +240,6 @@ void NestAnalysis::Reset()
   storage_tiling_boundaries_.clear();
   
   nest_state_.clear();
-  layout_nest_state_.clear();
   indices_.clear();
   num_epochs_ = 0;
 
@@ -246,6 +264,7 @@ void NestAnalysis::Reset()
 
   working_sets_computed_ = false;
   imperfectly_factorized_ = false;
+  gEnableImperfectCycleCount = false;
 
   // compute_info_.Reset();
   compute_info_.clear();
@@ -253,8 +272,8 @@ void NestAnalysis::Reset()
 
   loop_gists_temporal_.clear();
   loop_gists_spatial_.clear();
-  loop_gists_temporal_.resize(problem::GetShape()->NumFlattenedDimensions);
-  loop_gists_spatial_.resize(problem::GetShape()->NumFlattenedDimensions);
+  loop_gists_temporal_.resize(workload_->GetShape()->NumFlattenedDimensions);
+  loop_gists_spatial_.resize(workload_->GetShape()->NumFlattenedDimensions);
 
   skew_descriptors_.clear();
   cur_skew_descriptor_ = nullptr;
@@ -262,30 +281,8 @@ void NestAnalysis::Reset()
   no_multicast_.clear();
   no_link_transfer_.clear();
   no_temporal_reuse_.clear();
-
-  // Added by JT
-
-  spatial_access_buffer_level.clear();
-  temporal_access_below_loop_level.clear();
-  spatial_access_loop_level.clear();
-  total_access_loop_level.clear();
-  total_access_buffer_level.clear();
-  total_data_size_access_loop_level.clear();
-  data_related_dim.clear();
-  total_data_size_access_buffer_level.clear();
-  read_length_loop_level.clear();
-  reading_start_index_step_loop_level.clear();
-  reading_start_index_step_loop_level.clear();
-  oActs_height_width_dim_id.clear();
-  weights_height_dim_id.clear();
-  stride_list.clear();
-  read_length_loop_level_related_dim_id.clear();
-  iacts_data_id=0;
-  weights_data_id=0;
-  oacts_data_id=0;
-  layout_data_start_index_step_loop_level.clear();
-  layout_data_length_per_buf_row_loop_level.clear();
-  // Done added by JT.
+  rmw_first_update_.clear();
+  no_coalesce_.clear();
 }
 
 // Ugly function for pre-checking capacity fits before running the heavyweight
@@ -328,7 +325,7 @@ NestAnalysis::GetWorkingSetSizes_LTW() const
     problem::OperationPoint high = dimension_sizes;
     high.IncrementAllDimensions(-1);
     problem::OperationSpace maxtile(workload_, origin, high);
-    for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+    for (unsigned pvi = 0; pvi < unsigned(workload_->GetShape()->NumDataSpaces); pvi++)
       workload_->SetWorkloadTensorSize(problem::Shape::DataSpaceID(pvi), maxtile.GetDataSpace(pvi));
     workload_->AllTensorsSet();
   }
@@ -360,11 +357,19 @@ problem::Workload* NestAnalysis::GetWorkload(){
   return workload_;
 }
 
+layout::Layouts NestAnalysis::GetLayout(){
+  return layout_;
+}
+
+bool NestAnalysis::IsLayoutInitialized(){
+  return layout_initialized_;
+}
+
 std::ostream& operator << (std::ostream& out, const NestAnalysis& n)
 {
   for (auto cur = n.nest_state_.rbegin(); cur != n.nest_state_.rend(); cur++)
   {
-    cur->descriptor.Print(out, false);
+    cur->descriptor.Print(out, false, n.workload_->GetShape()->FlattenedDimensionIDToName);
   }
   out << std::endl;
   return out;
@@ -377,70 +382,90 @@ void NestAnalysis::ComputeWorkingSets()
     InitializeNestProperties();
     InitializeLiveState();
     DetectImperfectFactorization();
+    if (!gUseIslAnalysis)
+    {
+      // Recursive call starting from the last element of the list.
+      num_epochs_ = 1;
+      ComputeDeltas(nest_state_.rbegin());
+      CollectWorkingSets();
+    }
+  }
 
-    // Added by JT
-    // TestElementState();
-    // Done added by JT
+  if (gUseIslAnalysis)
+  {
+    auto occupancies =
+      analysis::OccupanciesFromMapping(cached_nest, *workload_);
 
-    // Recursive call starting from the last element of the list.
-    num_epochs_ = 1;
-    ComputeDeltas(nest_state_.rbegin());
+    auto legacy_output =
+      GenerateLegacyNestAnalysisOutput(
+        ReuseAnalysis(occupancies),
+        nest_state_,
+        storage_tiling_boundaries_,
+        master_spatial_level_,
+        storage_boundary_level_,
+        num_spatial_elems_,
+        logical_fanouts_,
+        *workload_
+      );
 
-    // Added by JT
-    // TestElementState();
-    // Done added by JT
+    compute_info_sets_ = legacy_output.first;
+    working_sets_ = legacy_output.second;
+  }
 
-    CollectWorkingSets();
+  if (gPrintNestAnalysisResult)
+  {
+    for (size_t pv = 0; pv < workload_->GetShape()->NumDataSpaces; ++pv)
+    {
+      std::cout << "DataSpace: " << pv << std::endl;
+      const auto& data_movement_nest = working_sets_.at(pv);
+      for (const auto& tile : data_movement_nest)
+      {
+        std::cout << "fanout: " << tile.fanout << std::endl;
+        std::cout << "access stats: " << tile.access_stats << std::endl;
+      }
+    }
   }
 
   // Done.
   working_sets_computed_ = true;
 }
 
-
-void NestAnalysis::TestElementState()
-{
-  std::cout << std::endl << std::endl << "NestAnalysis::TestElementState" << std::endl;
-  for (auto &cur: nest_state_){
-    std::cout << "cur.level=" << cur.level << "cur.live_state.size()=" << cur.live_state.size() << std::endl; 
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++){
-      for (auto& state: cur.live_state){
-          std::cout << "cur.level=" << cur.level << "\t state.second.access_stats["  << pv <<"]\t\t=" << state.second.access_stats[pv];
-          std::cout << "cur.level=" << cur.level << "\t state.second.max_size["      << pv <<"]\t\t=\t" << state.second.max_size[pv] << std::endl;
-          std::cout << "cur.level=" << cur.level << "\t state.second.link_transfers["<< pv <<"]\t\t=\t" << state.second.link_transfers[pv] << std::endl;
-      }
-    }
-  }
-}
-
-
 // Internal helper methods
+
 void NestAnalysis::DetectImperfectFactorization()
 {
+  dim_imperfectly_factorized_at_.clear();
   for (auto cur = nest_state_.rbegin(); cur != nest_state_.rend(); cur++)
   {
     if (cur->descriptor.end != cur->descriptor.residual_end)
     {
       imperfectly_factorized_ = true;
-      break;
+      gEnableImperfectCycleCount = true;
+      dim_imperfectly_factorized_at_[cur->descriptor.dimension] = cur->level;
     }
-  }  
+  }
+}
+
+bool NestAnalysis::NeedsToRunImperfectIteration(std::vector<analysis::LoopState>::reverse_iterator cur)
+{
+  auto level = cur->level;
+  bool last_global_iteration = IsLastGlobalIteration_(level+1, cur->descriptor.dimension);
+
+  bool imperfectly_factorized_below = false;
+  if(dim_imperfectly_factorized_at_.find(cur->descriptor.dimension) != dim_imperfectly_factorized_at_.end())
+  {
+    imperfectly_factorized_below |= dim_imperfectly_factorized_at_[cur->descriptor.dimension] < level;
+  }
+  return imperfectly_factorized_below && last_global_iteration;
 }
 
 void NestAnalysis::InitializeNestProperties()
 {
-  // Added by JT
-  InitNumSpatialAccessEveryBufferLevel();
-  InitDimAccessEveryBufferLevel();
-  InitRunLengthEveryBufferLevel();
-  InitLayoutNestEveryBufferLevel();
-  // Done Added by JT
   InitNumSpatialElems();
   InitStorageBoundaries();
   InitSpatialFanouts();
   InitPerLevelDimScales();
 }
-
 
 void NestAnalysis::InitializeLiveState()
 {
@@ -495,51 +520,18 @@ void PrintStamp(const std::vector<unsigned>& v)
 
 void NestAnalysis::CollectWorkingSets()
 {
-  //JTC std::cout << " NestAnalysis::CollectWorkingSets" << std::endl;
-  //JTC std::cout << " nest_state.size" << nest_state_.size() << std::endl;
   // Collect the data we want to return. Transpose the max_size_ and accesses_
   // matrix, pack them into an array of vectors and return.
   for (auto& cur : nest_state_)
   {
-    
     // All spatial levels that are not a master-spatial level are not valid
     bool valid_level = !loop::IsSpatial(cur.descriptor.spacetime_dimension) || master_spatial_level_[cur.level];
     if (valid_level)
     {
       // Contains the collected state for this level.
       analysis::ElementState condensed_state(*workload_);
-      for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+      for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
       {
-        // Sanity check: All elements in a given level should
-        // have similar working sets, accesses etc.
-        // TODO Can we leverage this assertion to avoid redundant simulation
-        // by only simulating one spatial element per level?
-        if (!gExtrapolateUniformSpatial)
-        {
-          // FIXME: aggregate stats.
-          // for (std::uint64_t i = 1; i < cur.live_state.size(); i++)
-          // {
-          //   ASSERT(cur.live_state[i].access_stats[pv] ==
-          //          cur.live_state[i - 1].access_stats[pv]);
-          //   ASSERT(cur.live_state[i].max_size[pv] ==
-          //          cur.live_state[i - 1].max_size[pv]);
-          //   ASSERT(cur.live_state[i].link_transfers[pv] ==
-          //          cur.live_state[i - 1].link_transfers[pv]);
-          // }
-        }
-
-        // // Since, all elements have the same properties, use the properties
-        // // of the first element to build condensed_state
-        // const uint64_t REPR_ELEM_ID = 0;  // representative element id.
-        // condensed_state.access_stats[pv] =
-        //     cur.live_state[REPR_ELEM_ID].access_stats[pv];
-        // condensed_state.max_size[pv] =
-        //     cur.live_state[REPR_ELEM_ID].max_size[pv];
-        // condensed_state.link_transfers[pv] =
-        //     cur.live_state[REPR_ELEM_ID].link_transfers[pv];
-        // // condensed_state.data_densities[pv] =
-        // //     cur.live_state[REPR_ELEM_ID].data_densities[pv];
-
         // We have 3 choices:
         // (1) Sample the stats from one spatial instance and report that as the
         //     per-instance stats.
@@ -555,42 +547,20 @@ void NestAnalysis::CollectWorkingSets()
         // address this, but will require changes to the post-processing code.
         // (3) is probably the best approach but will require significant
         // reworking of the post-processing and microarchitecture code.
-
-        // bool first = true;
-        // for (auto& state: cur.live_state)
-        // {
-        //   if (first)
-        //   {
-        //     condensed_state.access_stats[pv] = state.second.access_stats[pv];
-        //     condensed_state.max_size[pv] = state.second.max_size[pv];
-        //     condensed_state.link_transfers[pv] = state.second.link_transfers[pv];
-        //     first = false;
-        //     // std::cout << "s";
-        //     // PrintStamp(state.first);
-        //     // std::cout << " store size " << condensed_state.max_size[pv] << std::endl;
-        //     break;
-        //   }
-        // }
+        //
+        // Current implementation: (2) with floating-point.
 
         for (auto& state: cur.live_state)
         {
-          // std::cout << std::endl;
-          // std::cout << "cur.level=" << cur.level << "\t state.second.access_stats["  << pv <<"]\t\t=\t" << state.second.access_stats[pv];
-          // std::cout << "cur.level=" << cur.level << "\t state.second.max_size["      << pv <<"]\t\t=\t" << state.second.max_size[pv] << std::endl;
-          // std::cout << "cur.level=" << cur.level << "\t state.second.link_transfers["<< pv <<"]\t\t=\t" << state.second.link_transfers[pv] << std::endl;
           condensed_state.access_stats[pv].Accumulate(state.second.access_stats[pv]);
           condensed_state.max_size[pv] += state.second.max_size[pv];
           condensed_state.link_transfers[pv] += state.second.link_transfers[pv];
         }
+
         std::uint64_t num_sampled_instances = cur.live_state.size();
-        // std::cout << "cur.level=" << cur.level<< "\t num_sampled_instances\t\t\t=\t" << num_sampled_instances << std::endl;
         condensed_state.access_stats[pv].Divide(num_sampled_instances);
         condensed_state.max_size[pv] /= num_sampled_instances;
         condensed_state.link_transfers[pv] /= num_sampled_instances;
-
-        // std::cout << "final -- cur.level=" << cur.level << "\t condensed_state.access_stats["  << pv <<"]\t\t=\t" << condensed_state.access_stats[pv];
-        // std::cout << "final -- cur.level=" << cur.level << "\t condensed_state.max_size["      << pv <<"]\t\t\t=\t" << condensed_state.max_size[pv] << std::endl;
-        // std::cout << "final -- cur.level=" << cur.level << "\t condensed_state.link_transfers["<< pv <<"]\t\t=\t" << condensed_state.link_transfers[pv] << std::endl;
       }
 
       // Build the subnest corresponding to this level.
@@ -610,9 +580,10 @@ void NestAnalysis::CollectWorkingSets()
         std::reverse(subnest.begin(), subnest.end());
       }
 
-   
+      auto storage_level = arch_storage_level_[cur.level];
+
       // Transfer data from condensed_state to working_sets_
-      for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+      for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
       {
         DataMovementInfo tile;
         tile.size                   = condensed_state.max_size[pv];
@@ -622,29 +593,20 @@ void NestAnalysis::CollectWorkingSets()
         // tile.content_accesses       = tile.GetTotalAccesses();
         tile.link_transfers         = condensed_state.link_transfers[pv];
         tile.subnest                = subnest;
-        tile.replication_factor     = num_spatial_elems_[cur.level];
+        tile.replication_factor     = utilized_spatial_elems_[cur.level];
         tile.fanout                 = logical_fanouts_[cur.level];
         tile.is_on_storage_boundary = storage_boundary_level_[cur.level];
         tile.is_master_spatial      = master_spatial_level_[cur.level];
-        // tile.tile_density           = condensed_state.data_densities[pv];
-        // Added by JT
-        tile.spatial_access_loop_level.push_back(spatial_access_loop_level[cur.level]);
-        tile.total_access_loop_level.push_back(total_access_loop_level[cur.level]);
-        tile.total_data_size_access_loop_level.push_back(total_data_size_access_loop_level[cur.level]);
-        tile.storage_tiling_boundaries_        = storage_tiling_boundaries_;
-        tile.data_related_dim                  = data_related_dim;
-        
-        tile.reading_start_index_step_loop_level.push_back(reading_start_index_step_loop_level[cur.level]);
-        tile.read_length_loop_level.push_back(read_length_loop_level[cur.level]);
-        auto it = std::find(storage_tiling_boundaries_.begin(), storage_tiling_boundaries_.end(), cur.level);
-        if (it != storage_tiling_boundaries_.end()) 
+        tile.rmw_first_update = 0;
+        if(rmw_first_update_.find(storage_level) != rmw_first_update_.end())
         {
-          int storage_boundary_index = it - storage_tiling_boundaries_.begin();
-          int layout_loop_level = layout_loop_nest.storage_tiling_boundaries[storage_boundary_index];
-          tile.layout_data_start_index_step_loop_level.push_back(layout_data_start_index_step_loop_level[layout_loop_level]);
-          tile.layout_data_length_per_buf_row_loop_level.push_back(layout_data_length_per_buf_row_loop_level[layout_loop_level]);
+          tile.rmw_first_update = rmw_first_update_[storage_level][pv];
         }
-        // Done
+        tile.no_coalesce = 0;
+        if(no_coalesce_.find(storage_level) != no_coalesce_.end())
+        {
+          tile.no_coalesce = no_coalesce_[storage_level][pv];
+        }
         working_sets_[pv].push_back(tile);
       }
     } // if (valid_level)
@@ -653,6 +615,13 @@ void NestAnalysis::CollectWorkingSets()
   // Extract body data from innermost spatial level.
   bool innermost_level_compute_info_collected = false; 
   
+  uint64_t max_temporal_iterations = 1;
+  for (auto& cur : nest_state_)
+  {
+    if (!loop::IsSpatial(cur.descriptor.spacetime_dimension))
+      max_temporal_iterations *= cur.descriptor.end;
+  }
+
   for (auto& cur : nest_state_)
   {
     // All spatial levels that are not a master-spatial level are not valid
@@ -662,7 +631,7 @@ void NestAnalysis::CollectWorkingSets()
       if (!innermost_level_compute_info_collected)
       {
         analysis::ComputeInfo compute_info;
-        compute_info.replication_factor = num_spatial_elems_[cur.level] * logical_fanouts_[cur.level];
+        compute_info.replication_factor = utilized_spatial_elems_[cur.level] * logical_fanouts_[cur.level];
 
         double avg_accesses = 0;
         for (auto& info: compute_info_)
@@ -672,6 +641,7 @@ void NestAnalysis::CollectWorkingSets()
         avg_accesses /= compute_info_.size();
 
         compute_info.accesses = avg_accesses;
+        compute_info.max_temporal_iterations = max_temporal_iterations;
         compute_info_sets_.push_back(compute_info);
         innermost_level_compute_info_collected = true;
       }
@@ -684,8 +654,8 @@ void NestAnalysis::CollectWorkingSets()
       } // inner most
     } // valid level
   }
-}
 
+}
 
 // All but last vector.
 std::vector<unsigned> AllButLast(const std::vector<unsigned>& v)
@@ -717,7 +687,6 @@ void NestAnalysis::PrintSpaceTimeStamp()
 // previous iteration and the current iteration of the current level.
 problem::OperationSpace NestAnalysis::ComputeDeltas(std::vector<analysis::LoopState>::reverse_iterator cur)
 {
-  // std::cout  << std::endl << "NestAnalysis::ComputeDeltas" << std::endl;
   ASSERT(cur != nest_state_.rend());
   //ASSERT(spatial_id_ < cur->live_state.size());
 
@@ -742,8 +711,8 @@ problem::OperationSpace NestAnalysis::ComputeDeltas(std::vector<analysis::LoopSt
     
     loop_gists_temporal_.clear();
     loop_gists_spatial_.clear();
-    loop_gists_temporal_.resize(problem::GetShape()->NumFlattenedDimensions);
-    loop_gists_spatial_.resize(problem::GetShape()->NumFlattenedDimensions);
+    loop_gists_temporal_.resize(workload_->GetShape()->NumFlattenedDimensions);
+    loop_gists_spatial_.resize(workload_->GetShape()->NumFlattenedDimensions);
 
     saved_skew_descriptor = cur_skew_descriptor_;
     cur_skew_descriptor_ = nullptr;
@@ -766,7 +735,7 @@ problem::OperationSpace NestAnalysis::ComputeDeltas(std::vector<analysis::LoopSt
                                               ElementState(*workload_)).first;
   auto& cur_state = cur_state_it->second;
 
-  // std::cout << "level " << cur->level << " potentially created live state entry. Full state:";
+  // std::cout << "CD level " << cur->level << " potentially created live state entry. Full state:\n";
   // for (auto& state: cur->live_state)
   // {
   //   std::cout << "  ";
@@ -842,8 +811,8 @@ problem::OperationSpace NestAnalysis::ComputeDeltas(std::vector<analysis::LoopSt
   // across ancestor iterations, we apply a simple heuristic to detect this
   // behavior and simply discard any residual state if the tile shape changes
   // the magnitude or direction of its stride.
-  problem::PerDataSpace<bool> no_temporal_reuse;
-  for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  problem::PerDataSpace<bool> no_temporal_reuse(workload_->GetShape()->NumDataSpaces);
+  for(unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     no_temporal_reuse[pv] = false;
   }
@@ -938,7 +907,7 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
     // }
     compute_info_[AllButLast(space_stamp_)].accesses += body_iterations;
 
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+    for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
     {
       // Set scatter factor (otherwise it will stay at 0 for temporal levels).
       std::uint64_t scatter_factor = 1;
@@ -949,6 +918,7 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
 
       // Set cumulative hops for temporal levels.
       access_stats.hops = 0.0;
+      access_stats.unicast_hops = 0.0;
     }
   }
   else // recurse
@@ -956,8 +926,11 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
     std::vector<problem::PerDataSpace<std::size_t>> temporal_delta_sizes;
     std::vector<std::uint64_t> temporal_delta_scale;
 
-    bool run_last_iteration = imperfectly_factorized_ || problem::GetShape()->UsesFlattening || gRunLastIteration;
-    bool run_second_last_iteration = imperfectly_factorized_ && run_last_iteration;
+
+    bool imperfect_iteration = NeedsToRunImperfectIteration(cur);
+    bool this_level_imperfect = cur->descriptor.end != cur->descriptor.residual_end;
+    bool run_last_iteration = imperfect_iteration || workload_->GetShape()->UsesFlattening || gRunLastIteration;
+    bool run_second_last_iteration = this_level_imperfect && run_last_iteration;
 
     if (gExtrapolateUniformTemporal && !disable_temporal_extrapolation_.at(level))
     {
@@ -980,7 +953,7 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
       // Iteration #0.
       indices_[level] = cur->descriptor.start;
       loop_gists_temporal_.at(dim).index = indices_[level];
-        
+
       if (num_iterations >= 1)
       {
         // Invoke next (inner) loop level.
@@ -1132,19 +1105,19 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
     {
       // Track accesses for only those levels that are relevant
       // in the final analysis after CollapseTiles.
-      problem::PerDataSpace<std::size_t> final_delta_sizes;
+      problem::PerDataSpace<std::size_t> final_delta_sizes(workload_->GetShape()->NumDataSpaces);
       final_delta_sizes.fill(0);
 
       auto num_deltas = temporal_delta_sizes.size();
       for (unsigned i = 0; i < num_deltas; i++)
       {
-        for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
         {
           final_delta_sizes[pv] += (temporal_delta_sizes[i][pv] * temporal_delta_scale[i]);
         }
       }
 
-      for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+      for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
       {
         // Set scatter factor (otherwise it will stay at 0 for temporal levels).
         std::uint64_t scatter_factor = 1;
@@ -1155,6 +1128,7 @@ void NestAnalysis::ComputeTemporalWorkingSet(std::vector<analysis::LoopState>::r
 
         // Set cumulative hops for temporal levels.
         access_stats.hops = 0.0;
+        access_stats.unicast_hops = 0.0;
 
         // Update delta histogram. Hypothesis is we only need to do this for temporal levels.
         cur_state.delta_histograms[pv][final_delta_sizes[pv]] += num_epochs_;
@@ -1177,7 +1151,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
 
   std::uint64_t num_spatial_elems = logical_fanouts_[level];
   spatial_id_ *= num_spatial_elems;
-  // std::cout << "level = " << level << " logical_fanouts_[level](num_spatial_elems)=" << num_spatial_elems << std::endl;
+
   // Deltas needed by each of the spatial elements.
   // This array will be filled by recursive calls.
   // This used to be a dense array but is now a map
@@ -1214,10 +1188,10 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
   // transfers completely obliterates access to a producer level,
   // use those link transfers only.
 
-  problem::PerDataSpace<std::unordered_set<std::uint64_t>> unaccounted_delta;
+  problem::PerDataSpace<std::unordered_set<std::uint64_t>> unaccounted_delta(workload_->GetShape()->NumDataSpaces);
   for (auto& delta: spatial_deltas)
   {
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+    for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
       unaccounted_delta[pv].insert(delta.first);
   }
 
@@ -1239,7 +1213,6 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
       nest_state_[cur->level].live_state.emplace(AllButLast(space_stamp_),
                                                  ElementState(*workload_)).first;
   auto& cur_state = cur_state_it->second;
-  // std::cout <<  "cur_state_it->second=" <<  cur_state.max_size << std::endl;
   //auto& cur_state = nest_state_[cur->level].live_state[spatial_id_];
 
   // std::cout << "CSWS level " << level << " potentially created live state entry. Full state:\n";
@@ -1250,10 +1223,11 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
   //   std::cout << "->" << state.second.max_size.at(0) << std::endl;
   // }
 
-  problem::PerDataSpace<AccessStatMatrix> access_stats_without_link_transfers, access_stats_with_link_transfers;
-  problem::PerDataSpace<AccessStatMatrix*> access_stats;
+  problem::PerDataSpace<AccessStatMatrix> access_stats_without_link_transfers(workload_->GetShape()->NumDataSpaces);
+  problem::PerDataSpace<AccessStatMatrix> access_stats_with_link_transfers(workload_->GetShape()->NumDataSpaces);
+  problem::PerDataSpace<AccessStatMatrix*> access_stats(workload_->GetShape()->NumDataSpaces);
 
-  for (unsigned pvi = 0; pvi < problem::GetShape()->NumDataSpaces; pvi++)
+  for (unsigned pvi = 0; pvi < workload_->GetShape()->NumDataSpaces; pvi++)
   {
     // Default: do not use link transfers.
     access_stats[pvi] = &access_stats_without_link_transfers[pvi];
@@ -1271,7 +1245,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
     // Reset unaccounted delta, and now count with link transfers.
     for (auto& delta: spatial_deltas)
     {
-      for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+      for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
         unaccounted_delta[pv].insert(delta.first);
     }
     // for (uint64_t i = 0; i < num_spatial_elems; i++)
@@ -1279,7 +1253,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
     //   unaccounted_delta[i].fill(true);
     // }
 
-    problem::PerDataSpace<std::uint64_t> link_transfers;
+    problem::PerDataSpace<std::uint64_t> link_transfers(workload_->GetShape()->NumDataSpaces);
 
     ComputeNetworkLinkTransfers(cur, spatial_deltas, unaccounted_delta, link_transfers);
 
@@ -1287,7 +1261,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
                                        access_stats_with_link_transfers);
 
     // Compare.
-    for (unsigned pvi = 0; pvi < problem::GetShape()->NumDataSpaces; pvi++)
+    for (unsigned pvi = 0; pvi < workload_->GetShape()->NumDataSpaces; pvi++)
     {
       std::uint64_t total_without = access_stats_without_link_transfers[pvi].TotalAccesses();
       std::uint64_t total_with = access_stats_with_link_transfers[pvi].TotalAccesses();
@@ -1300,7 +1274,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
     }
   }
 
-  for (unsigned pvi = 0; pvi < problem::GetShape()->NumDataSpaces; pvi++)
+  for (unsigned pvi = 0; pvi < workload_->GetShape()->NumDataSpaces; pvi++)
   {
     cur_state.access_stats[pvi].Accumulate(*access_stats[pvi]);
   }
@@ -1309,7 +1283,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
 
   // Check that all deltas were accounted for correctly.
 
-  for (unsigned pvi = 0; pvi < problem::GetShape()->NumDataSpaces; pvi++)
+  for (unsigned pvi = 0; pvi < workload_->GetShape()->NumDataSpaces; pvi++)
   {
     ASSERT(unaccounted_delta[pvi].empty());
   }
@@ -1323,7 +1297,7 @@ void NestAnalysis::ComputeSpatialWorkingSet(std::vector<analysis::LoopState>::re
   // }
 
   // Consistency check.
-  // for (unsigned pvi = 0; pvi < problem::GetShape()->NumDataSpaces; pvi++)
+  // for (unsigned pvi = 0; pvi < workload_->GetShape()->NumDataSpaces; pvi++)
   // {
   //   std::uint64_t fanout = 0;
   //   for (unsigned i = 0; i < cur_state.accesses[pvi].size(); i++)
@@ -1351,14 +1325,14 @@ std::uint64_t NestAnalysis::ApplySkew(std::uint64_t unskewed_index)
     for (auto& term: cur_skew_descriptor_->terms)
     {
       std::int64_t prod = term.constant;
-      if (term.variable.dimension != problem::GetShape()->NumFlattenedDimensions)
+      if (term.variable.dimension != workload_->GetShape()->NumFlattenedDimensions)
       {
         if (term.variable.is_spatial)
           prod *= loop_gists_spatial_.at(term.variable.dimension).index;
         else
           prod *= loop_gists_temporal_.at(term.variable.dimension).index;
       }
-      if (term.bound.dimension != problem::GetShape()->NumFlattenedDimensions)
+      if (term.bound.dimension != workload_->GetShape()->NumFlattenedDimensions)
       {
         if (term.bound.is_spatial)
           prod *= loop_gists_spatial_.at(term.bound.dimension).index;
@@ -1470,7 +1444,7 @@ void NestAnalysis::FillSpatialDeltas(std::vector<analysis::LoopState>::reverse_i
     loop_gists_spatial_.at(dim).index = indices_[level];
 
     unsigned iterations_to_run =
-      (gExtrapolateUniformSpatial && !problem::GetShape()->UsesFlattening)
+      (gExtrapolateUniformSpatial && !workload_->GetShape()->UsesFlattening)
       ? (gDisableFirstElementOnlySpatialExtrapolation ? 3 : 1) : num_iterations;
 
     if (loop::IsSpatial(next->descriptor.spacetime_dimension))
@@ -1577,7 +1551,7 @@ void NestAnalysis::FillSpatialDeltas(std::vector<analysis::LoopState>::reverse_i
       //
 
       // Determine translation vector from #iterations_to_run-2 to #iterations_to_run-1.
-      problem::PerDataSpace<Point> translation_vectors;
+      problem::PerDataSpace<Point> translation_vectors(workload_->GetShape()->NumDataSpaces);
       if (indices_[level] < end)
       {
         if(!gDisableFirstElementOnlySpatialExtrapolation) 
@@ -1592,7 +1566,7 @@ void NestAnalysis::FillSpatialDeltas(std::vector<analysis::LoopState>::reverse_i
           auto& opspace_lastrun = spatial_deltas.at(last_skewed_index);
           auto& opspace_secondlastrun = spatial_deltas.at(secondlast_skewed_index);
 
-          for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+          for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
           {
             translation_vectors[pv] =
               opspace_secondlastrun.GetDataSpace(pv).GetTranslation(opspace_lastrun.GetDataSpace(pv));
@@ -1623,7 +1597,7 @@ void NestAnalysis::FillSpatialDeltas(std::vector<analysis::LoopState>::reverse_i
                                    problem::OperationSpace(workload_)).first;
         auto& dst_temporal_delta = dst_temporal_delta_it->second;
         auto& src_temporal_delta = spatial_deltas.at(src_delta_index);
-        for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+        for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
         {
           dst_temporal_delta.GetDataSpace(pv) = src_temporal_delta.GetDataSpace(pv);
           dst_temporal_delta.GetDataSpace(pv).Translate(translation_vectors.at(pv));
@@ -1654,9 +1628,9 @@ void NestAnalysis::ComputeAccurateMulticastedAccesses(
   // that the current delta matches with. This will be used
   // to infer the multicast factor for a specific delta.
   // reused across loop iterations to avoid initialization overheads.
-  problem::PerDataSpace<uint64_t> num_matches;
-  problem::PerDataSpace<bool> no_multicast;
-  for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  problem::PerDataSpace<uint64_t> num_matches(workload_->GetShape()->NumDataSpaces);
+  problem::PerDataSpace<bool> no_multicast(workload_->GetShape()->NumDataSpaces);
+  for(unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     no_multicast[pv] = false;
   }
@@ -1672,8 +1646,9 @@ void NestAnalysis::ComputeAccurateMulticastedAccesses(
     double accesses = 0;
     std::uint64_t scatter_factor = 0;
     double hops = 0.0;
+    double unicast_hops = 0.0;
   };
-  problem::PerDataSpace<std::unordered_map<std::uint64_t, TempAccessStats>> temp_stats;
+  problem::PerDataSpace<std::unordered_map<std::uint64_t, TempAccessStats>> temp_stats(workload_->GetShape()->NumDataSpaces);
 
   // FIXME: we should only be looking at physical dimensions here. The problem
   // is that sparse mappings may appear to exceed the physical dimensions before
@@ -1691,9 +1666,9 @@ void NestAnalysis::ComputeAccurateMulticastedAccesses(
 
     num_matches.fill(0);
     
-    problem::PerDataSpace<std::vector<std::uint64_t>> match_set;
+    problem::PerDataSpace<std::vector<std::uint64_t>> match_set(workload_->GetShape()->NumDataSpaces);
 
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+    for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
     {
       auto unaccounted_it = unaccounted_delta[pv].find(skewed_spatial_index);
       if (unaccounted_it == unaccounted_delta[pv].end())
@@ -1735,8 +1710,11 @@ void NestAnalysis::ComputeAccurateMulticastedAccesses(
       }
     }
 
+    // NOTE: multicast is # children sharing the same delta
+    //       scatter factor is the # data spaces with the same multicast value
+
     // update the number of accesses at different multicast factors.
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+    for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
     {
       if (num_matches[pv] > 0 && delta.GetSize(pv) > 0)
       {
@@ -1752,37 +1730,77 @@ void NestAnalysis::ComputeAccurateMulticastedAccesses(
         ASSERT(num_matches[pv] == match_set[pv].size());
         
         double hops = 0;
+        double unicast_hops = 0;
+
+        // Create maps of max and min v coordinate at each h coordinate.
+        struct MinMax { std::uint64_t min; std::uint64_t max; };
+        std::map<std::uint64_t, MinMax> v_minmax_at_h;
         
         std::uint64_t h_max = 0;
+        double v_center = double(v_size-1) / 2;
+
         for (auto& linear_id : match_set[pv])
         {
           std::uint64_t h_id = linear_id % h_size;
-          h_max = std::max(h_max, h_id);
-        }
-        hops += double(h_max);
-        
-        double v_center = double(v_size-1) / 2;
-        for (auto& linear_id : match_set[pv])
-        {
           std::uint64_t v_id = linear_id / h_size;
-          hops += std::abs(double(v_id) - v_center);
+          
+          h_max = std::max(h_max, h_id);
+
+          auto it = v_minmax_at_h.find(h_id);
+          if (it == v_minmax_at_h.end())
+          {
+            v_minmax_at_h[h_id] = { v_id, v_id };
+          }
+          else
+          {
+            it->second.min = std::min(it->second.min, v_id);
+            it->second.max = std::max(it->second.max, v_id);
+          }
+
+          unicast_hops += double(h_id);
+          unicast_hops += std::abs(double(v_id) - v_center);
         }
 
+        hops += double(h_max);
+
+        // Walk through the minmax and see how far to drive the v lines.
+        for (auto& minmax : v_minmax_at_h)
+        {
+          auto min = minmax.second.min;
+          auto max = minmax.second.max;
+
+          double min_offset = double(min) - v_center;
+          double max_offset = double(max) - v_center;
+
+          assert(min_offset <= max_offset);
+
+          if (min_offset < 0)
+            hops += std::abs(min_offset);
+
+          if (max_offset > 0)
+            hops += max_offset;
+        }
+        
         // Accumulate this into the running hop count. We'll finally divide this
         // by the scatter factor to get average hop count.
         temp_struct.hops += hops;
+        temp_struct.unicast_hops += unicast_hops;
       }
     }
   }
 
   // Populate the actual stats.
-  for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     for (auto& x: temp_stats[pv])
     {
       auto multicast = x.first;
       auto scatter = x.second.scatter_factor;
-      access_stats[pv](multicast, scatter) = { x.second.accesses, x.second.hops };
+
+      access_stats[pv](multicast, scatter) =
+        { x.second.accesses,
+          (x.second.hops * x.second.accesses) / scatter, // Note! Weighted sum.
+          (x.second.unicast_hops * x.second.accesses) / scatter } ;// Note! Weighted sum.
     }
   }
 }
@@ -1819,7 +1837,7 @@ void NestAnalysis::CompareSpatioTemporalDeltas(
   //std::cout << "  cur : " << cur_delta << std::endl;
   //std::cout << "  prev: " << prev_delta << std::endl;
 
-  for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     if (!ignore_dataspaces[pv] && !cur_delta.IsEmpty(pv))
     {
@@ -1893,8 +1911,8 @@ void NestAnalysis::ComputeNetworkLinkTransfers(
   //   std::cout << "  "; prev_spatial_deltas[i].Print(pv);
   // }
   
-  problem::PerDataSpace<bool> no_link_transfer;
-  for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  problem::PerDataSpace<bool> no_link_transfer(workload_->GetShape()->NumDataSpaces);
+  for(unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     no_link_transfer[pv] = false;
   }
@@ -1907,8 +1925,7 @@ void NestAnalysis::ComputeNetworkLinkTransfers(
 
   // for each spatial elements, this array records if the data
   // needed by the element can be obtained from any of the neighboring elements.
-  std::vector<problem::PerDataSpace<bool>> inter_elem_reuse;
-  inter_elem_reuse.resize(num_spatial_elems);
+  std::vector<problem::PerDataSpace<bool>> inter_elem_reuse(num_spatial_elems, workload_->GetShape()->NumDataSpaces);
   for (int i = 0; i < num_spatial_elems; i++)
   {
     inter_elem_reuse.at(i).fill(false);
@@ -1988,7 +2005,7 @@ void NestAnalysis::ComputeNetworkLinkTransfers(
 //  for (int i = 0; i < num_spatial_elems; i++)
   {
     auto& cur_skewed_spatial_index = delta.first;
-    for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+    for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
     {
       if (inter_elem_reuse.at(cur_skewed_spatial_index)[pv])
       {
@@ -2011,785 +2028,75 @@ void NestAnalysis::ComputeNetworkLinkTransfers(
   // cur_state.prev_spatial_deltas[analysis::ElementState::MAX_TIME_LAPSE - 1] = cur_spatial_deltas;
 }
 
-
-void NestAnalysis::InitNumSpatialAccessEveryBufferLevel(){
- //JTC  std::cout << "NestAnalysis::InitNumSpatialAccessEveryBufferLevel" << std::endl;
-  spatial_access_loop_level.resize(nest_state_.size());
-  for (auto _ = spatial_access_loop_level.size(); _--;)
-    spatial_access_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-
- //JTC  std::cout << "#### obtain spatial_access_loop_level ####" << std::endl;
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
-  {
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++){
-      if (loop::IsSpatial(nest_state_[loop_level].descriptor.spacetime_dimension) && nest_state_[loop_level].descriptor.dimension == i){
-        if(loop_level == 0){
-          spatial_access_loop_level[loop_level][nest_state_[loop_level].descriptor.dimension] = nest_state_[loop_level].descriptor.end; 
-        }
-        else{
-          spatial_access_loop_level[loop_level][nest_state_[loop_level].descriptor.dimension] = spatial_access_loop_level[loop_level-1][nest_state_[loop_level].descriptor.dimension] * nest_state_[loop_level].descriptor.end; 
-        }
-      }
-      else{
-        if(loop_level == 0){
-          spatial_access_loop_level[loop_level][i] = 1; 
-        }
-        else{
-          spatial_access_loop_level[loop_level][i] = spatial_access_loop_level[loop_level-1][i]; 
-        }
-      }
-    }
-  }
-
-  // Print out for verification
- //JTC  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
- //JTC  {
- //JTC    std::cout << "level=" << loop_level;
- //JTC    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
- //JTC        std::cout  << "  " << spatial_access_loop_level[loop_level][i];
- //JTC    std::cout << std::endl;
- //JTC  }
-
-
-  //JTC std::cout << "#### obtain spatial_access_buffer_level ####" << std::endl;
-  spatial_access_buffer_level.resize(storage_tiling_boundaries_.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  int previous_storage_boundary = -1;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  {
-    for (int loop_level = 0; loop_level < (int)nest_state_.size(); loop_level++)
-    {
-      if(previous_storage_boundary< loop_level && loop_level <= (int)storage_tiling_boundaries_[buffer_level]){
-        spatial_access_buffer_level[buffer_level].push_back(spatial_access_loop_level[loop_level]);
-      }
-    }
-    previous_storage_boundary = storage_tiling_boundaries_[buffer_level];
-  }
-
- //JTC  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
- //JTC  {
- //JTC    std::cout << "##buffer_level=" << buffer_level << std::endl; 
- //JTC    for (unsigned sub_loop_level = 0; sub_loop_level < spatial_access_buffer_level[buffer_level].size(); sub_loop_level++)
- //JTC    {
- //JTC    std::cout << "sub_loop_level=" << sub_loop_level;
- //JTC      for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
- //JTC          std::cout  << "  " << spatial_access_buffer_level[buffer_level][sub_loop_level][i];
- //JTC      std::cout << std::endl;
- //JTC    }
- //JTC  }
-}
-
-
-void NestAnalysis::InitDimAccessEveryBufferLevel(){
-//JTC   std::cout << "NestAnalysis::InitDimAccessEveryBufferLevel" << std::endl;
-//JTC   std::cout << "problem::GetShape()->NumFactorizedDimensions=" << problem::GetShape()->NumFactorizedDimensions << std::endl;
-//JTC   std::cout << "problem::GetShape()->NumCoefficients=" << problem::GetShape()->NumCoefficients << std::endl;
-
-//JTC   std::cout << "#### obtain total_access_loop_level ####" << std::endl;
-  total_access_loop_level.resize(nest_state_.size());
-  for (auto _ = total_access_loop_level.size(); _--;)
-    total_access_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-
-//JTC   for( unsigned iter = 0; iter < storage_tiling_boundaries_.size(); iter++){
-//JTC     std::cout << "storage_tiling_boundaries_["<< iter <<"]=" << storage_tiling_boundaries_[iter] << std::endl;
-//JTC   }
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
-  {
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++){
-      if (nest_state_[loop_level].descriptor.dimension == i){
-        if(loop_level == 0){
-          total_access_loop_level[loop_level][nest_state_[loop_level].descriptor.dimension] = nest_state_[loop_level].descriptor.end; 
-        }
-        else{
-          total_access_loop_level[loop_level][nest_state_[loop_level].descriptor.dimension] = total_access_loop_level[loop_level-1][nest_state_[loop_level].descriptor.dimension] * nest_state_[loop_level].descriptor.end; 
-        }
-      }
-      else{
-        if(loop_level == 0){
-          total_access_loop_level[loop_level][i] = 1; 
-        }
-        else{
-          total_access_loop_level[loop_level][i] = total_access_loop_level[loop_level-1][i]; 
-        }
-      }
-    }
-  }
-
-  // Print out for verification
- //JTC  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
- //JTC  {
- //JTC    std::cout << "level=" << loop_level;
- //JTC    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
- //JTC        std::cout  << "  " << total_access_loop_level[loop_level][i];
- //JTC    std::cout << std::endl;
- //JTC  }
-
-
-  //JTC std::cout << "#### obtain total_access_buffer_level ####" << std::endl;
-  total_access_buffer_level.resize(storage_tiling_boundaries_.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  int previous_storage_boundary = -1;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  {
-    for (int loop_level = 0; loop_level < (int)nest_state_.size(); loop_level++)
-    {
-      if(previous_storage_boundary < loop_level && loop_level <= (int)storage_tiling_boundaries_[buffer_level]){
-        total_access_buffer_level[buffer_level].push_back(total_access_loop_level[loop_level]);
-      }
-    }
-    previous_storage_boundary = (int) storage_tiling_boundaries_[buffer_level];
-  }
-
-//JTC  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-//JTC  {
-//JTC    std::cout << "##buffer_level=" << buffer_level << std::endl;
-//JTC    for (unsigned sub_loop_level = 0; sub_loop_level < total_access_buffer_level[buffer_level].size(); sub_loop_level++)
-//JTC    {
-//JTC    std::cout << "sub_loop_level=" << sub_loop_level;
-//JTC      for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-//JTC          std::cout  << "  " << total_access_buffer_level[buffer_level][sub_loop_level][i];
-//JTC      std::cout << std::endl;
-//JTC    }
-//JTC  }
-
-
-  // define and create data_related_dim
-  //JTC std::cout << "#### obtain data_related_dim ####" << std::endl;
-  int proj_id = 0;
-  for (auto &proj: problem::GetShape()->Projections){
-    int expression_id = 0;
-    std::vector<std::pair<uint64_t, uint64_t> > related_dimension;
-    for (auto &proj_expression: proj){
-      for (auto &proj_term: proj_expression){
-        //JTC std::cout << "proj_id="<<proj_id<< "  expression_id=" << expression_id << "  coefficient=" << proj_term.first  << "  dimensionid:" << proj_term.second << std::endl;
-        related_dimension.push_back(std::make_pair(expression_id, proj_term.second));
-      }
-      expression_id++;
-    }
-    proj_id++;
-    data_related_dim.emplace(data_related_dim.end(), related_dimension);
-  }
-
-  //JTC for (unsigned i=0; i<data_related_dim.size(); i++){
-  //JTC   std::cout << "data_ID=" << i << "  dim:" << std::endl;
-  //JTC   for (unsigned k=0; k<data_related_dim[i].size(); k++){
-  //JTC       std::cout << " " << data_related_dim[i][k].first << " " << data_related_dim[i][k].second << std::endl;
-  //JTC   }  
-  //JTC }
-
-
-  // obtain total sizes of data required at every buffer level for different data types 
-  //JTC std::cout << "#### obtain total data sizes (bypass is not considered here.) ####" << std::endl;
-  total_data_size_access_loop_level.resize(nest_state_.size());
-  for (auto _ = total_data_size_access_loop_level.size(); _--;)
-    total_data_size_access_loop_level[_].resize(problem::GetShape()->NumDataSpaces, 1);
-
-  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++){
-    for (unsigned data_id=0; data_id<problem::GetShape()->NumDataSpaces; data_id++){
-      uint64_t previous_dimension = 0;
-      uint64_t added_dimension_val = 0;
-      for (unsigned k=0; k< data_related_dim[data_id].size(); k++){
-        uint64_t related_dim_id = data_related_dim[data_id][k].second;
-        if(data_related_dim[data_id][k].first != previous_dimension){
-          if(k == data_related_dim[data_id].size()-1){
-            total_data_size_access_loop_level[loop_level][data_id] *= added_dimension_val* total_access_loop_level[loop_level][related_dim_id];
-          }else{
-            total_data_size_access_loop_level[loop_level][data_id] *= added_dimension_val;
-            added_dimension_val = total_access_loop_level[loop_level][related_dim_id];
-          }
-        }
-        else if( data_related_dim[data_id][k].first == previous_dimension && k>0){
-          if(k == data_related_dim[data_id].size()-1){
-            added_dimension_val += total_access_loop_level[loop_level][related_dim_id] - 1;
-            if(previous_dimension != data_related_dim[data_id][0].first)
-              total_data_size_access_loop_level[loop_level][data_id] *= added_dimension_val;
-            else
-              total_data_size_access_loop_level[loop_level][data_id] = added_dimension_val;
-          }
-          else{
-            if(k <data_related_dim[data_id].size()-1){
-              if (data_related_dim[data_id][k+1].first != data_related_dim[data_id][k].first)
-                added_dimension_val += total_access_loop_level[loop_level][related_dim_id] - 1;
-            }
-            else{
-              added_dimension_val += total_access_loop_level[loop_level][related_dim_id];
-            }
-          }
-        }else if(data_related_dim[data_id][k].first == previous_dimension && k==0){
-          added_dimension_val = total_access_loop_level[loop_level][related_dim_id];
-        }
-        previous_dimension = data_related_dim[data_id][k].first;
-      }
-    }
-  }
-
-  //JTC for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
-  //JTC {
-  //JTC   std::cout << "level=" << loop_level;
-  //JTC   for (unsigned i=0; i<problem::GetShape()->NumDataSpaces; i++)
-  //JTC       std::cout  << "  " << total_data_size_access_loop_level[loop_level][i];
-  //JTC   std::cout << std::endl;
-  //JTC }
-
-
-  //JTC std::cout << "#### obtain total data sizes per buffer level ####" << std::endl;
-  total_data_size_access_buffer_level.resize(storage_tiling_boundaries_.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  previous_storage_boundary = -1;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  {
-    for (int loop_level = 0; loop_level < (int)nest_state_.size(); loop_level++)
-    {
-      if(previous_storage_boundary< loop_level && loop_level <= (int)storage_tiling_boundaries_[buffer_level]){
-        total_data_size_access_buffer_level[buffer_level].push_back(total_data_size_access_loop_level[loop_level]);
-      }
-    }
-    previous_storage_boundary = storage_tiling_boundaries_[buffer_level];
-  }
-
-  //JTC for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  //JTC {
-  //JTC   std::cout << "##buffer_level=" << buffer_level << std::endl;
-  //JTC   for (unsigned sub_loop_level = 0; sub_loop_level < total_data_size_access_buffer_level[buffer_level].size(); sub_loop_level++)
-  //JTC   {
-  //JTC   std::cout << "sub_loop_level=" << sub_loop_level;
-  //JTC     for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-  //JTC         std::cout  << "  " << total_data_size_access_buffer_level[buffer_level][sub_loop_level][i];
-  //JTC     std::cout << std::endl;
-  //JTC   }
-  //JTC }
-}
-
-
-void NestAnalysis::InitRunLengthEveryBufferLevel(){
-  //JTC std::cout << "NestAnalysis::InitRunLengthEveryBufferLevel" << std::endl;
-  for (unsigned i=0; i<problem::GetShape()->NumDataSpaces; i++){
-    if(problem::GetShape()->DataSpaceIDToName.at(i) == "Inputs"){
-      iacts_data_id=i;
-  //JTC     std::cout << problem::GetShape()->DataSpaceIDToName.at(i) << " ID=" << iacts_data_id << std::endl;
-    }
-    else if(problem::GetShape()->DataSpaceIDToName.at(i) == "Outputs"){
-      oacts_data_id=i;
-  //JTC     std::cout << problem::GetShape()->DataSpaceIDToName.at(i) << " ID=" << oacts_data_id << std::endl;
-    }
-    else if(problem::GetShape()->DataSpaceIDToName.at(i) == "Weights"){
-      weights_data_id=i;
-  //JTC     std::cout << problem::GetShape()->DataSpaceIDToName.at(i) << " ID=" << weights_data_id << std::endl;
-    }
-  }
-
-  for (unsigned i=0; i< data_related_dim[iacts_data_id].size(); i++){
-    for (unsigned j=0; j< data_related_dim[oacts_data_id].size(); j++){
-      if(data_related_dim[oacts_data_id][j].second == data_related_dim[iacts_data_id][i].second){
-        oActs_height_width_dim_id.push_back(i);
-      }
-    }
-  }
-
-  for (unsigned k=0; k< oActs_height_width_dim_id.size(); k++){
-    for (unsigned i=0; i< data_related_dim[iacts_data_id].size(); i++){
-      if(data_related_dim[oacts_data_id][i].first == data_related_dim[iacts_data_id][oActs_height_width_dim_id[k]].first && data_related_dim[oacts_data_id][i].second != oActs_height_width_dim_id[k]){
-        weights_height_dim_id.push_back(i);
-      }
-    }
-  }
-  //JTC 
-  /*
-  std::cout << "oActs_height_width_dim_id" << std::endl;
-  for (unsigned k=0; k< oActs_height_width_dim_id.size(); k++){
-    std::cout << oActs_height_width_dim_id[k] << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "weights_height_dim_id" << std::endl;
-  for (unsigned k=0; k< weights_height_dim_id.size(); k++){
-    std::cout << weights_height_dim_id[k] << " ";
-  }
-  std::cout << std::endl;
-
-
-  std::cout << "#### obtain strideing ####" << std::endl;
-  */
-  int coefficient_id = 0;
-
-  for (auto &coefficient_pair: problem::GetShape()->DefaultCoefficients){
-    //JTC std::cout << "coefficient_id=" << coefficient_pair.first  << "  coefficient value=" << coefficient_pair.second << std::endl;
-    coefficient_id++;
-    if(problem::GetShape()->CoefficientIDToName.find(coefficient_pair.first)->second=="Hstride"){
-      stride_list.push_back(coefficient_pair.second);
-    }
-    else if(problem::GetShape()->CoefficientIDToName.find(coefficient_pair.first)->second=="Wstride"){
-      stride_list.push_back(coefficient_pair.second);
-    }
-  }
-  //JTC for(unsigned stride_id=0; stride_id<stride_list.size(); stride_id++){
-  //JTC   std::cout << problem::GetShape()->CoefficientIDToName.find(stride_id)->second << " = " << stride_list[stride_id] << std::endl;
-  //JTC }
-  
-
-  //JTC std::cout << "#### obtain temporal_access_below_loop_level ####" << std::endl;
-  temporal_access_below_loop_level.resize(nest_state_.size());
-  for (auto _ = temporal_access_below_loop_level.size(); _--;)
-    temporal_access_below_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-  for (unsigned loop_level = 1; loop_level < nest_state_.size(); loop_level++){
-    for (unsigned dim_id = 1; dim_id <problem::GetShape()->NumFactorizedDimensions; dim_id++){ 
-      if(spatial_access_loop_level[loop_level][dim_id] != spatial_access_loop_level[loop_level-1][dim_id]){
-        temporal_access_below_loop_level[loop_level][dim_id]=total_access_loop_level[loop_level-1][dim_id];
-      }
-      else{
-        temporal_access_below_loop_level[loop_level][dim_id]=temporal_access_below_loop_level[loop_level-1][dim_id];
-      }
-    }
-  }
-
-  // Print out for verification
-  //JTC for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++)
-  //JTC {
-  //JTC   std::cout << "level=" << loop_level;
-  //JTC   for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-  //JTC       std::cout  << "  " << temporal_access_below_loop_level[loop_level][i];
-  //JTC   std::cout << std::endl;
-  //JTC }
-
-  //JTC std::cout << "#### obtain reading_start_index_step_loop_level ####" << std::endl;
-  reading_start_index_step_loop_level.resize(nest_state_.size());
-  for (auto _ = reading_start_index_step_loop_level.size(); _--;)
-    reading_start_index_step_loop_level[_].resize(data_related_dim[iacts_data_id][data_related_dim[iacts_data_id].size()-1].first+1, 0); // Number of multiplicative dimensions.
-
-  //JTC std::cout << "#### obtain read_length_loop_level ####" << std::endl;
-  read_length_loop_level.resize(nest_state_.size());
-  for (auto _ = read_length_loop_level.size(); _--;)
-    read_length_loop_level[_].resize(data_related_dim[iacts_data_id][data_related_dim[iacts_data_id].size()-1].first+1, 0); // Number of multiplicative dimensions.
-  
-
-  read_length_loop_level_related_dim_id.resize(data_related_dim[iacts_data_id][data_related_dim[iacts_data_id].size()-1].first+1);
-  for (unsigned dim_id=0; dim_id<data_related_dim[iacts_data_id].size(); dim_id++){
-    read_length_loop_level_related_dim_id[data_related_dim[iacts_data_id][dim_id].first].push_back(data_related_dim[iacts_data_id][dim_id].second);
-  }
-  
-  for (unsigned multiplicative_dim_id=0; multiplicative_dim_id<read_length_loop_level_related_dim_id.size(); multiplicative_dim_id++){
-    if(read_length_loop_level_related_dim_id[multiplicative_dim_id].size()>1){
-      bool swap_condition=false; // Make sure oActs_height_width_dimension is at the first location.
-      for (unsigned k=0; k< oActs_height_width_dim_id.size(); k++){
-        if(read_length_loop_level_related_dim_id[multiplicative_dim_id][0]==oActs_height_width_dim_id[k]){
-          swap_condition=true;
-        }
-      }
-      if(swap_condition){
-        auto temp = read_length_loop_level_related_dim_id[multiplicative_dim_id][0];
-        read_length_loop_level_related_dim_id[multiplicative_dim_id][0] = read_length_loop_level_related_dim_id[multiplicative_dim_id][1];
-        read_length_loop_level_related_dim_id[multiplicative_dim_id][1] = temp;
-      }
-    }
-  }
-
-  // Calculation run_length
-  for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++){
-    for (unsigned multiplicative_dim_id=0; multiplicative_dim_id<read_length_loop_level[loop_level].size(); multiplicative_dim_id++){
-      if(read_length_loop_level_related_dim_id[multiplicative_dim_id].size()>1){
-        // Height/Width dimension:
-        unsigned oActs_height_width_temporal_read_below = temporal_access_below_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][0]];  
-        unsigned weights_height_width_temporal_read_below = temporal_access_below_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][1]]; 
-        unsigned oActs_height_width_spatial = spatial_access_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][0]];
-        unsigned weights_height_width_spatial = spatial_access_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][1]];
-        // 1+stride*(1+(P_spatial-1)*P_temporal_step_below-1) + dilation*(1+(R_spatial-1)*R_temporal_step_below - 1)
-        read_length_loop_level[loop_level][multiplicative_dim_id] = 1 + stride_list[0]*(1+(oActs_height_width_spatial-1)*oActs_height_width_temporal_read_below-1) + (weights_height_width_spatial-1)*weights_height_width_temporal_read_below;
-        unsigned  oActs_height_width_delta_x = oActs_height_width_spatial*oActs_height_width_temporal_read_below*stride_list[0];
-        unsigned  weights_height_width_delta_x = weights_height_width_spatial*weights_height_width_temporal_read_below*1; // assume dilation=1 always
-        reading_start_index_step_loop_level[loop_level][multiplicative_dim_id] = (oActs_height_width_delta_x > weights_height_width_delta_x)?weights_height_width_delta_x:oActs_height_width_delta_x;
-      }else{
-        // channel dimension:
-        unsigned channel_temporal_read_below = temporal_access_below_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][0]]; 
-        unsigned channel_spatial = spatial_access_loop_level[loop_level][read_length_loop_level_related_dim_id[multiplicative_dim_id][0]]; 
-        // read_length_loop_level[loop_level][dim_id] 
-        read_length_loop_level[loop_level][multiplicative_dim_id]= channel_spatial*channel_temporal_read_below;
-        reading_start_index_step_loop_level[loop_level][multiplicative_dim_id] = 1+(channel_spatial-1)*channel_temporal_read_below;
-      }
-    }
-  }
-
-  //JTC for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++){
-  //JTC   std::cout  << "loop_level=" << loop_level << std::endl;
-  //JTC   for (unsigned dim_id=0; dim_id<read_length_loop_level[loop_level].size(); dim_id++){
-  //JTC      std::cout  << "dimID=" << dim_id << " read length L= " << read_length_loop_level[loop_level][dim_id] << std::endl;;
-  //JTC   }
-  //JTC }
-  //JTC std::cout << std::endl;
-
-  //JTC for (unsigned loop_level = 0; loop_level < nest_state_.size(); loop_level++){
-  //JTC   std::cout  << "loop_level=" << loop_level << std::endl;
-  //JTC   for (unsigned dim_id=0; dim_id<reading_start_index_step_loop_level[loop_level].size(); dim_id++){
-  //JTC      std::cout  << "dimID=" << dim_id << " Δx = " << reading_start_index_step_loop_level[loop_level][dim_id] << std::endl;;
-  //JTC   }
-  //JTC }
-  //JTC std::cout << std::endl;
-
-  // Sanity Checking.
-  // 1- No missed data, layout/dataflow allows data duplication but cannot skip data in the case of dense.
-  // I.E. assert(B>delta_y)
-  for (unsigned loop_level = 0; loop_level <  reading_start_index_step_loop_level.size(); loop_level++){
-    for (unsigned dim_id=0; dim_id<reading_start_index_step_loop_level[loop_level].size(); dim_id++){
-      assert(read_length_loop_level[loop_level][dim_id]>=reading_start_index_step_loop_level[loop_level][dim_id]);
-    }
-  } 
-
-  // Putting read length L and Δx into different buffer levels.
-  //JTC std::cout << "obtain reading_start_index_step_buffer_level" << std::endl;
-  // reading_start_index_step_buffer_level
-
-  reading_start_index_step_buffer_level.resize(storage_tiling_boundaries_.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  unsigned previous_storage_boundary = 0;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  {
-    for (int loop_level = previous_storage_boundary; loop_level <=  (int)storage_tiling_boundaries_[buffer_level]; loop_level++)
-    {
-      reading_start_index_step_buffer_level[buffer_level].push_back(reading_start_index_step_loop_level[loop_level]);
-    }
-    previous_storage_boundary = storage_tiling_boundaries_[buffer_level]+1;
-  }
-
-  //JTC for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  //JTC {
-  //JTC   std::cout << "##buffer_level=" << buffer_level << std::endl;
-  //JTC   for (unsigned sub_loop_level = 0; sub_loop_level < reading_start_index_step_buffer_level[buffer_level].size(); sub_loop_level++)
-  //JTC   {
-  //JTC   std::cout << "sub_loop_level=" << sub_loop_level;
-  //JTC     for (unsigned i=0; i<reading_start_index_step_buffer_level[buffer_level][sub_loop_level].size(); i++)
-  //JTC         std::cout  << "  " << reading_start_index_step_buffer_level[buffer_level][sub_loop_level][i];
-  //JTC     std::cout << std::endl;
-  //JTC   }
-  //JTC }
-
-  // Putting read length L and Δx into different buffer levels.
-  //JTC std::cout << "obtain read_length_buffer_level" << std::endl;
-  // read_length_buffer_level
-
-  read_length_buffer_level.resize(storage_tiling_boundaries_.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  previous_storage_boundary = 0;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  {
-    for (int loop_level = previous_storage_boundary; loop_level <=  (int)storage_tiling_boundaries_[buffer_level]; loop_level++)
-    {
-      read_length_buffer_level[buffer_level].push_back(read_length_loop_level[loop_level]);
-    }
-    previous_storage_boundary = storage_tiling_boundaries_[buffer_level]+1;
-  }
-  
-  //JTC for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++)
-  //JTC {
-  //JTC   std::cout << "##buffer_level=" << buffer_level << std::endl;
-  //JTC   for (unsigned sub_loop_level = 0; sub_loop_level < read_length_buffer_level[buffer_level].size(); sub_loop_level++)
-  //JTC   {
-  //JTC   std::cout << "sub_loop_level=" << sub_loop_level;
-  //JTC     for (unsigned i=0; i<read_length_buffer_level[buffer_level][sub_loop_level].size(); i++)
-  //JTC         std::cout  << "  " << read_length_buffer_level[buffer_level][sub_loop_level][i];
-  //JTC     std::cout << std::endl;
-  //JTC   }
-  //JTC }
-
-}
-
-
-void  NestAnalysis::InitLayoutNestEveryBufferLevel(){
-  //JTC std::cout << "NestAnalysis::InitLayoutNestEveryBufferLevel" << std::endl;
-  // calculate R and Δy
-  std::vector<std::vector<uint64_t> >               layout_temporal_access_below_loop_level; 
-  std::vector<std::vector<uint64_t> >               layout_spatial_access_loop_level; 
-  std::vector<std::vector<uint64_t> >               layout_total_access_loop_level; 
-
-  //JTC std::cout << "NestAnalysis::InitNumSpatialAccessEveryBufferLevel" << std::endl;
-  layout_spatial_access_loop_level.resize( layout_loop_nest.loops.size());
-  for (auto _ = layout_spatial_access_loop_level.size(); _--;)
-    layout_spatial_access_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-
-  //JTC std::cout << "#### obtain storage_boundary_loop_index_map ####" << std::endl;
-  for (unsigned buffer_level = 0; buffer_level < storage_tiling_boundaries_.size(); buffer_level++){
-    storage_boundary_loop_index_map.push_back(std::pair<uint64_t, uint64_t>(storage_tiling_boundaries_[buffer_level], layout_loop_nest.storage_tiling_boundaries[buffer_level]));
-    //JTC std::cout << "mapping loop storage boundary level:" << storage_boundary_loop_index_map.back().first << "layout loop storage boundary level:" <<  storage_boundary_loop_index_map.back().second << std::endl;
-  }
-  
-  //JTC std::cout << "#### obtain layout_spatial_access_loop_level ####" << std::endl;
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  for (unsigned loop_level = 0; loop_level < layout_loop_nest.loops.size(); loop_level++)
-  {
-    for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++){
-      if (loop::IsSpatial( layout_loop_nest.loops[loop_level].spacetime_dimension) &&  layout_loop_nest.loops[loop_level].dimension == i){
-        if(loop_level == 0){
-          layout_spatial_access_loop_level[loop_level][ layout_loop_nest.loops[loop_level].dimension] =  layout_loop_nest.loops[loop_level].end; 
-        }
-        else{
-          layout_spatial_access_loop_level[loop_level][ layout_loop_nest.loops[loop_level].dimension] = layout_spatial_access_loop_level[loop_level-1][ layout_loop_nest.loops[loop_level].dimension] *  layout_loop_nest.loops[loop_level].end; 
-        }
-      }
-      else{
-        if(loop_level == 0){
-          layout_spatial_access_loop_level[loop_level][i] = 1; 
-        }
-        else{
-          layout_spatial_access_loop_level[loop_level][i] = layout_spatial_access_loop_level[loop_level-1][i]; 
-        }
-      }
-    }
-  }
-
-  // Print out for verification
-  //JTC for (unsigned loop_level = 0; loop_level <  layout_loop_nest.loops.size(); loop_level++)
-  //JTC {
-  //JTC   std::cout << "level=" << loop_level;
-  //JTC   for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-  //JTC       std::cout  << "  " << layout_spatial_access_loop_level[loop_level][i];
-  //JTC   std::cout << std::endl;
-  //JTC }
-
-  //JTC std::cout << "#### obtain layout_total_access_loop_level ####" << std::endl;
-  layout_total_access_loop_level.resize( layout_loop_nest.loops.size());
-  for (auto _ = layout_total_access_loop_level.size(); _--;)
-    layout_total_access_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-
-  //JTC for( unsigned iter = 0; iter < layout_loop_nest.storage_tiling_boundaries.size(); iter++){
-  //JTC   std::cout << "layout storage_tiling_boundaries["<< iter <<"]=" << layout_loop_nest.storage_tiling_boundaries[iter] << std::endl;
-  //JTC }
-  
-  unsigned storage_level_start_loop_id=0;
-  for( unsigned iter = 0; iter < layout_loop_nest.storage_tiling_boundaries.size(); iter++){
-    // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-    for (unsigned loop_level=storage_level_start_loop_id; loop_level<=layout_loop_nest.storage_tiling_boundaries[iter]; loop_level++){
-      for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++){
-        if ( layout_loop_nest.loops[loop_level].dimension == i){
-          if(loop_level == storage_level_start_loop_id){
-            layout_total_access_loop_level[loop_level][ layout_loop_nest.loops[loop_level].dimension] = layout_loop_nest.loops[loop_level].end; 
-          }
-          else{
-            layout_total_access_loop_level[loop_level][ layout_loop_nest.loops[loop_level].dimension] = layout_total_access_loop_level[loop_level-1][ layout_loop_nest.loops[loop_level].dimension] *  layout_loop_nest.loops[loop_level].end; 
-          }
-        }
-        else{
-          if(loop_level == storage_level_start_loop_id){
-            layout_total_access_loop_level[loop_level][i] = 1; 
-          }
-          else{
-            layout_total_access_loop_level[loop_level][i] = layout_total_access_loop_level[loop_level-1][i]; 
-          }
-        }
-      }
-    }
-    storage_level_start_loop_id=layout_loop_nest.storage_tiling_boundaries[iter]+1;
-  }
-
-  // Print out for verification
-  //JTC for (unsigned loop_level = 0; loop_level <  layout_loop_nest.loops.size(); loop_level++)
-  //JTC {
-  //JTC   std::cout << "level=" << loop_level;
-  //JTC   for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-  //JTC       std::cout  << "  " << layout_total_access_loop_level[loop_level][i];
-  //JTC   std::cout << std::endl;
-  //JTC }
-
-  //JTC std::cout << "#### obtain layout_temporal_access_below_loop_level ####" << std::endl;
-  layout_temporal_access_below_loop_level.resize( layout_loop_nest.loops.size());
-  for (auto _ = layout_temporal_access_below_loop_level.size(); _--;)
-    layout_temporal_access_below_loop_level[_].resize(problem::GetShape()->NumFactorizedDimensions, 1);
-  for (unsigned loop_level = 1; loop_level <  layout_loop_nest.loops.size(); loop_level++){
-    for (unsigned dim_id = 1; dim_id <problem::GetShape()->NumFactorizedDimensions; dim_id++){ 
-      if(layout_spatial_access_loop_level[loop_level][dim_id] != layout_spatial_access_loop_level[loop_level-1][dim_id]){
-        layout_temporal_access_below_loop_level[loop_level][dim_id]=layout_total_access_loop_level[loop_level-1][dim_id];
-      }
-      else{
-        layout_temporal_access_below_loop_level[loop_level][dim_id]=layout_temporal_access_below_loop_level[loop_level-1][dim_id];
-      }
-    }
-  }
-
-  // Print out for verification
-  //JTC for (unsigned loop_level = 0; loop_level <  layout_loop_nest.loops.size(); loop_level++)
-  //JTC {
-  //JTC   std::cout << "level=" << loop_level;
-  //JTC   for (unsigned i=0; i<problem::GetShape()->NumFactorizedDimensions; i++)
-  //JTC       std::cout  << "  " << layout_temporal_access_below_loop_level[loop_level][i];
-  //JTC   std::cout << std::endl;
-  //JTC }
-
-  //JTC std::cout << "appeared_dimension_in_layout=";
-  std::vector<uint64_t> appeared_dimension_in_layout;
-  for(unsigned loop_level_id=0; loop_level_id < layout_loop_nest.loops.size(); loop_level_id++){
-    appeared_dimension_in_layout.push_back(layout_loop_nest.loops[loop_level_id].dimension);
-  //JTC   std::cout << appeared_dimension_in_layout.back() << " ";
-  }
-  //JTC std::cout << std::endl;
-
-  //JTC std::cout << "#### obtain layout_data_length_per_buf_loop_level_related_dim_id ####" << std::endl;
-  for (unsigned _ =0; _<read_length_loop_level_related_dim_id.size(); _++){
-    std::vector<uint64_t> multiplicative_dim_list; // First is oacts_height_width, the second (if there is) will be weights_height_width
-    for(unsigned k=0;k<read_length_loop_level_related_dim_id[_].size();k++){
-      if(std::find(appeared_dimension_in_layout.begin(), appeared_dimension_in_layout.end(), read_length_loop_level_related_dim_id[_][k]) != appeared_dimension_in_layout.end())
-        multiplicative_dim_list.push_back(read_length_loop_level_related_dim_id[_][k]);
-    }
-    layout_data_length_per_buf_loop_level_related_dim_id.push_back(multiplicative_dim_list); // Number of multiplicative dimensions.
-  }
-  
-  // print out layout_data_length_per_buf_loop_level_related_dim_id for verification
-  //JTC for (unsigned _ =0; _<read_length_loop_level_related_dim_id.size(); _++){
-  //JTC   for(unsigned k=0;k<layout_data_length_per_buf_loop_level_related_dim_id[_].size();k++){
-  //JTC     std::cout << "multiplicative_dimID= " << _ << "  loop dimension ID=" << layout_data_length_per_buf_loop_level_related_dim_id[_][k] << std::endl;
-  //JTC   }
-  //JTC }  
-  
-  //JTC std::cout << "#### obtain layout_data_start_index_step_loop_level ####" << std::endl;
-  layout_data_start_index_step_loop_level.resize( layout_loop_nest.loops.size());
-  for (auto _ = layout_data_start_index_step_loop_level.size(); _--;)
-    layout_data_start_index_step_loop_level[_].resize(data_related_dim[iacts_data_id][data_related_dim[iacts_data_id].size()-1].first+1, 0); // Number of multiplicative dimensions.
-
-  //JTC std::cout << "#### obtain layout_data_length_per_buf_row_loop_level ####" << std::endl;
-  layout_data_length_per_buf_row_loop_level.resize( layout_loop_nest.loops.size());
-  for (auto _ = layout_data_length_per_buf_row_loop_level.size(); _--;)
-    layout_data_length_per_buf_row_loop_level[_].resize(data_related_dim[iacts_data_id][data_related_dim[iacts_data_id].size()-1].first+1, 0); // Number of multiplicative dimensions.
-
-  // Calculation run_length
-  for (unsigned loop_level=0; loop_level<layout_loop_nest.loops.size(); loop_level++){
-    for (unsigned multiplicative_dim_id=0; multiplicative_dim_id<layout_data_length_per_buf_row_loop_level[loop_level].size(); multiplicative_dim_id++){
-      if(layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id].size()>1){
-        // Height/Width dimension:
-        unsigned oActs_height_width_temporal_read_below = layout_temporal_access_below_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][0]];  
-        unsigned weights_height_width_temporal_read_below = layout_temporal_access_below_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][1]]; 
-        unsigned oActs_height_width_spatial = layout_spatial_access_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][0]];
-        unsigned weights_height_width_spatial = layout_spatial_access_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][1]];
-        // 1+stride*(1+(P_spatial-1)*P_temporal_step_below-1) + dilation*(1+(R_spatial-1)*R_temporal_step_below - 1)
-        layout_data_length_per_buf_row_loop_level[loop_level][multiplicative_dim_id] = 1 + (oActs_height_width_spatial-1)*oActs_height_width_temporal_read_below + (weights_height_width_spatial-1)*weights_height_width_temporal_read_below;
-        unsigned  oActs_height_width_delta_y = oActs_height_width_spatial*oActs_height_width_temporal_read_below;
-        unsigned  weights_height_width_delta_y = weights_height_width_spatial*weights_height_width_temporal_read_below; // assume dilation=1 always
-        layout_data_start_index_step_loop_level[loop_level][multiplicative_dim_id] = (oActs_height_width_delta_y > weights_height_width_delta_y)?weights_height_width_delta_y:oActs_height_width_delta_y;
-      }
-      else if(layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id].size()==0){
-        layout_data_length_per_buf_row_loop_level[loop_level][multiplicative_dim_id]= 1;
-        layout_data_start_index_step_loop_level[loop_level][multiplicative_dim_id] = 1;
-      }
-      else{
-        unsigned temporal_read_below = layout_temporal_access_below_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][0]]; 
-        unsigned spatial = layout_spatial_access_loop_level[loop_level][layout_data_length_per_buf_loop_level_related_dim_id[multiplicative_dim_id][0]]; 
-        // layout_data_length_per_buf_row_loop_level[loop_level][dim_id] 
-        layout_data_length_per_buf_row_loop_level[loop_level][multiplicative_dim_id]= 1+(spatial-1)*temporal_read_below;
-        layout_data_start_index_step_loop_level[loop_level][multiplicative_dim_id] = spatial*temporal_read_below;
-      }
-    }
-  }
-
-  //JTC for (unsigned loop_level = 0; loop_level <  layout_loop_nest.loops.size(); loop_level++){
-  //JTC   std::cout  << "loop_level=" << loop_level << std::endl;
-  //JTC   for (unsigned dim_id=0; dim_id<layout_data_length_per_buf_row_loop_level[loop_level].size(); dim_id++){
-  //JTC      std::cout  << "dimID=" << dim_id << " data_read length L= " << layout_data_length_per_buf_row_loop_level[loop_level][dim_id] << std::endl;;
-  //JTC   }
-  //JTC }
-  //JTC std::cout << std::endl;
-
-  //JTC for (unsigned loop_level = 0; loop_level <  layout_loop_nest.loops.size(); loop_level++){
-  //JTC   std::cout  << "loop_level=" << loop_level << std::endl;
-  //JTC   for (unsigned dim_id=0; dim_id<layout_data_start_index_step_loop_level[loop_level].size(); dim_id++){
-  //JTC      std::cout  << "dimID=" << dim_id << " Δy = " << layout_data_start_index_step_loop_level[loop_level][dim_id] << std::endl;;
-  //JTC   }
-  //JTC } 
-  //JTC std::cout << std::endl;
-
-  // Sanity Checking.
-  // 1- No missed data, layout/dataflow allows data duplication but cannot skip data in the case of dense.
-  // I.E. assert(B>delta_y)
-  for (unsigned loop_level = 0; loop_level < layout_data_start_index_step_loop_level.size(); loop_level++){
-    for (unsigned dim_id=0; dim_id<layout_data_start_index_step_loop_level[loop_level].size(); dim_id++){
-      assert(layout_data_length_per_buf_row_loop_level[loop_level][dim_id]>=layout_data_start_index_step_loop_level[loop_level][dim_id]);
-    }
-  } 
-
-  // Putting read length L and Δx into different buffer levels.
-  //JTC std::cout << "obtain layout_data_start_index_step_buffer_level" << std::endl;
-  // layout_data_start_index_step_buffer_level
-
-  layout_data_start_index_step_buffer_level.resize(layout_loop_nest.storage_tiling_boundaries.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  unsigned previous_storage_boundary = 0;
-  for (unsigned buffer_level = 0; buffer_level < layout_loop_nest.storage_tiling_boundaries.size(); buffer_level++)
-  {
-    for (int loop_level = previous_storage_boundary; loop_level <=  (int)layout_loop_nest.storage_tiling_boundaries[buffer_level]; loop_level++)
-    {
-      layout_data_start_index_step_buffer_level[buffer_level].push_back(layout_data_start_index_step_loop_level[loop_level]);
-    }
-    previous_storage_boundary = layout_loop_nest.storage_tiling_boundaries[buffer_level]+1;
-  }
-
-  //JTC for (unsigned buffer_level = 0; buffer_level < layout_loop_nest.storage_tiling_boundaries.size(); buffer_level++)
-  //JTC {
-  //JTC   std::cout << "##buffer_level=" << buffer_level << std::endl;
-  //JTC   for (unsigned sub_loop_level = 0; sub_loop_level < layout_data_start_index_step_buffer_level[buffer_level].size(); sub_loop_level++)
-  //JTC   {
-  //JTC   std::cout << "sub_loop_level=" << sub_loop_level;
-  //JTC     for (unsigned i=0; i<layout_data_start_index_step_buffer_level[buffer_level][sub_loop_level].size(); i++)
-  //JTC         std::cout  << "  " << layout_data_start_index_step_buffer_level[buffer_level][sub_loop_level][i];
-  //JTC     std::cout << std::endl;
-  //JTC   }
-  //JTC }
-
-  //JTC std::cout << "obtain layout_data_length_per_buf_row_buffer_level" << std::endl;
-  // layout_data_length_per_buf_row_buffer_level
-
-  layout_data_length_per_buf_row_buffer_level.resize(layout_loop_nest.storage_tiling_boundaries.size());
-
-  // Loop from innermost nest to the outermost nest -> we could obtain such access for every loop level.
-  previous_storage_boundary = 0;
-  for (unsigned buffer_level = 0; buffer_level < layout_loop_nest.storage_tiling_boundaries.size(); buffer_level++)
-  {
-    for (int loop_level = previous_storage_boundary; loop_level <=  (int)layout_loop_nest.storage_tiling_boundaries[buffer_level]; loop_level++)
-    {
-      layout_data_length_per_buf_row_buffer_level[buffer_level].push_back(layout_data_length_per_buf_row_loop_level[loop_level]);
-    }
-    previous_storage_boundary = layout_loop_nest.storage_tiling_boundaries[buffer_level]+1;
-  }
-
-  //JTC for (unsigned buffer_level = 0; buffer_level < layout_loop_nest.storage_tiling_boundaries.size(); buffer_level++)
-  //JTC {
-  //JTC   std::cout << "##buffer_level=" << buffer_level << std::endl;
-  //JTC   for (unsigned sub_loop_level = 0; sub_loop_level < layout_data_length_per_buf_row_buffer_level[buffer_level].size(); sub_loop_level++)
-  //JTC   {
-  //JTC   std::cout << "sub_loop_level=" << sub_loop_level;
-  //JTC     for (unsigned i=0; i<layout_data_length_per_buf_row_buffer_level[buffer_level][sub_loop_level].size(); i++)
-  //JTC         std::cout  << "  " << layout_data_length_per_buf_row_buffer_level[buffer_level][sub_loop_level][i];
-  //JTC     std::cout << std::endl;
-  //JTC   }
-  //JTC }
-
-
-}
-
 // computes the number of spatial elements at each level
 // and identifies master spatial levels.
 void NestAnalysis::InitNumSpatialElems()
 {
-  // std::cout << "NestAnalysis::InitNumSpatialElems = " << std::endl;
+  utilized_spatial_elems_.resize(nest_state_.size());
   num_spatial_elems_.resize(nest_state_.size());
   master_spatial_level_.resize(nest_state_.size());
 
   int cur_index = nest_state_.size() - 1;
   // cumulative product of spatial tiling factors.
   std::uint64_t product = 1;
+  double utilized_product = 1;
   bool prev_loop_was_spatial = false;
   for (auto loop = nest_state_.rbegin(); loop != nest_state_.rend(); loop++)
   {
     ASSERT(cur_index >= 0);
 
     num_spatial_elems_[cur_index] = product;
-    // std::cout << "num_spatial_elems_[" << cur_index << "]=" << num_spatial_elems_[cur_index] << std::endl; 
+    utilized_spatial_elems_[cur_index] = utilized_product;
+
     if (loop::IsSpatial(loop->descriptor.spacetime_dimension))
     {
       master_spatial_level_[cur_index] = !prev_loop_was_spatial;
       product *= loop->descriptor.end;
+
+      if(loop->descriptor.residual_end != loop->descriptor.end)
+      {
+          // Find the next-outermost loop of the same dimension.
+          auto loop2 = nest_state_.rbegin();
+          bool found = false;
+          double outer_size = 1;
+          for(; loop2 != nest_state_.rend(); loop2++)
+          {
+            if(loop2->level == loop->level) break;
+            if(loop2->descriptor.dimension == loop->descriptor.dimension)
+            {
+              double end = (double) loop2->descriptor.end;
+              double residual_end = (double) loop2->descriptor.residual_end;
+              outer_size = (residual_end + end * (outer_size - 1));
+              found = true;
+            }
+          }
+          if(!found)
+          {
+            std::cout << "Outermost loop of dimension " << loop->descriptor.dimension << " was imperfectly factorized. " 
+            << "Need more loop levels to factorize this loop... were loops of the dimensions constrained to 1 at all higher levels?" << std::endl;
+            // Print the loop nest! We're gonna crash!!
+            int j = 0;
+            for(auto loop3 = nest_state_.rbegin(); loop3 != nest_state_.rend(); loop3++)
+            {
+              for(int q = 0; q < j; q++) std::cout << "  ";
+              std::cout << "Loop " << j << ": "
+                        << loop3->descriptor.PrintCompact(workload_->GetShape()->FlattenedDimensionIDToName);
+              if(loop3->level == loop->level) std::cout << " <---";
+              std::cout << std::endl;
+              j++;
+            }
+            std::cout << "Exiting..." << std::endl;
+            exit(1);
+          }
+          double end = (double) loop->descriptor.end;
+          double residual_end = (double) loop->descriptor.residual_end;
+          utilized_product = utilized_product * (residual_end + end * (outer_size - 1)) / outer_size;
+      }
+      else
+      {
+        utilized_product *= loop->descriptor.end;
+
+      }
       prev_loop_was_spatial = true;
     }
     else
@@ -2810,15 +2117,6 @@ void NestAnalysis::InitNumSpatialElems()
     }
   }
 
-  //JTC std::cout << "Number of spatial elements at each level" << std::endl;
-  //JTC for (int i = num_spatial_elems_.size() - 1; i >= 0; i--)
-  //JTC {
-  //JTC   std::cout << num_spatial_elems_[i];
-  //JTC   if (master_spatial_level_[i]) std::cout << "(master)";
-  //JTC   if (linked_spatial_level_[i]) std::cout << "(linked)";
-  //JTC   std::cout << ", ";
-  //JTC }
-  //JTC std::cout << std::endl;
 }
 
 void NestAnalysis::InitStorageBoundaries()
@@ -2831,7 +2129,6 @@ void NestAnalysis::InitStorageBoundaries()
   unsigned loop_level = 0;
   for (auto& i : storage_tiling_boundaries_)
   {
-    //JTC std::cout << "boundary level i=" << i << std::endl;
     ASSERT(i < storage_boundary_level_.size());
     storage_boundary_level_[i] = true;
 
@@ -2844,7 +2141,7 @@ void NestAnalysis::InitStorageBoundaries()
       // variables it touches.
       for (auto& term: skew_it->second.terms)
       {
-        if (term.variable.dimension != problem::GetShape()->NumFlattenedDimensions && !term.variable.is_spatial)
+        if (term.variable.dimension != workload_->GetShape()->NumFlattenedDimensions && !term.variable.is_spatial)
         {
           auto dim = term.variable.dimension;
           // Walk through the loops in this loop block and poison the loop
@@ -2870,6 +2167,7 @@ void NestAnalysis::InitStorageBoundaries()
 
     storage_level++;
   }
+
 }
 
 void NestAnalysis::InitSpatialFanouts()
@@ -2882,12 +2180,10 @@ void NestAnalysis::InitSpatialFanouts()
     if (!loop::IsSpatial(nest_state_[cur_level].descriptor.spacetime_dimension))
     {
       logical_fanouts_[cur_level] = 1;
-      // std::cout << " logical_fanouts_["<<cur_level<<"]=" << logical_fanouts_[cur_level] << std::endl;
     }
     else if (!master_spatial_level_[cur_level])
     {
       logical_fanouts_[cur_level] = 0;
-      // std::cout << " logical_fanouts_["<<cur_level<<"]=" << logical_fanouts_[cur_level] << std::endl;
     }
     else
     {
@@ -2899,13 +2195,11 @@ void NestAnalysis::InitSpatialFanouts()
         {
           logical_fanoutX_[cur_level] *=
               nest_state_[next_temporal_level].descriptor.end;
-          // std::cout << " cur_level=" << cur_level << "  next_temporal_level=" << next_temporal_level << "  logical_fanoutX_[" << cur_level << "]=" << logical_fanoutX_[cur_level] << std::endl;
         }
         else
         {
           logical_fanoutY_[cur_level] *=
               nest_state_[next_temporal_level].descriptor.end;
-          // std::cout << " cur_level=" << cur_level << "  next_temporal_level=" << next_temporal_level << "  logical_fanoutY_[" << cur_level << "]=" << logical_fanoutY_[cur_level] << std::endl;
         }
 
         if (next_temporal_level > 0)
@@ -2915,7 +2209,6 @@ void NestAnalysis::InitSpatialFanouts()
         else
         {
           scale_factor = nest_state_[0].descriptor.end;
-          // std::cout << " scale_factor=" << scale_factor << std::endl;
           break;
         }
       }
@@ -2923,7 +2216,6 @@ void NestAnalysis::InitSpatialFanouts()
       logical_fanouts_[cur_level] =
           num_spatial_elems_[next_temporal_level] / num_spatial_elems_[cur_level];
       logical_fanouts_[cur_level] *= scale_factor;
-      //JTC std::cout << " logical_fanouts_[" << cur_level << "]=" << logical_fanouts_[cur_level] << std::endl;
 
       ASSERT(logical_fanouts_[cur_level] ==
              logical_fanoutX_[cur_level] * logical_fanoutY_[cur_level]);
@@ -2943,7 +2235,7 @@ void NestAnalysis::InitSpatialFanouts()
 
 void NestAnalysis::InitPerLevelDimScales()
 {
-  for (unsigned dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+  for (unsigned dim = 0; dim < workload_->GetShape()->NumFlattenedDimensions; dim++)
   {
     cur_transform_[dim] = 0;
   }
@@ -2972,7 +2264,7 @@ void NestAnalysis::InitPerLevelDimScales()
     auto desc = nest_state_[level].descriptor;
     int dim = int(desc.dimension);
 
-    for (std::uint64_t dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+    for (std::uint64_t dim = 0; dim < workload_->GetShape()->NumFlattenedDimensions; dim++)
     {
       vector_strides_[level][dim] = cur_scale[dim];
     }
@@ -2980,7 +2272,7 @@ void NestAnalysis::InitPerLevelDimScales()
     cur_scale_residual[dim] += (cur_scale[dim]*(desc.residual_end - desc.start - 1)); // FIXME: assuming stride = 1
     cur_scale[dim] *= (desc.end - desc.start); // FIXME: assuming stride = 1
     
-    for (std::uint64_t dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+    for (std::uint64_t dim = 0; dim < workload_->GetShape()->NumFlattenedDimensions; dim++)
     {
       //mold_low_[level][dim] = desc.start; Should be 0. FIXME: verify.
       mold_high_[level][dim] = cur_scale[dim] - 1;
@@ -3000,7 +2292,7 @@ problem::OperationPoint NestAnalysis::IndexToOperationPoint_(
   const std::vector<int>& indices) const
 {
   problem::OperationPoint point;
-  for (unsigned dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+  for (unsigned dim = 0; dim < workload_->GetShape()->NumFlattenedDimensions; dim++)
   {
     point[dim] = 0;
   }
@@ -3061,8 +2353,8 @@ problem::PerDataSpace<Point> NestAnalysis::GetCurrentTranslationVectors(std::vec
   cur_transform_[dim] = saved_transform;
   
   // Calculate and return translation vectors
-  problem::PerDataSpace<Point> translation_vectors;
-  for (unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+  problem::PerDataSpace<Point> translation_vectors(workload_->GetShape()->NumDataSpaces);
+  for (unsigned pv = 0; pv < workload_->GetShape()->NumDataSpaces; pv++)
   {
     translation_vectors[pv] = firstrun.GetDataSpace(pv).GetTranslation(secondrun.GetDataSpace(pv));
   }
@@ -3084,7 +2376,7 @@ problem::OperationSpace NestAnalysis::GetCurrentWorkingSet(std::vector<analysis:
   // is only available for certain point-set implementations.
   // Note: we aren't using +=. This means we're ignoring subvolumes
   // returned to us by recursive FillSpatialDeltas calls.
-  for (unsigned dim = 0; dim < unsigned(problem::GetShape()->NumFlattenedDimensions); dim++)
+  for (unsigned dim = 0; dim < unsigned(workload_->GetShape()->NumFlattenedDimensions); dim++)
   {
     low_problem_point[dim] = cur_transform_[dim] + mold_low_[level][dim];
     high_problem_point[dim] = cur_transform_[dim] + (IsLastGlobalIteration_(level+1, dim) ?

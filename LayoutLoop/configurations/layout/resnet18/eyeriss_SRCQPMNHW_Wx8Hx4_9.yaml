@@ -1,0 +1,45 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: R=1 S=1 P=7 Q=4 C=128 M=128 N=1 H=7 W=4
+    permutation: SRCQPMNHW
+  - target: MainMemory
+    type: intraline
+    factors: R=3 S=3 P=4 Q=8 C=1 M=1 N=1 H=4 W=8
+    permutation: SRCQPMNHW
+
+  - target: GlobalBuffer
+    type: interline
+    factors: R=1 S=1 P=2 Q=4 C=128 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: GlobalBuffer
+    type: intraline
+    factors: R=3 S=3 P=4 Q=8 C=1 M=1 N=1 H=4 W=8
+    permutation: SRCQPMNHW
+
+  - target: DummyBuffer
+    type: interline
+    factors: R=1 S=1 P=2 Q=4 C=128 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: DummyBuffer
+    type: intraline
+    factors: R=3 S=3 P=4 Q=8 C=1 M=1 N=1 H=4 W=8
+    permutation: SRCQPMNHW
+
+  - target: RegisterFile
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: weights_spad
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: ofmap_spad
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+

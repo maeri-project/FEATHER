@@ -151,8 +151,16 @@ void Shape::Parse(config::CompoundConfigNode shape)
   }
 
   // Data Spaces.
-  config::CompoundConfigNode data_spaces = shape.lookup("data-spaces");
+  config::CompoundConfigNode data_spaces = shape.lookup("data_spaces");
   assert(data_spaces.isList());
+
+  if (static_cast<std::size_t>(data_spaces.getLength()) > MAX_DATA_SPACES)
+  {
+    std::cerr << "ERROR: number of data spaces in problem shape ("
+              << data_spaces.getLength() << ") exceeds max allowed ("
+              << MAX_DATA_SPACES << ". Please update MAX_DATA_SPACES "
+              << "in problem-shape.hpp if necessary." << std::endl;
+  }
 
   NumDataSpaces = 0;
   for (int d = 0; d < data_spaces.getLength(); d++)
@@ -165,7 +173,7 @@ void Shape::Parse(config::CompoundConfigNode shape)
     DataSpaceNameToID[name] = NumDataSpaces;
 
     bool read_write = false;
-    data_space.lookupValue("read-write", read_write);
+    data_space.lookupValue("read_write", read_write);
     IsReadWriteDataSpace[NumDataSpaces] = read_write;
 
     Projection projection;
@@ -233,6 +241,67 @@ void Shape::Parse(config::CompoundConfigNode shape)
       assert(false);
     }
 
+      
+    // --- New code to process "ranks" ---
+    // --- Build the RankNameToDilationStride mapping using the projection expression ---
+    // For ranks "W" and "H" (as specified in the ranks field) with SOP expressions having multiple terms,
+    // we use the coefficient names from the corresponding projection expression to look up the instance values.
+    // --- Process the "ranks" field ---
+    std::vector<std::string> rank_names;
+    if (data_space.exists("ranks"))
+    {
+      data_space.lookupArrayValue("ranks", rank_names);
+      if (rank_names.size() != projection.size())
+      {
+        std::cerr << "ERROR: Number of rank names (" << rank_names.size()
+                  << ") does not match number of projection expressions ("
+                  << projection.size() << ") in dataspace " << name << std::endl;
+        exit(1);
+      }
+    }
+    // Save mapping from dataspace name to its rank names.
+    DataSpaceNameToRankName[name] = rank_names;
+
+    // --- Build the RankNameToFactorizedDimensionID mapping ---
+    // For each rank, record the factorized dimension IDs that appear in its projection expression.
+    for (std::size_t i = 0; i < rank_names.size(); i++)
+    {
+      std::string rank = rank_names[i];
+      std::vector<std::string> dimNames;
+      std::vector<std::uint32_t> dims;
+      if (i < projection.size())
+      {
+        for (const auto& term : projection[i])
+        {
+          dims.push_back(term.second);
+          dimNames.push_back(FactorizedDimensionIDToName.at(term.second));
+        }
+      }
+      RankNameToFactorizedDimensionID[rank] = dims;
+      RankNameToDimensionName[ rank_names[i] ] = dimNames;
+
+    }
+    
+    // --- Build the RankNameToDimensionName and RankNameToCoefficient mappings ---
+    // For each rank whose corresponding projection expression has more than one term,
+    // extract the dimension and coefficient names.
+    for (std::size_t i = 0; i < rank_names.size(); i++)
+    {
+      if (projection[i].size() > 1)
+      {
+
+        std::vector<std::string> coeffs;
+        // For each term in the projection expression:
+        for (const auto& term : projection[i])
+        {
+          // term.first is the coefficient ID.
+          coeffs.push_back(CoefficientIDToName.at(term.first));
+        }
+        RankNameToCoefficient[ rank_names[i] ] = coeffs;
+      }
+    }
+    // --- End new code ---   
+
     Projections.push_back(projection);
     NumDataSpaces++;
   }
@@ -240,7 +309,7 @@ void Shape::Parse(config::CompoundConfigNode shape)
 
 std::set <Shape::FlattenedDimensionID> Shape::GetFullyContractedDimensions() const
 {
-  // criteria for contracted dimensions: in read dataspace but not in read-write dataspace
+  // criteria for contracted dimensions: in read dataspace but not in read_write dataspace
 
   std::set <FactorizedDimensionID> contracted_dims;
   DataSpaceID pv;

@@ -132,7 +132,7 @@ void OperationSpace::FactorizeCarveMultiply(const Workload* wc,
   // perform the carving *before* projecting into data spaces because the
   // carving assumes that the region we're asking for (between low, high) is
   // a contiguous section within the flattened/factorized space. Once we
-  // project into data-spaces that information is lost, and the carving
+  // project into data_spaces that information is lost, and the carving
   // algorithm has no way to distinguish between contiguous regions (which may
   // need to be carved up) and clean AAHR regions. We assume that each AAHR in
   // factorized problem space will project onto an AAHR in each data-space.
@@ -356,7 +356,7 @@ OperationSpace& OperationSpace::operator += (const OperationPoint& p)
   // Step 1: un-flattern the provided point.
   Point factorized = Factorize(workload_, p);
 
-  // Step 2: project and add into all data-spaces.
+  // Step 2: project and add into all data_spaces.
   for (unsigned i = 0; i < data_spaces_.size(); i++)
   {
     data_spaces_.at(i) += Project(i, workload_, factorized);
@@ -406,7 +406,7 @@ void OperationSpace::SaveAndSubtractIfSameStride(OperationSpace& prev, problem::
 
   for (unsigned i = 0; i < data_spaces_.size(); i++)
   {
-    if(no_temporal_reuse.at(i)) continue;
+    if (no_temporal_reuse.at(i)) continue;
     Point translation;
     if (!prev.data_spaces_.at(i).empty()) 
     {
@@ -416,33 +416,70 @@ void OperationSpace::SaveAndSubtractIfSameStride(OperationSpace& prev, problem::
       translation = prev.data_spaces_.at(i).GetTranslation(data_spaces_.at(i));
     }
 
-    if (prev_translation.at(i).Order() == 0)
+    // Translation cases:
+    // prev | cur  | outcome
+    // ---- | ---- | -------
+    // NULL | NULL | Subtract. Do not update prev.
+    // NULL |    0 | Subtract. Do not update prev. [Stationary]
+    // NULL |   >0 | Subtract. Update prev.
+    //    0 | NULL | Impossible.
+    //    0 |    0 | Impossible.
+    //    0 |   >0 | Impossible.
+    //   >0 | NULL | Impossible.
+    //   >0 |    0 | Subtract. Do not update prev. [Stationary]
+    //   >0 |   >0 | Equal ? Subtract : Blow Up. 
+
+    assert(!translation.IsNull() || prev_translation.at(i).IsNull());
+    assert(prev_translation.at(i).IsNull() || !prev_translation.at(i).IsZero());
+
+    // Lambda for conciseness.
+    auto SubAndSwap = [&]()
     {
-      // Previous stride is null, so we perform a delta.
       auto saved = data_spaces_.at(i);
       data_spaces_.at(i).Subtract(prev.data_spaces_.at(i));
       std::swap(saved, prev.data_spaces_.at(i));
+    };
+
+    if (translation.IsNull() || translation.IsZero())
+    {
+      // Current stride is NULL, which means this was the first iteration, OR
+      // Current stride is 0, which means we were stationary.
+      // In either case, do NOT update prev_translation.
+      SubAndSwap();
+    }
+    else if (prev_translation.at(i).IsNull() && !translation.IsZero())
+    {
+      // Previous stride is NULL but current stride is Non-Zero,
+      // so we perform a delta and update stride.
+      SubAndSwap();
       prev_translation.at(i) = translation;
     }
-    else if (translation == prev_translation.at(i))
+    else if (!prev_translation.at(i).IsZero() && !translation.IsZero())
     {
-      // Stride is the same as previous stride, so perform a delta.
-      auto saved = data_spaces_.at(i);
-      data_spaces_.at(i).Subtract(prev.data_spaces_.at(i));
-      std::swap(saved, prev.data_spaces_.at(i));
+      if (translation == prev_translation.at(i))
+      {
+        // Non-Zero stride is the same as previous stride, so perform a delta.
+        SubAndSwap();
+      }
+      else
+      {
+        // Non-Zero stride has changed; discard the subtrahend and reset the
+        // previous stride to NULL.
+        prev.data_spaces_.at(i) = data_spaces_.at(i);
+        prev_translation.at(i) = Point();
+      }
     }
     else
     {
-      // Stride has changed; discard the subtrahend and reset the stride.
-      prev.data_spaces_.at(i) = data_spaces_.at(i);
-      prev_translation.at(i) = Point();
+      std::cerr << "ERROR: illegal combination of prev_translation and translation" << std::endl;
+      std::exit(1);
     }
   }
 }
 
 PerDataSpace<std::size_t> OperationSpace::GetSizes() const
 {
-  PerDataSpace<std::size_t> retval;
+  PerDataSpace<std::size_t> retval(data_spaces_.size());
   
   for (unsigned i = 0; i < data_spaces_.size(); i++)
     retval.at(i) = data_spaces_.at(i).size();

@@ -1,0 +1,40 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: R=1 S=1 P=1 Q=28 C=72 M=40 N=1 H=1 W=28
+    permutation: SRCQPMNHW
+  - target: MainMemory
+    type: intraline
+    factors: R=1 S=1 P=28 Q=1 C=1 M=1 N=1 H=28 W=1
+    permutation: SRCQPMNHW
+
+  - target: GlobalBuffer
+    type: interline
+    factors: R=1 S=1 P=1 Q=14 C=72 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: GlobalBuffer
+    type: intraline
+    factors: R=1 S=1 P=28 Q=1 C=1 M=1 N=1 H=28 W=1
+    permutation: SRCQPMNHW
+
+  - target: RegisterFile
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: PEWeightBuffer
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: PEAccuBuffer
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+
+  - target: PEWeightRegs
+    type: interline
+    factors: R=1 S=1 P=1 Q=1 C=1 M=1 N=1 H=1 W=1
+    permutation: SRCQPMNHW
+

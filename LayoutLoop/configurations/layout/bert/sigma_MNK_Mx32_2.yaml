@@ -1,0 +1,61 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: M=16 N=128 K=615
+    permutation: MNK
+
+  - target: MainMemory
+    type: intraline
+    factors: M=32 N=6 K=5
+    permutation: MNK
+
+  - target: GlobalBuffer
+    type: interline
+    factors: M=16 N=64 K=1
+    permutation: MNK
+
+  - target: GlobalBuffer
+    type: intraline
+    factors: M=32 N=6 K=5
+    permutation: MNK
+
+  - target: RegisterFile
+    type: interline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: RegisterFile
+    type: intraline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEWeightBuffer
+    type: interline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEWeightBuffer
+    type: intraline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEAccuBuffer
+    type: interline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEAccuBuffer
+    type: intraline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEWeightRegs
+    type: interline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: PEWeightRegs
+    type: intraline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+

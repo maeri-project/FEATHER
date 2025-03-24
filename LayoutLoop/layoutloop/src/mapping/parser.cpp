@@ -43,14 +43,21 @@ ArchProperties arch_props_;
 // Forward declarations.
 //
 unsigned FindTargetStorageLevel(config::CompoundConfigNode directive);
+
 unsigned FindTargetTilingLevel(config::CompoundConfigNode constraint, std::string type);
+
 std::map<problem::Shape::FlattenedDimensionID, std::pair<int,int>> ParseUserFactors(
   config::CompoundConfigNode constraint, const problem::Workload& workload);
-std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::CompoundConfigNode constraint);
+
+std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::CompoundConfigNode constraint, const problem::Workload& workload);
+
 void ParseUserDatatypeBypassSettings(config::CompoundConfigNode constraint,
                                      unsigned level,
-                                     problem::PerDataSpace<std::string>& user_bypass_strings);
-loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive);
+                                     problem::PerDataSpace<std::string>& user_bypass_strings,
+                                     const problem::Workload& workload);
+
+loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive,
+                                         const problem::Workload& workload);
 
 //
 // Parse mapping in libconfig format and generate data structure.
@@ -65,16 +72,18 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
   std::map<unsigned, std::map<problem::Shape::FlattenedDimensionID, std::pair<int,int>>> user_factors;
   std::map<unsigned, std::vector<problem::Shape::FlattenedDimensionID>> user_permutations;
   std::map<unsigned, std::uint32_t> user_spatial_splits;
-  problem::PerDataSpace<std::string> user_bypass_strings;
+  problem::PerDataSpace<std::string> user_bypass_strings(workload.GetShape()->NumDataSpaces);
   std::map<unsigned, double> confidence_thresholds;
   std::unordered_map<unsigned, loop::Nest::SkewDescriptor> user_skews;
-  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_link_transfer;
-  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_multicast;
-  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_temporal_reuse;
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_link_transfer(workload.GetShape()->NumDataSpaces);
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_multicast(workload.GetShape()->NumDataSpaces);
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_temporal_reuse(workload.GetShape()->NumDataSpaces);
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> rmw_first_update(workload.GetShape()->NumDataSpaces);
+  std::unordered_map<unsigned, problem::PerDataSpace<bool>> no_coalesce(workload.GetShape()->NumDataSpaces);
 
   // Initialize user bypass strings to "XXXXX...1" (note the 1 at the end).
   // FIXME: there's probably a cleaner way/place to initialize this.
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload.GetShape()->NumDataSpaces); pvi++)
   {
     std::string xxx(arch_props_.StorageLevels(), 'X');
     xxx.back() = '1';
@@ -105,45 +114,13 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       auto level_id = FindTargetTilingLevel(directive, type);
 
       user_factors[level_id] = ParseUserFactors(directive, workload);
+      user_permutations[level_id] = ParseUserPermutations(directive, workload);
 
-      // The following logic was moved to the next per-level block of code.
-
-      // auto level_factors = ParseUserFactors(directive, workload);
-      // if (level_factors.size() > 0)
-      // {
-      //   // Fill in missing factors with default = 1.
-      //   for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
-      //   {
-      //     auto dim = problem::Shape::FlattenedDimensionID(idim);
-      //     if (level_factors.find(dim) == level_factors.end())
-      //     {
-      //       level_factors[dim] = std::make_pair<>(1, 1);
-      //     }
-      //   }
-      //   user_factors[level_id] = level_factors;
-      // }
-        
-      user_permutations[level_id] = ParseUserPermutations(directive);
-
-      // The following logic was moved to the next per-level block of code.
-
-      // auto level_permutations = ParseUserPermutations(directive);
-      // if (level_permutations.size() > 0)
-      // {
-      //   // Fill in missing dimensions with an undetermined order.
-      //   for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
-      //   {
-      //     auto dim = problem::Shape::FlattenedDimensionID(idim);
-      //     if (std::find(level_permutations.begin(), level_permutations.end(), dim) == level_permutations.end())
-      //       level_permutations.push_back(dim);
-      //   }
-      //   user_permutations[level_id] = level_permutations;
-      // }
-
+      std::vector<std::string> datatype_strings;
       if (type == "spatial")
       {
         // Initialize user spatial splits to map all dimensions to the hardware X-axis.
-        std::uint32_t user_split = unsigned(problem::GetShape()->NumFlattenedDimensions);
+        std::uint32_t user_split = unsigned(workload.GetShape()->NumFlattenedDimensions);
         directive.lookupValue("split", user_split);
         user_spatial_splits[level_id] = user_split;
 
@@ -151,19 +128,19 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
         if (directive.exists("no_link_transfer"))
         {
           auto storage_level = arch_props_.TilingToStorage(level_id);
-          std::vector<std::string> datatype_strings;
+          datatype_strings.clear();
           if (directive.lookupArrayValue("no_link_transfer", datatype_strings))
           {
-            no_link_transfer[storage_level] = problem::PerDataSpace<bool>();
+            no_link_transfer[storage_level] = problem::PerDataSpace<bool>(workload.GetShape()->NumDataSpaces);
             
-            for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+            for(unsigned pv = 0; pv < workload.GetShape()->NumDataSpaces; pv++)
               no_link_transfer[storage_level][pv] = 0;
             for (const std::string& datatype_string: datatype_strings)
             {
               try
               {
                 no_link_transfer[storage_level].at(
-                  problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+                  workload.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
               }
               catch (std::out_of_range& oor)
               {
@@ -174,56 +151,86 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
             }
           }
         }
+  
+        bool found = false;
+        datatype_strings.clear();
+        if (directive.exists("no_reuse"))
+          found = directive.lookupArrayValue("no_reuse", datatype_strings);
+        if (!found && directive.exists("no_reuse"))
+          found = directive.lookupArrayValue("no_reuse", datatype_strings);
 
         // No multicast no reduction
-        if (directive.exists("no_multicast_no_reduction"))
+        if (found)
         {
           auto storage_level = arch_props_.TilingToStorage(level_id);
-          std::vector<std::string> datatype_strings;
-          if (directive.lookupArrayValue("no_multicast_no_reduction", datatype_strings))
+          no_multicast[storage_level] = problem::PerDataSpace<bool>(workload.GetShape()->NumDataSpaces);
+          for(unsigned pv = 0; pv < workload.GetShape()->NumDataSpaces; pv++)
+            no_multicast[storage_level][pv] = 0;
+          for (const std::string& datatype_string: datatype_strings)
           {
-            no_multicast[storage_level] = problem::PerDataSpace<bool>();
-            for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
-              no_multicast[storage_level][pv] = 0;
-            for (const std::string& datatype_string: datatype_strings)
+            try
             {
-              try
-              {
-                no_multicast[storage_level].at(
-                  problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
-              }
-              catch (std::out_of_range& oor)
-              {
-                std::cerr << "ERROR: parsing no_multicast_no_reduction setting: data-space " << datatype_string
-                          << " not found in problem shape." << std::endl;
-                exit(1);
-              }
+              no_multicast[storage_level].at(
+                workload.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+            }
+            catch (std::out_of_range& oor)
+            {
+              std::cerr << "ERROR: parsing no_multicast_no_reduction setting: data-space " << datatype_string
+                        << " not found in problem shape." << std::endl;
+              exit(1);
             }
           }
         }
       }
+
       if (type == "temporal")
       {
-        // No temporal reuse
-        if (directive.exists("no_temporal_reuse"))
+        bool found = false;
+        datatype_strings.clear();
+        if (directive.exists("no_reuse"))
+          found = directive.lookupArrayValue("no_reuse", datatype_strings);
+        if (!found && directive.exists("no_temporal_reuse"))
+          found = directive.lookupArrayValue("no_temporal_reuse", datatype_strings);
+        if (found)
         {
           auto storage_level = arch_props_.TilingToStorage(level_id);
-          std::vector<std::string> datatype_strings;
-          if (directive.lookupArrayValue("no_temporal_reuse", datatype_strings))
+          no_temporal_reuse[storage_level] = problem::PerDataSpace<bool>(workload.GetShape()->NumDataSpaces);
+          for(unsigned pv = 0; pv < workload.GetShape()->NumDataSpaces; pv++)
+            no_temporal_reuse[storage_level][pv] = 0;
+          for (const std::string& datatype_string: datatype_strings)
           {
-            no_temporal_reuse[storage_level] = problem::PerDataSpace<bool>();
+            try
+            {
+              no_temporal_reuse[storage_level].at(
+                workload.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+            }
+            catch (std::out_of_range& oor)
+            {
+              std::cerr << "ERROR: parsing no_temporal_reuse setting: data-space " << datatype_string
+                        << " not found in problem shape." << std::endl;
+              exit(1);
+            }
+          }
+        }
+        if (directive.exists("rmw_first_update"))
+        {
+          auto storage_level = arch_props_.TilingToStorage(level_id);
+          datatype_strings.clear();
+          if (directive.lookupArrayValue("rmw_first_update", datatype_strings))
+          {
+            rmw_first_update[storage_level] = problem::PerDataSpace<bool>();
             for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
-              no_temporal_reuse[storage_level][pv] = 0;
+              rmw_first_update[storage_level][pv] = 0;
             for (const std::string& datatype_string: datatype_strings)
             {
               try
               {
-                no_temporal_reuse[storage_level].at(
-                  problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+                rmw_first_update[storage_level].at(
+                  workload.GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
               }
               catch (std::out_of_range& oor)
               {
-                std::cerr << "ERROR: parsing no_temporal_reuse setting: data-space " << datatype_string
+                std::cerr << "ERROR: parsing rmw_first_update setting: data-space " << datatype_string
                           << " not found in problem shape." << std::endl;
                 exit(1);
               }
@@ -232,18 +239,44 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
         }
       }
     }
-    else if (type == "datatype" || type == "bypass")
+    else if (type == "datatype" || type == "bypass" || type == "dataspace")
     {
       auto level_id = FindTargetTilingLevel(directive, type);
       ParseUserDatatypeBypassSettings(directive,
                                       arch_props_.TilingToStorage(level_id),
-                                      user_bypass_strings);
+                                      user_bypass_strings,
+                                      workload);
+      if (directive.exists("no_coalesce"))
+      {
+        auto storage_level = arch_props_.TilingToStorage(level_id);
+        std::vector<std::string> datatype_strings;
+        if (directive.lookupArrayValue("no_coalesce", datatype_strings))
+        {
+          no_coalesce[storage_level] = problem::PerDataSpace<bool>();
+          for(unsigned pv = 0; pv < problem::GetShape()->NumDataSpaces; pv++)
+            no_coalesce[storage_level][pv] = 0;
+          for (const std::string& datatype_string: datatype_strings)
+          {
+            try
+            {
+              no_coalesce[storage_level].at(
+                problem::GetShape()->DataSpaceNameToID.at(datatype_string)) = 1;
+            }
+            catch (std::out_of_range& oor)
+            {
+              std::cerr << "ERROR: parsing no_coalesce setting: data-space " << datatype_string
+                        << " not found in problem shape." << std::endl;
+              exit(1);
+            }
+          }
+        }
+      }
     }
     else if (type == "skew")
     {
       // Note: skews are stored by storage level id, not tiling level id.
       auto storage_level_id = FindTargetStorageLevel(directive);
-      user_skews[storage_level_id] = ParseUserSkew(directive);
+      user_skews[storage_level_id] = ParseUserSkew(directive, workload);
     }
     else
     {
@@ -269,13 +302,13 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       permutation = user_permutations.find(level);
     }
 
-    if (permutation->second.size() != std::size_t(problem::GetShape()->NumFlattenedDimensions))
+    if (permutation->second.size() != std::size_t(workload.GetShape()->NumFlattenedDimensions))
     {
       // Fill in missing dimensions with an undetermined order.
       std::cerr << "WARNING: parsing mapping: permutation contains insufficient dimensions at level: "
                 << arch_props_.TilingLevelName(level) << ", padding with arbitrary order." << std::endl;
 
-      for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+      for (unsigned idim = 0; idim < unsigned(workload.GetShape()->NumFlattenedDimensions); idim++)
       {
         auto dim = problem::Shape::FlattenedDimensionID(idim);
         if (std::find(permutation->second.begin(), permutation->second.end(), dim) == permutation->second.end())
@@ -292,13 +325,13 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       factors = user_factors.find(level);
     }
 
-    if (factors->second.size() != std::size_t(problem::GetShape()->NumFlattenedDimensions))
+    if (factors->second.size() != std::size_t(workload.GetShape()->NumFlattenedDimensions))
     {
       // Fill in missing factors with default = 1.
       std::cerr << "WARNING: parsing mapping: factors not provided for all dimensions at level: "
                 << arch_props_.TilingLevelName(level) << ", setting to 1." << std::endl;
 
-      for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+      for (unsigned idim = 0; idim < unsigned(workload.GetShape()->NumFlattenedDimensions); idim++)
       {
         auto dim = problem::Shape::FlattenedDimensionID(idim);
         if (factors->second.find(dim) == factors->second.end())
@@ -315,13 +348,13 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       {
         std::cerr << "WARNING: parsing mapping: split not found for spatial level: "
                   << arch_props_.TilingLevelName(level) << ", setting to all-X." << std::endl;
-        user_spatial_splits[level] = unsigned(problem::GetShape()->NumFlattenedDimensions);
+        user_spatial_splits[level] = unsigned(workload.GetShape()->NumFlattenedDimensions);
         split = user_spatial_splits.find(level);
       }
     }
 
-    // Each partition has problem::GetShape()->NumFlattenedDimensions loops.
-    for (unsigned idim = 0; idim < unsigned(problem::GetShape()->NumFlattenedDimensions); idim++)
+    // Each partition has workload.GetShape()->NumFlattenedDimensions loops.
+    for (unsigned idim = 0; idim < unsigned(workload.GetShape()->NumFlattenedDimensions); idim++)
     {
       loop::Descriptor loop;
       loop.dimension = permutation->second.at(idim);
@@ -339,7 +372,7 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
 
   // Validity checks.
   std::map<problem::Shape::FlattenedDimensionID, int> prod;
-  for (unsigned dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+  for (unsigned dim = 0; dim < workload.GetShape()->NumFlattenedDimensions; dim++)
     prod[dim] = 0;
 
   // (((resP3-1)*P2 + (resP2-1))*P1 + (resP1-1))*P0 + resP0  
@@ -349,17 +382,17 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       prod[loop.dimension] = prod[loop.dimension]*loop.end + loop.residual_end-1;
   }
 
-  for (unsigned dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+  for (unsigned dim = 0; dim < workload.GetShape()->NumFlattenedDimensions; dim++)
     prod[dim]++;
 
   // All user-provided factors must multiply-up to the dimension size.
   bool fault = false;
-  for (unsigned dim = 0; dim < problem::GetShape()->NumFlattenedDimensions; dim++)
+  for (unsigned dim = 0; dim < workload.GetShape()->NumFlattenedDimensions; dim++)
   {
     if (prod[dim] != workload.GetFlattenedBound(dim))
     {
       std::cerr << "ERROR: parsing mapping: product of all factors of dimension "
-                << problem::GetShape()->FlattenedDimensionIDToName.at(dim) << " is "
+                << workload.GetShape()->FlattenedDimensionIDToName.at(dim) << " is "
                 << prod[dim] << ", which is not equal to "
                 << "the dimension size of the workload " << workload.GetFlattenedBound(dim)
                 << "." << std::endl;
@@ -372,13 +405,12 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
   }
 
   // Concatenate the subnests to form the final mapping nest.
-  Mapping mapping;
+  Mapping mapping(&workload);
   
-  std::uint64_t storage_level = 0;
   for (uint64_t i = 0; i < arch_props_.TilingLevels(); i++)
   {
     uint64_t num_subnests_added = 0;
-    for (int dim = 0; dim < int(problem::GetShape()->NumFlattenedDimensions); dim++)
+    for (int dim = 0; dim < int(workload.GetShape()->NumFlattenedDimensions); dim++)
     {
       // Ignore trivial factors
       // This reduces computation time by 1.5x on average.
@@ -395,19 +427,18 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
       {
         // Add a trivial temporal nest to make sure
         // we have at least one subnest in each level.
-        mapping.loop_nest.AddLoop(problem::Shape::FlattenedDimensionID(int(problem::GetShape()->NumFlattenedDimensions) - 1),
+        mapping.loop_nest.AddLoop(problem::Shape::FlattenedDimensionID(int(workload.GetShape()->NumFlattenedDimensions) - 1),
                                    0, 1, 1, spacetime::Dimension::Time);
       }
       mapping.loop_nest.AddStorageTilingBoundary();
       mapping.complete_loop_nest.AddStorageTilingBoundary();
-      storage_level++;
     }
   }
 
   // The user_mask input is a set of per-datatype strings. Each string has a length
   // equal to num_storage_levels, and contains the characters 0 (bypass), 1 (keep),
   // or X (evaluate both).    
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload.GetShape()->NumDataSpaces); pvi++)
   {
     auto pv = problem::Shape::DataSpaceID(pvi);
 
@@ -446,6 +477,8 @@ Mapping ParseAndConstruct(config::CompoundConfigNode config,
   mapping.loop_nest.no_link_transfer = no_link_transfer;
   mapping.loop_nest.no_multicast = no_multicast;
   mapping.loop_nest.no_temporal_reuse = no_temporal_reuse;
+  mapping.loop_nest.rmw_first_update = rmw_first_update;
+  mapping.loop_nest.no_coalesce = no_coalesce;
   mapping.id = 0;
   mapping.fanoutX_map = arch_props_.FanoutX();
   mapping.fanoutY_map = arch_props_.FanoutY();
@@ -564,7 +597,7 @@ std::map<problem::Shape::FlattenedDimensionID, std::pair<int,int>> ParseUserFact
       problem::Shape::FlattenedDimensionID dimension;
       try
       {
-        dimension = problem::GetShape()->FlattenedDimensionNameToID.at(dimension_name);
+        dimension = workload.GetShape()->FlattenedDimensionNameToID.at(dimension_name);
       }
       catch (const std::out_of_range& oor)
       {
@@ -611,7 +644,7 @@ std::map<problem::Shape::FlattenedDimensionID, std::pair<int,int>> ParseUserFact
 //
 // Parse user permutations.
 //
-std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::CompoundConfigNode directive)
+std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::CompoundConfigNode directive, const problem::Workload& workload)
 {
   std::vector<problem::Shape::FlattenedDimensionID> retval;
     
@@ -622,7 +655,7 @@ std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::
     char token;
     while (iss >> token)
     {
-      auto dimension = problem::GetShape()->FlattenedDimensionNameToID.at(std::string(1, token)); // note: can fault.
+      auto dimension = workload.GetShape()->FlattenedDimensionNameToID.at(std::string(1, token)); // note: can fault.
       retval.push_back(dimension);
     }
   }
@@ -635,7 +668,8 @@ std::vector<problem::Shape::FlattenedDimensionID> ParseUserPermutations(config::
 //
 void ParseUserDatatypeBypassSettings(config::CompoundConfigNode directive,
                                      unsigned level,
-                                     problem::PerDataSpace<std::string>& user_bypass_strings)
+                                     problem::PerDataSpace<std::string>& user_bypass_strings,
+                                     const problem::Workload& workload)
 {
   // Datatypes to "keep" at this level.
   if (directive.exists("keep"))
@@ -644,7 +678,7 @@ void ParseUserDatatypeBypassSettings(config::CompoundConfigNode directive,
     directive.lookupArrayValue("keep", datatype_strings);
     for (const std::string& datatype_string: datatype_strings)
     {
-      auto datatype = problem::GetShape()->DataSpaceNameToID.at(datatype_string);
+      auto datatype = workload.GetShape()->DataSpaceNameToID.at(datatype_string);
       user_bypass_strings.at(datatype).at(level) = '1';
     }
   }
@@ -656,7 +690,7 @@ void ParseUserDatatypeBypassSettings(config::CompoundConfigNode directive,
     directive.lookupArrayValue("bypass", datatype_strings);
     for (const std::string& datatype_string: datatype_strings)
     {
-      auto datatype = problem::GetShape()->DataSpaceNameToID.at(datatype_string);
+      auto datatype = workload.GetShape()->DataSpaceNameToID.at(datatype_string);
       user_bypass_strings.at(datatype).at(level) = '0';
     }
   }
@@ -665,7 +699,7 @@ void ParseUserDatatypeBypassSettings(config::CompoundConfigNode directive,
 //
 // Parse user skew.
 //
-loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive)
+loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive, const problem::Workload& workload)
 {
   loop::Nest::SkewDescriptor skew_descriptor;
 
@@ -700,7 +734,7 @@ loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive)
       auto variable = term_cfg.lookup("variable");
       std::string buffer;
       variable.lookupValue("dimension", buffer);
-      term.variable.dimension = problem::GetShape()->FlattenedDimensionNameToID.at(buffer);
+      term.variable.dimension = workload.GetShape()->FlattenedDimensionNameToID.at(buffer);
 
       variable.lookupValue("type", buffer);
       if (buffer == "spatial")
@@ -719,7 +753,7 @@ loop::Nest::SkewDescriptor ParseUserSkew(config::CompoundConfigNode directive)
       auto bound = term_cfg.lookup("bound");
       std::string buffer;
       bound.lookupValue("dimension", buffer);
-      term.bound.dimension = problem::GetShape()->FlattenedDimensionNameToID.at(buffer);
+      term.bound.dimension = workload.GetShape()->FlattenedDimensionNameToID.at(buffer);
 
       bound.lookupValue("type", buffer);
       if (buffer == "spatial")

@@ -40,6 +40,17 @@ Application::Application(config::CompoundConfig* config)
 {
   auto rootNode = config->getRoot();
 
+  // Version check
+  if (rootNode.exists("architecture") && rootNode.lookup("architecture").exists("nodes"))
+  {
+    std::cerr << "ERROR: 'nodes' found as a sub-key in the architecture. The 'nodes' key is used by "
+              << "the v0.4 timeloopfe front-end format, and will not be recognized by 'timeloop-...' "
+              << "commands. Please use the timeloopfe front-end, which is documented at "
+              << "https://github.com/Accelergy-Project/timeloop-accelergy-exercises and "
+              << "https://timeloop.csail.mit.edu." << std::endl;
+    exit(1);
+  }
+
   // Problem configuration.
   auto problem = rootNode.lookup("problem");
   problem::ParseWorkload(problem, workload_);
@@ -120,7 +131,7 @@ void Application::Run()
   const std::string stats_file_name = out_prefix_ + ".stats.txt";
   const std::string map_txt_file_name = out_prefix_ + ".map.txt";
     
-  Mapping best_mapping;
+  Mapping best_mapping(&workload_);
   model::Engine best_engine;
   model::Engine engine;
 
@@ -149,7 +160,7 @@ void Application::Run()
           // Construct a mapping from the mapping ID. This step can fail
           // because the space of *legal* mappings isn't dense (unfortunately),
           // so a mapping ID may point to an illegal mapping.
-          Mapping mapping;
+          Mapping mapping(&workload_);
 
           auto construction_status = mapspace_->ConstructMapping(mapping_id, &mapping);
           success &= std::accumulate(construction_status.begin(), construction_status.end(), true,

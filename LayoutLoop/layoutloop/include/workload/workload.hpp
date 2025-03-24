@@ -65,7 +65,7 @@ class Workload
   typedef std::map<Shape::FlattenedDimensionID, Coordinate> FlattenedBounds;
   typedef std::map<Shape::CoefficientID, int> Coefficients;
   typedef std::map<Shape::DataSpaceID, std::shared_ptr<DensityDistribution>> Densities;
-  
+
  protected:
   FactorizedBounds factorized_bounds_;
   FlattenedBounds flattened_bounds_;
@@ -82,9 +82,6 @@ class Workload
 
  public:
   Workload() {
-    if (workload_alive_) {
-      throw std::runtime_error("Only one Workload instance allowed at any point.");
-    }
     workload_alive_ = true;
     current_shape_ = &shape_;
   }

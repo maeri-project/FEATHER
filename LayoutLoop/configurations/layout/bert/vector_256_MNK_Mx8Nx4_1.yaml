@@ -1,0 +1,31 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: M=64 N=96 K=192
+    permutation: MNK
+
+  - target: MainMemory
+    type: intraline
+    factors: M=8 N=8 K=4
+    permutation: MNK
+
+  - target: GlobalBuffer
+    type: interline
+    factors: M=64 N=16 K=1
+    permutation: MNK
+
+  - target: GlobalBuffer
+    type: intraline
+    factors: M=8 N=8 K=4
+    permutation: MNK
+
+  - target: RegisterFile
+    type: interline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+
+  - target: RegisterFile
+    type: intraline
+    factors: M=1 N=1 K=1
+    permutation: MNK
+

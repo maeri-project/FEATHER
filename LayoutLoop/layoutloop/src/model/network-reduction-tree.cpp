@@ -37,6 +37,10 @@
 #include "model/network-reduction-tree.hpp"
 BOOST_CLASS_EXPORT(model::ReductionTreeNetwork)
 
+bool gHideInconsequentialStatsNetworkReductionTree =
+  (getenv("TIMELOOP_HIDE_INCONSEQUENTIAL_STATS") == NULL) ||
+  (strcmp(getenv("TIMELOOP_HIDE_INCONSEQUENTIAL_STATS"), "0") != 0);
+
 namespace model
 {
 
@@ -75,11 +79,11 @@ ReductionTreeNetwork::Specs ReductionTreeNetwork::ParseSpecs(config::CompoundCon
 
   // Word Bits.
   std::uint32_t word_bits;
-  if (network.lookupValue("network-word-bits", word_bits))
+  if (network.lookupValue("network_word_bits", word_bits))
   {
     specs.word_bits = word_bits;
   }
-  else if (network.lookupValue("word-bits", word_bits) ||
+  else if (network.lookupValue("word_bits", word_bits) ||
            network.lookupValue("word_width", word_bits) ||
            network.lookupValue("datawidth", word_bits) )
   {
@@ -94,12 +98,12 @@ ReductionTreeNetwork::Specs ReductionTreeNetwork::ParseSpecs(config::CompoundCon
 
   // adder energy.
   double adder_energy = 0.0;
-  network.lookupValue("adder-energy", adder_energy);
+  network.lookupValue("adder_energy", adder_energy);
   specs.adder_energy = adder_energy;
 
   // Wire energy.
   double wire_energy = 0.0;
-  network.lookupValue("wire-energy", wire_energy);
+  network.lookupValue("wire_energy", wire_energy);
   specs.wire_energy = wire_energy;
 
   // Network fill and drain latency
@@ -180,21 +184,24 @@ void ReductionTreeNetwork::SetTileWidth(double width_um)
 }
 
 EvalStatus ReductionTreeNetwork::Evaluate(const tiling::CompoundTile& tile,
-                              const bool break_on_failure)
+                                          problem::Workload* workload,
+                                          const bool break_on_failure)
 {
+  workload_ = workload;
+  
   tiling::CompoundDataMovementInfo data_movement = tile.data_movement_info;
 
   (void) break_on_failure;
   assert(specs_.cType == UpdateDrain); // ReductionTreeNetwork can only be used in update-drain connection
 
   // Get stats from the CompoundTile
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload_->GetShape()->NumDataSpaces); pvi++)
   {
     auto pv = problem::Shape::DataSpaceID(pvi);
       
     stats_.utilized_instances[pv] = data_movement[pvi].replication_factor;
 
-    if (problem::GetShape()->IsReadWriteDataSpace.at(pv))
+    if (workload_->GetShape()->IsReadWriteDataSpace.at(pv))
     {
       stats_.ingresses[pv] = data_movement[pvi].access_stats;
       for (auto& x: stats_.ingresses[pv].stats)
@@ -210,7 +217,7 @@ EvalStatus ReductionTreeNetwork::Evaluate(const tiling::CompoundTile& tile,
   } 
 
   // Calculate energy
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload_->GetShape()->NumDataSpaces); pvi++)
   {
     auto pv = problem::Shape::DataSpaceID(pvi);
 
@@ -230,7 +237,7 @@ EvalStatus ReductionTreeNetwork::Evaluate(const tiling::CompoundTile& tile,
       double num_hops = 0;
       if (ingresses > 0)
       {
-        if (problem::GetShape()->IsReadWriteDataSpace.at(pv))
+        if (workload_->GetShape()->IsReadWriteDataSpace.at(pv))
         {
           // Modeling the reduction tree here!
           num_hops = std::floor(std::log2(reduction_factor)) * 0.5;
@@ -239,7 +246,7 @@ EvalStatus ReductionTreeNetwork::Evaluate(const tiling::CompoundTile& tile,
       total_wire_hops += num_hops * ingresses;
     }
 
-    if (problem::GetShape()->IsReadWriteDataSpace.at(pv))
+    if (workload_->GetShape()->IsReadWriteDataSpace.at(pv))
     {
       stats_.energy_per_hop[pv] = energy_per_hop;
       stats_.num_hops[pv] = total_ingresses > 0 ? total_wire_hops / total_ingresses : 0;
@@ -259,13 +266,14 @@ EvalStatus ReductionTreeNetwork::Evaluate(const tiling::CompoundTile& tile,
 // FIXME: Should merge this back to the common abstract Network class
 // PAT interface.
 //
-double ReductionTreeNetwork::WireEnergyPerHop(std::uint64_t word_bits, const double hop_distance,
-                                       double wire_energy_override)
+double ReductionTreeNetwork::WireEnergyPerHop(std::uint64_t word_bits,
+                                              const double hop_distance,
+                                              double wire_energy_override)
 {
   double hop_distance_mm = hop_distance / 1000;
   if (wire_energy_override != 0.0)
   {
-    // Internal wire model using user-provided average wire-energy/b/mm.
+    // Internal wire model using user-provided average wire_energy/b/mm.
     return word_bits * hop_distance_mm * wire_energy_override;
   }
   else
@@ -301,10 +309,12 @@ void ReductionTreeNetwork::Print(std::ostream& out) const
   out << indent << indent << "Type            : " << specs_.type << std::endl;
   out << indent << indent << "ConnectionType  : " << specs_.cType << std::endl;
   out << indent << indent << "Word bits       : " << specs_.word_bits << std::endl;
-  if (specs_.adder_energy.Get() != 0.0) {
+  if (specs_.adder_energy.Get() != 0.0)
+  {
     out << indent << indent << "Adder energy    : " << specs_.adder_energy << " pJ" << std::endl;
   }
-  if (specs_.wire_energy.Get() != 0.0) {
+  if (specs_.wire_energy.Get() != 0.0)
+  {
     out << indent << indent << "Wire energy     : " << specs_.wire_energy << " pJ/b/mm" << std::endl;
   }
   out << indent << indent << "Fill latency     : " << stats_.fill_latency << std::endl;
@@ -315,10 +325,11 @@ void ReductionTreeNetwork::Print(std::ostream& out) const
 
   out << indent << "STATS" << std::endl;
   out << indent << "-----" << std::endl;
-  for (unsigned pvi = 0; pvi < unsigned(problem::GetShape()->NumDataSpaces); pvi++)
+  for (unsigned pvi = 0; pvi < unsigned(workload_->GetShape()->NumDataSpaces); pvi++)
   {
     auto pv = problem::Shape::DataSpaceID(pvi);
-    out << indent << problem::GetShape()->DataSpaceIDToName.at(pv) << ":" << std::endl;
+    if(gHideInconsequentialStatsNetworkReductionTree && stats_.spatial_reductions.at(pv) == 0) continue;
+    out << indent << workload_->GetShape()->DataSpaceIDToName.at(pv) << ":" << std::endl;
 
     out << indent + indent << "Spatial reductions                      : "
         << stats_.spatial_reductions.at(pv) << std::endl;

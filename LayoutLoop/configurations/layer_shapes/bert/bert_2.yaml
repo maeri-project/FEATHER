@@ -1,0 +1,34 @@
+problem:
+  instance:
+    K: 3072
+    M: 512
+    N: 768
+  shape:
+    data_spaces:
+    - name: Inputs
+      ranks:
+      - M
+      - K
+      projection:
+      - - - M
+      - - - K
+    - name: Weights
+      ranks:
+      - N
+      - K
+      projection:
+      - - - N
+      - - - K
+    - name: Outputs
+      ranks:
+      - M
+      - N
+      projection:
+      - - - M
+      - - - N
+      read_write: true
+    dimensions:
+    - M
+    - N
+    - K
+    name: gemm

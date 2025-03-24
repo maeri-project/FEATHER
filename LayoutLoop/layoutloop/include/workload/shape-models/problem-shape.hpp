@@ -89,10 +89,31 @@ class Shape
 
   std::vector<std::set<FlattenedDimensionID>> DataSpaceIDToDimensionIDVector;
 
+  // --- NEW MEMBERS ---
+  // Map dataspace name to its rank names (as specified in the YAML "ranks" field)
+  std::map<std::string, std::vector<std::string>> DataSpaceNameToRankName;
+  // Map a rank name to the factorized dimensions that appear in the corresponding projection expression.
+  std::map<std::string, std::vector<std::uint32_t>> RankNameToFactorizedDimensionID;
+  // Map rank "W" and "H" to a tuple (dilation, stride) as given in the instance.
+  std::map<std::string, std::tuple<std::uint32_t, std::uint32_t>> RankNameToDilationStride;
+  std::map<std::string, std::vector<std::string>> RankNameToDimensionName;
+  std::map<std::string, std::vector<std::string>> RankNameToCoefficient;
+  // -------------------
+  
+
  public: 
   void Parse(config::CompoundConfigNode config);
   std::set<FlattenedDimensionID> GetCoIteratedDimensions(const std::vector<DataSpaceID> dataspace_pair) const;
   std::set<FlattenedDimensionID> GetFullyContractedDimensions() const;
 };
+
+// The only reason we need the following global constants is because of
+// the PerDataSpace<> class. We attempted to make that class more dynamic
+// by being disciplined about instantiating its objects and passing in
+// NumDataSpaces from the parsed workload each time. However, that turned
+// out to be too cumbersome for Stats classes for some modules in model/,
+// which have tens of PerDataSpace<> members.
+
+const std::size_t MAX_DATA_SPACES = 5;
 
 } // namespace problem

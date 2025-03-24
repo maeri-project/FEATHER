@@ -9,8 +9,7 @@ In this folder, we demonstrate steps to leverage proposed Layoutloop to enable d
 [TL,DR] In the following text, we first show 
 - environment setup (2),
 - Experiment of co-searching dataflow-layout (3), 
-- Experiemnt of exploring different rerordering capabilities (4) 
-- results analysis (5) including pre-run results and how to understand new results.
+- results analysis (4) including pre-run results and how to understand new results.
 
 ## 2. Setup
 To avoid the tedious dependency, we offer the docker with all dependencies and code being setup.

@@ -20,6 +20,10 @@ Performance-wise, FEATHER implements Reorder In Reduction (RIR) to hide the reor
 1. BIRRD supports arbitrary reoredering in functionality.
 2. BIIRD implements data reordering in data reduction (RIR) to hide reordering latency behind the critical path.
 
+# News
+
+We augment LayoutLoop with more precise layout modeling, better userability! **Now LayoutLoop is integrated into official NVlabs/Timeloop**, Check out this [PR](https://github.com/NVlabs/timeloop/pull/301) and this [PR](https://github.com/NVlabs/timeloop/pull/304)
+
 # Repository Overview.
 
 In this repository, we include all three key results of the papers, including

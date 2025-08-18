@@ -1,0 +1,49 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: M=512 K=12 N=768
+    permutation: MKN
+  - target: MainMemory
+    type: intraline
+    factors: M=16 K=64 N=4
+    permutation: MKN
+  - target: GlobalBuffer
+    type: interline
+    factors: M=32 K=768 N=192
+    permutation: MKN
+  - target: GlobalBuffer
+    type: intraline
+    factors: M=16 K=4 N=4
+    permutation: MKN
+  - target: DummyBuffer
+    type: interline
+    factors: M=32 K=48 N=96
+    permutation: MKN
+  - target: DummyBuffer
+    type: intraline
+    factors: M=1 K=1 N=1
+    permutation: MKN
+  - target: RegisterFile
+    type: interline
+    factors: M=1 K=12 N=24
+    permutation: MKN
+  - target: RegisterFile
+    type: intraline
+    factors: M=1 K=1 N=1
+    permutation: MKN
+  - target: weights_spad
+    type: interline
+    factors: M=1 K=12 N=8
+    permutation: MKN
+  - target: weights_spad
+    type: intraline
+    factors: M=1 K=1 N=1
+    permutation: MKN
+  - target: ofmap_spad
+    type: interline
+    factors: M=1 K=12 N=2
+    permutation: MKN
+  - target: ofmap_spad
+    type: intraline
+    factors: M=1 K=1 N=1
+    permutation: MKN

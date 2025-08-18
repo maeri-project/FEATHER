@@ -105,6 +105,7 @@ NestAnalysis::NestAnalysis()
 }
 
 
+
 void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest, layout::Layouts layout,
                         std::map<unsigned, std::uint64_t> fanoutX_map,
                         std::map<unsigned, std::uint64_t> fanoutY_map)
@@ -114,17 +115,6 @@ void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest, layout::L
 
   ASSERT(fanoutX_map.size() == nest->storage_tiling_boundaries.size());
   ASSERT(fanoutY_map.size() == nest->storage_tiling_boundaries.size());
-
-#ifdef DEBUG
-  std::cout << "mapping analysis" << std::endl;
-  for( auto iter = nest->loops.rbegin(); iter < nest->loops.rend(); iter++){
-   std::cout << "iter->dimension=" << iter->dimension << "-" << problem::GetShape()->FlattenedDimensionIDToName.at(iter->dimension) <<" in [" << iter->start  << ", " << iter->end << ", " << iter->stride << ") iter->residual_end=" << iter->residual_end  << std::endl;
-  }
-
-  for( unsigned iter = 0; iter < nest->storage_tiling_boundaries.size(); iter++){
-   std::cout << "nest->storage_tiling_boundaries["<< iter <<"]=" << nest->storage_tiling_boundaries[iter] << std::endl;
-  }
-#endif
 
   workload_ = wc;
   layout_ = layout;
@@ -173,7 +163,6 @@ void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest, layout::L
 
   gResetOnStrideChange = !workload_->GetShape()->UsesFlattening; 
 }
-
 
 
 void NestAnalysis::Init(problem::Workload* wc, const loop::Nest* nest,
@@ -2386,4 +2375,31 @@ problem::OperationSpace NestAnalysis::GetCurrentWorkingSet(std::vector<analysis:
   return problem::OperationSpace(workload_, low_problem_point, high_problem_point);
 }
 
+std::uint64_t NestAnalysis::GetLoopOuterSize(const loop::Descriptor &loop) const {
+  bool found = false;
+  analysis::LoopState found_loop;
+  for (auto nest_loop : nest_state_) {
+    if (nest_loop.descriptor == loop) {
+      found = true;
+      found_loop = nest_loop;
+      break;
+    }
+  }
+  if (!found) {
+    std::cout << "Failed to find loop inside loop nest, exiting ...";
+    return 0;
+  }
+
+  std::uint64_t outer_size = 1;
+  for (auto loop2 = nest_state_.rbegin(); loop2 != nest_state_.rend(); loop2++) {
+    if (loop2->level == found_loop.level) {
+      break;
+    } else if (loop2->descriptor.dimension == loop.dimension) {
+      int end = loop2->descriptor.end;
+      int residual_end = loop2->descriptor.residual_end;
+      outer_size = (outer_size - 1) * end + residual_end;
+    }
+  }
+  return outer_size;
+}
 } // namespace analysis

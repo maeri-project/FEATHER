@@ -1,0 +1,40 @@
+mapping:
+  - target: RegisterFile
+    type: datatype
+    keep:
+      - Inputs
+      - Outputs
+    bypass:
+      - Weights
+  - target: GlobalBuffer
+    type: datatype
+    keep:
+      - Weights
+    bypass:
+      - Inputs
+      - Outputs
+  - target: MainMemory
+    type: datatype
+    keep:
+      - Inputs
+      - Weights
+      - Outputs
+    bypass:
+      []
+  - target: RegisterFile
+    type: temporal
+    factors: M1 N8 K48
+    permutation: NKM
+  - target: GlobalBuffer
+    type: spatial
+    factors: M8 N4 K8
+    permutation: MNK
+    split: 3
+  - target: GlobalBuffer
+    type: temporal
+    factors: M1 N6 K1
+    permutation: NMK
+  - target: MainMemory
+    type: temporal
+    factors: M64 N16 K2
+    permutation: MKN

@@ -1,0 +1,49 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: C=14 K=84 R=1 S=1 N=1 V=7 H=7 W=7 L=42 Q=7 P=7
+    permutation: CKRSNVHWLQP
+  - target: MainMemory
+    type: intraline
+    factors: C=8 K=8 R=1 S=1 N=1 V=16 H=2 W=2 L=16 Q=2 P=2
+    permutation: CKRSNVHWLQP
+  - target: GlobalBuffer
+    type: interline
+    factors: C=112 K=336 R=1 S=1 N=1 V=7 H=7 W=1 L=21 Q=1 P=7
+    permutation: CKRSNVHWLQP
+  - target: GlobalBuffer
+    type: intraline
+    factors: C=1 K=1 R=1 S=1 N=1 V=16 H=2 W=2 L=16 Q=2 P=2
+    permutation: CKRSNVHWLQP
+  - target: DummyBuffer
+    type: interline
+    factors: C=16 K=14 R=1 S=1 N=1 V=16 H=1 W=1 L=14 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: DummyBuffer
+    type: intraline
+    factors: C=1 K=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: RegisterFile
+    type: interline
+    factors: C=1 K=14 R=1 S=1 N=1 V=1 H=1 W=1 L=14 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: RegisterFile
+    type: intraline
+    factors: C=1 K=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: weights_spad
+    type: interline
+    factors: C=1 K=14 R=1 S=1 N=1 V=1 H=1 W=1 L=14 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: weights_spad
+    type: intraline
+    factors: C=1 K=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: ofmap_spad
+    type: interline
+    factors: C=1 K=14 R=1 S=1 N=1 V=1 H=1 W=1 L=14 Q=1 P=1
+    permutation: CKRSNVHWLQP
+  - target: ofmap_spad
+    type: intraline
+    factors: C=1 K=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CKRSNVHWLQP

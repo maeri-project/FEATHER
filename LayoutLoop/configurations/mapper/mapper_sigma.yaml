@@ -1,0 +1,10 @@
+mapper:
+  optimization-metrics: [ delay, energy ]
+  live-status: False
+  num-threads: 32
+  timeout: 300
+  victory-condition: 300
+  algorithm: random-pruned
+  max-permutations-per-if-visit: 8
+  sync_interval: 100
+  penalize_consecutive_bypass_fails: True

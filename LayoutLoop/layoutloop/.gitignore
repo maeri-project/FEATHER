@@ -1,10 +1,7 @@
-benchmarks/layer_shapes/formal_definition/*
-
 /build/
 /src/pat
 /lib/
 /bin/
-benchmarks/test*
 
 # Generated output
 timeloop-output.pkl

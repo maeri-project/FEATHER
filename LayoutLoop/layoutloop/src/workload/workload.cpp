@@ -180,6 +180,20 @@ void ParseWorkloadInstance(config::CompoundConfigNode config, Workload& workload
   }
   workload.SetCoefficients(coefficients);
 
+  // ToDo: make this cleaner
+  Workload::Paddings paddings;
+  paddings["Hpadding"] = 0;
+  if (config.exists("Hpadding"))
+  {
+    config.lookupValue("Hpadding", paddings["Hpadding"]);
+  }
+  paddings["Wpadding"] = 0;
+  if (config.exists("Wpadding"))
+  {
+    config.lookupValue("Wpadding", paddings["Wpadding"]);
+  }
+  workload.SetPaddings(paddings);
+
   Workload::Densities densities;
   std::string density_distribution;
 

@@ -227,6 +227,9 @@ class NestAnalysis
   layout::Layouts GetLayout();
   bool IsLayoutInitialized();
 
+  // currently need this for imperfect factorization in bank conflict computation
+  std::uint64_t GetLoopOuterSize(const loop::Descriptor &loop) const; 
+
   // Serialization.
   friend class boost::serialization::access;
 

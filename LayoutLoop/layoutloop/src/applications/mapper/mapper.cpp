@@ -35,7 +35,7 @@
 
 #include "applications/mapper/mapper.hpp"
 #include "layout/layout.hpp"
-#include "crypto/crypto.hpp"
+#include "layoutspaces/layoutspace.hpp"
 
 //--------------------------------------------//
 //                Application                 //
@@ -75,59 +75,6 @@ Mapper::Mapper(config::CompoundConfig* config,
   auto problem = rootNode.lookup("problem");
   problem::ParseWorkload(problem, workload_);
   std::cout << "Problem configuration complete." << std::endl;
-  std::cout << "Print out overall CoefficientIDToName of the given problem" << std::endl;
-  for (auto pro: workload_.GetShape()->CoefficientIDToName){
-    std::cout << pro.first << " " << pro.second  << " " ;
-  }
-  std::cout << std::endl;
-  for (auto pro: workload_.GetShape()->DefaultCoefficients){
-    std::cout << pro.first << " " << pro.second  << " " ;
-  }
-  std::cout << std::endl;
-
-  std::cout << "Print out overall FactorizedDimensionNameToID of the given problem" << std::endl;
-  for (auto pro: workload_.GetShape()->FactorizedDimensionNameToID){
-    std::cout << pro.first << ":" << pro.second << " ";
-  }
-  std::cout << std::endl;
-  std::cout << "Print out overall workload_.GetFactorizedBounds()->GetCoordinates from problem" << std::endl;
-  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
-  {
-    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " ";
-  }
-  std::cout << std::endl;
-  for (auto pro: workload_.GetFactorizedBounds().GetCoordinates()){
-    std::cout << pro << " ";
-  }
-  std::cout << std::endl;
-
-  std::cout << "Print out DataSpaceIDToDimensionIDVector from problem" << std::endl;
-  for (unsigned index =0; index < workload_.GetShape()->NumDataSpaces; index++){
-    std::cout << workload_.GetShape()->DataSpaceIDToName.at(index) << ":";
-    for(auto pro2: workload_.GetShape()->DataSpaceIDToDimensionIDVector[index]){
-      std::cout << pro2  << " ";
-    }
-    std::cout << std::endl;
-    index++;
-  }
-  std::cout << std::endl;
-  std::cout << "Overall Workload Dimension" << std::endl;
-  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
-  {
-    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " = "
-              << workload_.GetFlattenedBound(dim) << std::endl;
-  }
-  std::cout << std::endl;
-  std::cout << "Print out overall DataSpaceIDToName of the given problem" << std::endl;
-  for (auto pro:  workload_.GetShape()->DataSpaceIDToName){
-    std::cout << pro.first << " " << pro.second << " ";
-  }
-  std::cout << std::endl;
-
-  // std::cout << "Print out overall GetCoIteratedDimensions of the given problem" << std::endl;
-  // for (const auto& pro: shape_problem->GetCoIteratedDimensions()){
-  //   std::cout << pro << " ";
-  // }
 
   // Mapper (this application) configuration.
   auto mapper = rootNode.lookup("mapper");
@@ -367,57 +314,29 @@ Mapper::Mapper(config::CompoundConfig* config,
   {
     cfg_string_ = nullptr;
   }
-
-  // crypto modeling
-  std::cout << "Start Parsering Crypto" << std::endl;
-  config::CompoundConfigNode compound_config_node_crypto;
-  bool existing_crypto = rootNode.lookup("crypto", compound_config_node_crypto);
-  crypto_ = new crypto::CryptoConfig();
-
-  if (existing_crypto){
-    crypto_ = crypto::ParseAndConstruct(compound_config_node_crypto);
-    
-    crypto_->crypto_initialized_ = true;
-
-    std::cout << "Crypto Configuration:\n";
-    std::cout << "  Name: " << crypto_->name << "\n";
-    std::cout << "  Family: " << crypto_->family << "\n";
-    std::cout << "  Datapath: " << crypto_->datapath << "\n";
-    std::cout << "  Auth Additional Cycle Per Block: " << crypto_->auth_additional_cycle_per_block << "\n";
-    std::cout << "  Auth Additional Energy Per Block: " << crypto_->auth_additional_energy_per_block << "\n";
-    std::cout << "  Auth Cycle Per Datapath: " << crypto_->auth_cycle_per_datapath << "\n";
-    std::cout << "  Auth Enc Parallel: " << (crypto_->auth_enc_parallel ? "true" : "false") << "\n";
-    std::cout << "  Auth Energy Per Datapath: " << crypto_->auth_energy_per_datapath << "\n";
-    std::cout << "  Enc Cycle Per Datapath: " << crypto_->enc_cycle_per_datapath << "\n";
-    std::cout << "  Enc Energy Per Datapath: " << crypto_->enc_energy_per_datapath << "\n";
-    std::cout << "  Hash Size: " << crypto_->hash_size << "\n";
-    std::cout << "  Xor Cycle: " << crypto_->xor_cycle << "\n";
-    std::cout << "  Xor Energy Per Datapath: " << crypto_->xor_energy_per_datapath << "\n";
-  }
-  else{
-    std::cout << "No Crypto specified" << std::endl;
-  }
   
   // layout modeling
   std::cout << "Start Parsering Layout" << std::endl;
   config::CompoundConfigNode compound_config_node_layout;
   bool existing_layout = rootNode.lookup("layout", compound_config_node_layout);
-  // ToDo: 
-  if (existing_layout){
-    std::map<std::string, std::pair<uint32_t, uint32_t>> externalPortMapping;
-    for (auto i: arch_specs_.topology.LevelNames())
-        externalPortMapping[i] = {arch_specs_.topology.GetStorageLevel(i)->num_ports.Get(), arch_specs_.topology.GetStorageLevel(i)->num_ports.Get()};
 
+  std::vector<std::pair<std::string, std::pair<uint32_t, uint32_t>>> externalPortMapping;
+  for (auto i: arch_specs_.topology.StorageLevelNames()){
+      externalPortMapping.push_back({i, {arch_specs_.topology.GetStorageLevel(i)->num_ports.Get(), arch_specs_.topology.GetStorageLevel(i)->num_ports.Get()}});
+    std::cout << "Storage Level " << i << " has " << arch_specs_.topology.GetStorageLevel(i)->num_ports.Get() << " ports" << std::endl;
+  }
+  if (existing_layout){
     layout_ = layout::ParseAndConstruct(compound_config_node_layout, workload_, externalPortMapping);
-    
+
     layout_initialized_ = true;
     layout::PrintOverallLayout(layout_);
   }
   else{
     layout_initialized_ = false;
-    std::cout << "No Layout specified, so using bandwidth based modeling" << std::endl;
+    std::cout << "No Layout specified, using layout searching." << std::endl;
+    layout_ = layout::InitializeDummyLayout(workload_, externalPortMapping);
+    layout::PrintOverallLayout(layout_);
   }
-
 }
 
 Mapper::~Mapper()
@@ -431,7 +350,7 @@ Mapper::~Mapper()
   {
     delete sparse_optimizations_;
   }
-  
+
   for (auto& search: search_)
   {
     if (search)
@@ -525,7 +444,6 @@ Mapper::Result Mapper::Run()
                                         layout_,
                                         layout_initialized_,
                                         sparse_optimizations_,
-                                        crypto_,
                                         &best_));
   }
 
@@ -623,10 +541,7 @@ Mapper::Result Mapper::Run()
         model::Engine engine;
         engine.Spec(arch_specs_);
 
-        if (layout_initialized_){ // ToDo: @Jianming modify here
-          engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, false);
-        }else
-          engine.Evaluate(mapping, workload_, sparse_optimizations_, crypto_, false);
+        engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, false);
 
         mapping.PrettyPrint(std::cout, arch_specs_.topology.StorageLevelNames(),
                             engine.GetTopology().GetStats().utilized_capacities,
@@ -678,10 +593,7 @@ Mapper::Result Mapper::Run()
     model::Engine engine;
     engine.Spec(arch_specs_);
     
-    if (layout_initialized_){
-      engine.Evaluate(global_best_.mapping, workload_, layout_, sparse_optimizations_, crypto_);
-    }else
-      engine.Evaluate(global_best_.mapping, workload_, sparse_optimizations_, crypto_);
+    engine.Evaluate(global_best_.mapping, workload_, global_best_.layout, sparse_optimizations_);
 
     stats_str << engine << std::endl;
 
@@ -725,6 +637,7 @@ Mapper::Result Mapper::Run()
 
     // Print the mapping in Tenssella input format.
     global_best_.mapping.PrintTenssella(tensella_str);
+    layout::PrintOverallLayoutConcise(global_best_.layout);
   }
   else
   {
@@ -815,6 +728,11 @@ Mapper::Result Mapper::Run()
     global_best_.mapping.FormatAsYaml(yaml_out, arch_specs_.topology.StorageLevelNames());
     yaml_out << YAML::EndSeq;
     yaml_out << YAML::EndMap;
+
+    // Dump the global best layout to YAML file
+    std::string layout_filename = out_prefix_ + ".layout.yaml";
+    layout::DumpLayoutToYAML(global_best_.layout, layout_filename);
+    std::cout << "Best layout saved to " << layout_filename << std::endl;
   }
 #endif
   if (!cfg_string_) {

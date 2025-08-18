@@ -35,7 +35,7 @@
 #include "model/sparse-optimization-info.hpp"
 #include "search/search.hpp"
 #include "layout/layout.hpp"
-#include "crypto/crypto.hpp"
+#include "layoutspaces/layoutspace.hpp"
 
 
 struct EvaluationResult
@@ -43,6 +43,7 @@ struct EvaluationResult
   bool valid = false;
   Mapping mapping;
   model::Topology::Stats stats;
+  layout::Layouts layout;  // Add layout field
 
   bool UpdateIfBetter(const EvaluationResult& other, const std::vector<std::string>& metrics);
   bool UpdateIfEqual(const EvaluationResult& other, const std::vector<std::string>& metrics);
@@ -93,6 +94,7 @@ class MapperThread
   unsigned thread_id_;
   search::SearchAlgorithm* search_;
   mapspace::MapSpace* mapspace_;
+  layoutspace::Legal* layoutspace_;
   std::mutex* mutex_;
   uint128_t search_size_;
   std::uint32_t timeout_;
@@ -118,7 +120,6 @@ class MapperThread
   layout::Layouts layout_;
   bool layout_initialized_;
   sparse::SparseOptimizationInfo* sparse_optimizations_;
-  crypto::CryptoConfig* crypto_;
   EvaluationResult* best_;
 
   // Thread-local data (stats etc.).
@@ -155,9 +156,8 @@ class MapperThread
     layout::Layouts layout,
     bool layout_initialized,
     sparse::SparseOptimizationInfo* sparse_optimizations,
-    crypto::CryptoConfig* crypto,
     EvaluationResult* best
-  );
+    );
 
   void Start();
 

@@ -1,5 +1,7 @@
 problem:
   instance:
+    Hpadding: 0
+    Wpadding: 0
     C: 120
     Hdilation: 1
     Hstride: 1
@@ -30,7 +32,7 @@ problem:
       - - - S
       ranks:
       - C
-      - M
+      - K
       - R
       - S
     - name: Inputs
@@ -47,7 +49,7 @@ problem:
           - Hstride
       ranks:
       - N
-      - C
+      - V
       - H
       - W
     - name: Outputs
@@ -59,7 +61,7 @@ problem:
       read_write: true
       ranks:
       - N
-      - M
+      - L
       - Q
       - P
     dimensions:
@@ -71,3 +73,4 @@ problem:
     - P
     - Q
     name: CNN_Layer
+

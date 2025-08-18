@@ -9,9 +9,12 @@ architecture:
         - name: MainMemory
           class: DRAM
           attributes:
-            width: 256
-            block-size: 32
-            word-bits: 8
+            width: 1024
+            n_banks: 32
+            block_size: 64
+            word_bits: 16
+            read_bandwidth: 128
+            write_bandwidth: 128
       subtree:
         - name: eyeriss
           attributes:
@@ -21,17 +24,18 @@ architecture:
               class: smartbuffer_SRAM
               attributes:
                 memory_depth: 8192
-                memory_width: 256
+                memory_width: 1024
                 n_banks: 32
-                word-bits: 8
-                read_bandwidth: 32
-                write_bandwidth: 32
+                word_bits: 16
+                block_size: 64
+                read_bandwidth: 64
+                write_bandwidth: 64
             - name: DummyBuffer[0..15] # for better mapping
               class: regfile
               attributes:
                 depth: 16
                 width: 16
-                word-bits: 8
+                word_bits: 16
                 meshX: 16
           subtree:
           - name: PE[0..255]
@@ -40,26 +44,26 @@ architecture:
                 class: smartbuffer_RF
                 attributes:
                   memory_depth: 16
-                  memory_width: 8
-                  word-bits: 8
+                  memory_width: 16
+                  word_bits: 16
                   meshX: 16
               - name: weights_spad
                 class: smartbuffer_RF
                 attributes:
                   memory_depth: 256
-                  memory_width: 8
-                  word-bits: 8
+                  memory_width: 16
+                  word_bits: 16
                   meshX: 16
               - name: ofmap_spad
                 class: smartbuffer_RF
                 attributes:
                   memory_depth: 64
-                  memory_width: 8
+                  memory_width: 16
                   update_fifo_depth: 2
-                  word-bits: 8
+                  word_bits: 16
                   meshX: 16
               - name: mac
                 class: intmac
                 attributes:
-                  datawidth: 8
+                  datawidth: 16
                   meshX: 16

@@ -64,7 +64,7 @@ WORKDIR /home/workspace
 CMD ["bash"]
 
 RUN git clone --recurse-submodules  https://github.com/NVlabs/timeloop.git
-RUN cd timeloop && git checkout orojenesis_keep_max &&   \
+RUN cd timeloop && git checkout oaves_keep_max &&   \
     cd ./src && ln -s ../pat-public/src/pat . &&  cd .. && \
     scons --static -j4 && \
     export TIMELOOP_BASE_PATH=$(pwd)

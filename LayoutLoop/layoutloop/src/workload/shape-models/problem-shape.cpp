@@ -241,7 +241,6 @@ void Shape::Parse(config::CompoundConfigNode shape)
       assert(false);
     }
 
-      
     // --- New code to process "ranks" ---
     // --- Build the RankNameToDilationStride mapping using the projection expression ---
     // For ranks "W" and "H" (as specified in the ranks field) with SOP expressions having multiple terms,
@@ -279,6 +278,10 @@ void Shape::Parse(config::CompoundConfigNode shape)
       }
       RankNameToFactorizedDimensionID[rank] = dims;
       RankNameToDimensionName[ rank_names[i] ] = dimNames;
+      if (rank == "H" || rank == "W")
+      {
+        RankNameToZeroPadding[rank] = (rank == "H") ? "Hpadding" : "Wpadding";
+      }
 
     }
     

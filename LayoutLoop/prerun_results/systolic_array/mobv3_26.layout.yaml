@@ -1,0 +1,25 @@
+layout:
+  - target: MainMemory
+    type: interline
+    factors: C=12 R=3 S=1 N=1 V=16 H=28 W=7 L=16 Q=7 P=7
+    permutation: CRSNVHWLQP
+  - target: MainMemory
+    type: intraline
+    factors: C=20 R=1 S=3 N=1 V=15 H=1 W=4 L=15 Q=2 P=2
+    permutation: CRSNVHWLQP
+  - target: GlobalBuffer
+    type: interline
+    factors: C=120 R=3 S=3 N=1 V=120 H=30 W=30 L=120 Q=14 P=14
+    permutation: CRSNVHWLQP
+  - target: GlobalBuffer
+    type: intraline
+    factors: C=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CRSNVHWLQP
+  - target: RegisterFile
+    type: interline
+    factors: C=8 R=1 S=1 N=1 V=8 H=1 W=1 L=8 Q=1 P=1
+    permutation: CRSNVHWLQP
+  - target: RegisterFile
+    type: intraline
+    factors: C=1 R=1 S=1 N=1 V=1 H=1 W=1 L=1 Q=1 P=1
+    permutation: CRSNVHWLQP

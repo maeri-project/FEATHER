@@ -1,18 +1,58 @@
-# Figure 13 Reproduction -- LayoutLoop
+# LayoutLoop
 
-## 1. Overview
-LayoutLoop is built from [Timeloop](https://parashar.org/ispass19.pdf) to augment Timeloop with layout consideration to coexplore dataflow-layout together for various different AI accelerators including FEATHER.
-In this folder, we demonstrate steps to leverage proposed Layoutloop to enable dataflow-layout co-exploration for various AI accelerators.
+## 1.
 
-**[TL,DR] The searching takes long time (~2 hours on average per design), such that we offer pre-run results in the `FEATHER/LayoutLoop/pre_run_results` folder. (The analysis is in 5 of this readme.md)**
+LayoutLoop is a tool based on [TimeLoop](https://timeloop.csail.mit.edu/). It integrates the functionalities of more accurate layout-based memory modeling.
 
-[TL,DR] In the following text, we first show 
-- environment setup (2),
-- Experiment of co-searching dataflow-layout (3), 
-- results analysis (4) including pre-run results and how to understand new results.
+The key contributions of SquareLoop over previous tools are:
+* realistic layout-based memory model utilizing accurate dataspace-wise evaluation
+* introduction of physical ranks, allowing for independent per-dataspace layout and AuthBlock specification 
+* Layout-Mapping co-search algorithm
+
 
 ## 2. Setup
 To avoid the tedious dependency, we offer the docker with all dependencies and code being setup.
+
+### 2.0 Files Overview
+
+We use the following files in the experiments:
+
+* Architecture
+    * SIGMA (vector256, full-flege flexible accelerator)
+        * `benchmarks/arch_designs/vector_256.yaml`
+    * SIMBA (reconfigurable systolic array)
+        * `benchmarks/arch_designs/simba_like.yaml`
+        * `benchmarks/arch_designs/components/*`
+        * `benchmarks/arch_designs/constraints/*`
+    * Edge-TPU (systolic)
+        * `benchmarks/arch_designs/vector_256.yaml`
+        * `benchmarks/arch_designs/systolic_constraint/mapspace_XY_OS.yaml`
+        * `benchmarks/arch_designs/systolic_constraint_depthwise/mapspace_XY_OS.yaml`
+    * Eyeriss (eyeriss)
+        * `benchmarks/arch_designs/eyeriss_like/arch/eyeriss_like.yaml`
+        * `benchmarks/arch_designs/eyeriss_like/arch/components/*`
+        * `benchmarks/arch_designs/eyeriss_like/constraints/*` (constraint for convolution workload only)
+        * `benchmarks/arch_designs/eyeriss_like/constraints_depthwise/*`  (constraint for depth-wise convolution workload only)
+* Workloads
+    * ResNet18
+        * `benchmarks/layer_shapes/resnet18/*`
+    * ResNet50
+        * `benchmarks/layer_shapes/resnet50/*`
+    * MobileNetV3 (mobv3)
+        * `benchmarks/layer_shapes/mobv3/*`
+    * bert
+        * `benchmarks/layer_shapes/bert/*`
+    * bert_conv (converted matrix multiplication as the form of convolution)
+        * `benchmarks/layer_shapes/bert_conv/*`
+    * vgg small
+        * `benchmarks/layer_shapes/vgg01/*`
+    * vgg large
+        * `benchmarks/layer_shapes/vgg02/*`
+    * AlexNet
+        * `benchmarks/layer_shapes/AlexNet/*`
+* Mapper
+    * `benchmarks/mapper/mapper.yaml`
+
 
 ### 2.1 Software Dependency -- Docker installation
 ```
@@ -21,24 +61,32 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin 
 ### 2.2 Download and Setup prebuilt docker.
 Steps: download the docker [link](https://drive.google.com/file/d/1-BdCdKI00gXY8GKtNpwHVtn4b-r_vNCC/view?usp=sharing) and install it
 ```bash
-docker load -i feather_layoutloop_docker.tar.gz 
 docker image ls
+docker load -i feather_layoutloop_docker.tar.gz 
 ```
 View the image name from the all available docker images.
-
 
 ## 3. Experiment: Launch the run for different accelerators setup (Optional, > 24 hours)
 
 ```bash
 #docker run -it <docker_img_name>
 docker run -it feather_layoutloop
+
+```
+
+When inside the docker
+```bash
+pip install torch torchlens pyyaml torchvision pandas
 git clone <provided_url>
+#e.g. git clone https://github.com/maeri-project/FEATHER.git
+```
+
+```bash
 cd FEATHER/LayoutLoop/layoutloop
 scons -j<number_of_available_threads>
 cd FEATHER/LayoutLoop/configurations
 make clean
-make timeloop_dse # launch dataflow design space exploration for various architectures under ResNet-50, MobileNet-V3 and Bert -- using bandwidth based memory modeling
-make layoutloop_dse  # launch dataflow design space exploration for various architectures under ResNet-50, MobileNet-V3 and Bert -- using layoutloop based precise memory modeling
+make dse  # launch dataflow design space exploration for various architectures under ResNet-18, MobileNet-V3 and Bert -- using layoutloop based precise memory modeling
 ```
 
 The old pre-searched results are listed in the pre_run_results, and the collected results are listed in the function named figure13() in `FEATHER/results_generation.py`.
@@ -47,7 +95,6 @@ The old pre-searched results are listed in the pre_run_results, and the collecte
 ### 4.1 Pre-run results analysis (Mandatory, just reading the prerun-results, take ~5 minutes)
 1. All pre-run results are sitting in the folder `FEATHER/LayoutLoop/pre_run_results`
 ```
-├── results_bw_layout_modeling
 └── results_precise_layout_modeling
 ```
 

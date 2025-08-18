@@ -1,9 +1,10 @@
 problem:
   instance:
+    Hpadding: 2
+    Wpadding: 2
     C: 120
     Hdilation: 1
     Hstride: 1
-    M: 120
     N: 1
     P: 28
     Q: 28
@@ -25,12 +26,10 @@ problem:
     - name: Weights
       projection:
       - - - C
-      - - - M
       - - - R
       - - - S
       ranks:
       - C
-      - M
       - R
       - S
     - name: Inputs
@@ -47,27 +46,27 @@ problem:
           - Hstride
       ranks:
       - N
-      - C
+      - V
       - H
       - W
     - name: Outputs
       projection:
       - - - N
-      - - - M
+      - - - C
       - - - Q
       - - - P
       read_write: true
       ranks:
       - N
-      - M
+      - L
       - Q
       - P
     dimensions:
     - C
-    - M
     - R
     - S
     - N
     - P
     - Q
     name: CNN_Layer
+

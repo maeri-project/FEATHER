@@ -1,0 +1,9 @@
+mapper:
+  optimization_metrics: [ delay, energy ]
+  live_status: False
+  num_threads: 1
+  timeout: 15000
+  victory_condition: 3000
+  search_size: 4000000
+  algorithm: random_pruned
+  max_permutations_per_if_visit: 16

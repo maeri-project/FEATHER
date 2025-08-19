@@ -1,0 +1,10 @@
+MainMemory [ Inputs:131072 (131072) Weights:131072 (131072) Outputs:131072 (131072) ] 
+-------------------------------------------------------------------------------------
+| for M in [0:2048) (Spatial-X)
+
+GlobalBuffer_VMEM [ ] 
+RegisterFile [ ] 
+----------------
+|   for K in [0:32)
+|     for M in [0:2)
+|       << Compute >>

@@ -1,0 +1,19 @@
+#error Tenssella does not support bypass.
+#error Tenssella does not support bypass.
+#error Tenssella does not support bypass.
+t2
+M 1 K 1 
+K
+s2
+M 2048 K 1 
+M
+2
+#error Tenssella does not support bypass.
+#error Tenssella does not support bypass.
+#error Tenssella does not support bypass.
+t1
+M 1 K 1 
+K
+t0
+M 2 K 32 
+MK

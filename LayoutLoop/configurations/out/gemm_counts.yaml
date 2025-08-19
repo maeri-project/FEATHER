@@ -1,0 +1,21 @@
+counts:
+- file: gemm/gemm_M8192_N32_K1.yaml
+  M: 8192
+  N: 32
+  K: 1
+  invocations: 1
+- file: gemm/gemm_M8192_N132_K128.yaml
+  M: 8192
+  N: 132
+  K: 128
+  invocations: 1
+- file: gemm/gemm_M16384_N32_K1.yaml
+  M: 16384
+  N: 32
+  K: 1
+  invocations: 1
+- file: gemm/gemm_M16384_N132_K128.yaml
+  M: 16384
+  N: 132
+  K: 128
+  invocations: 1

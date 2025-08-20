@@ -1,7 +1,8 @@
 problem:
   instance:
-    K: 32
-    M: 4096
+    K: 124
+    M: 16384
+    N: 128
   shape:
     data_spaces:
     - name: Inputs
@@ -13,20 +14,21 @@ problem:
       - - - K
     - name: Weights
       ranks:
-      - M
+      - N
       - K
       projection:
-      - - - M
+      - - - N
       - - - K
     - name: Outputs
       ranks:
       - M
-      - K
+      - N
       projection:
       - - - M
-      - - - K
+      - - - N
       read_write: true
     dimensions:
     - M
+    - N
     - K
-    name: vectorized
+    name: gemm

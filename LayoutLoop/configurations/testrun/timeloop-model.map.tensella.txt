@@ -1,21 +1,18 @@
 #error Tenssella does not support bypass.
 #error Tenssella does not support bypass.
+#error Tenssella does not support bypass.
 t2
-M 128 N 1 K 31 
-KM
-s2
-M 8 N 16 K 1 
-MN
-3
+M 16384 N 1 K 1 
+M
 #error Tenssella does not support bypass.
 #error Tenssella does not support bypass.
 t1
-M 4 N 2 K 1 
-NM
+M 1 N 1 K 1 
+K
 s1
-M 4 N 2 K 4 
-MNK
-0
+M 1 N 128 K 124 
+NK
+2
 t0
-M 1 N 2 K 1 
-N
+M 1 N 1 K 1 
+K

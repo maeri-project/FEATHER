@@ -8,11 +8,12 @@ architecture:
     - name: MainMemory
       class: DRAM
       attributes:
-        width: 8192
-        block_size: 256
+        width: 131072
+        block_size: 4096
         word_bits: 32
-        read_bandwidth: 256
-        write_bandwidth: 256
+        read_bandwidth: 4096
+        write_bandwidth: 4096
+        num_ports: 1
 
     subtree:
     - name: Chip
@@ -20,27 +21,31 @@ architecture:
         technology: 45nm
 
       local:
-      - name: GlobalBuffer_VMEM[0..2047]
-        class: SRAM
+      - name: GlobalBuffer_VMEM[0..127]
+        class: regfile
         attributes:
           depth: 32768
           width: 4096
-          block_size: 128
+          block_size: 1
+          cluster_size: 128
           word_bits: 32
           read_bandwidth: 1
           write_bandwidth: 1
           num_ports: 1
+          meshX: 128
       subtree:
-      - name: PE
+      - name: PE[0..16383]
         local:
-        - name: RegisterFile[0..2047]
+        - name: RegisterFile
           class: regfile
           attributes:
-            depth: 16
+            depth: 1
             width: 32
             block_size: 1
             word_bits: 32
-        - name: MACC[0..2047]
+            meshX: 128
+        - name: MACC
           class: intmac
           attributes:
             datawidth: 32
+            meshX: 128

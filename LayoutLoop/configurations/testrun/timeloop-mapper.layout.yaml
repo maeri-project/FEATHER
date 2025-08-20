@@ -1,25 +1,25 @@
 layout:
   - target: MainMemory
     type: interline
-    factors: M=8 K=1
-    permutation: MK
+    factors: M=2048 K=31 N=4
+    permutation: MKN
   - target: MainMemory
     type: intraline
-    factors: M=2048 K=1
-    permutation: MK
+    factors: M=64 K=4 N=64
+    permutation: MKN
   - target: GlobalBuffer_VMEM
     type: interline
-    factors: M=1 K=1
-    permutation: MK
+    factors: M=16 K=4 N=8
+    permutation: MKN
   - target: GlobalBuffer_VMEM
     type: intraline
-    factors: M=1 K=1
-    permutation: MK
+    factors: M=1 K=1 N=1
+    permutation: MKN
   - target: RegisterFile
     type: interline
-    factors: M=1 K=1
-    permutation: MK
+    factors: M=1 K=1 N=2
+    permutation: MKN
   - target: RegisterFile
     type: intraline
-    factors: M=1 K=1
-    permutation: MK
+    factors: M=1 K=1 N=1
+    permutation: MKN

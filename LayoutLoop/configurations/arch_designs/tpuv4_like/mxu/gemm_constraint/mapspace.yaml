@@ -1,0 +1,14 @@
+mapspace_constraints:
+  targets:
+    - target: GlobalBuffer_VMEM
+      type: spatial
+      factors: K<=128
+    # intuitive optimization for row stationary
+    # -> process a row/col of the output before going to the next one
+    - target: GlobalBuffer_VMEM
+      type: temporal
+      permutation: MNK
+    # intuitive optimization to reduce map space size
+    - target: MainMemory
+      type: temporal
+      permutation: MNK

@@ -1,24 +1,32 @@
 problem:
   instance:
-    M: 4096
+    K: 31
+    M: 16384
   shape:
     data_spaces:
     - name: Inputs
       ranks:
-      - A
+      - M
+      - K
       projection:
       - - - M
+      - - - K
     - name: Weights
       ranks:
-      - B
+      - M
+      - K
       projection:
       - - - M
+      - - - K
     - name: Outputs
       ranks:
-      - C
+      - M
+      - K
       projection:
       - - - M
+      - - - K
       read_write: true
     dimensions:
     - M
+    - K
     name: vectorized

@@ -19,23 +19,23 @@ architecture:
     - name: Chip
       attributes:
         technology: 45nm
-
       local:
       - name: GlobalBuffer_VMEM[0..127]
-        class: SRAM
+        class: regfile
         attributes:
           depth: 32768
-          width: 32
+          width: 4096
           block_size: 1
+          cluster_size: 128
           word_bits: 32
           read_bandwidth: 1
           write_bandwidth: 1
           num_ports: 1
           meshX: 128
       subtree:
-      - name: PE
+      - name: PE[0..16383]
         local:
-        - name: RegisterFile[0..65535]
+        - name: RegisterFile
           class: regfile
           attributes:
             depth: 1
@@ -43,7 +43,7 @@ architecture:
             block_size: 1
             word_bits: 32
             meshX: 128
-        - name: MACC[0..65535]
+        - name: MACC
           class: intmac
           attributes:
             datawidth: 32

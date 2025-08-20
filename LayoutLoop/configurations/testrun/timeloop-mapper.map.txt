@@ -1,0 +1,19 @@
+MainMemory [ Inputs:2031616 (2031616) Weights:15872 (15872) Outputs:2097152 (2097152) ] 
+---------------------------------------------------------------------------------------
+| for M in [0:128)
+|   for K in [0:31)
+|     for N in [0:16) (Spatial-X)
+|       for M in [0:8) (Spatial-X)
+
+GlobalBuffer_VMEM [ Outputs:128 (128) ] 
+---------------------------------------
+|         for M in [0:4)
+|           for N in [0:2)
+|             for K in [0:4) (Spatial-Y)
+|               for N in [0:2) (Spatial-Y)
+|                 for M in [0:4) (Spatial-Y)
+
+RegisterFile [ Inputs:1 (1) ] 
+-----------------------------
+|                   for N in [0:2)
+|                     << Compute >>

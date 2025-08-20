@@ -1,7 +1,7 @@
 problem:
   instance:
-    K: 33
-    M: 8192
+    K: 31
+    M: 16384
   shape:
     data_spaces:
     - name: Inputs

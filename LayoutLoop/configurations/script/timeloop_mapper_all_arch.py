@@ -10,8 +10,10 @@ import os, inspect, sys
 # arch_prefix = "sigma"
 # arch_prefix = "vpuv4"
 # arch_prefix = "vpuv5e"
-arch_prefix = "vpuv6e"
+# arch_prefix = "mxu"
+# arch_prefix = "mxu_inf_off_chip"
 # arch_prefix = "systolic_array"
+arch_dict_list = ["mxu_128"]#, "mxu_inf_off_chip"]
 ########### Must Change
 
 map_policy_dict = {
@@ -23,6 +25,8 @@ map_policy_dict = {
     "vpuv4": "../mapper/mapper_vpu.yaml",
     "vpuv6e": "../mapper/mapper_vpu.yaml",
     "vpuv6e_inf_off_chip": "../mapper/mapper_vpu.yaml",
+    "mxu_128": "../mapper/mapper_mxu.yaml",
+    "mxu_inf_off_chip": "../mapper/mapper_mxu.yaml",
 }
 
 map_constraint_dict = {
@@ -34,6 +38,8 @@ map_constraint_dict = {
     "vpuv4": "",
     "vpuv6e": "",
     "vpuv6e_inf_off_chip": "",
+    "mxu": "",
+    "mxu_inf_off_chip": "",
 }
 
 gemm_map_constraint_dict = {
@@ -45,6 +51,9 @@ gemm_map_constraint_dict = {
     "vpuv4": "",
     "vpuv6e": "",
     "vpuv6e_inf_off_chip": "",
+    "mxu_128": "",
+    # "mxu": "../arch_designs/tpuv6e_like/mxu/constraints_gemm/eyeriss_like_arch_constraints.yaml ../arch_designs/tpuv6e_like/mxu/constraints_gemm/eyeriss_like_map_constraints.yaml",
+    "mxu_inf_off_chip": "",
 }
 
 depthwise_map_constraint_dict = {
@@ -56,6 +65,8 @@ depthwise_map_constraint_dict = {
     "vpuv4": "",
     "vpuv6e": "",
     "vpuv6e_inf_off_chip": "",
+    "mxu_128": "",
+    "mxu_inf_off_chip": "",
 }
 
 arch_dict = {
@@ -67,12 +78,13 @@ arch_dict = {
     "vpuv4": "../arch_designs/tpuv4_like/vpu/vpu_like.yaml",
     "vpuv6e": "../arch_designs/tpuv6e_like/vpu/vpu_like.yaml",
     "vpuv6e_inf_off_chip": "../arch_designs/tpuv6e_like/vpu/vpu_inf_off_chip.yaml",
+    "mxu_128": "../arch_designs/tpuv4_like/mxu/mxu_like.yaml",
+    "mxu_inf_off_chip": "../arch_designs/tpuv4_like/mxu/mxu_inf_off_chip.yaml",
 }
 
-arch_dict_list = ["vpuv4", "vpuv6e", "vpuv6e_inf_off_chip"]
 
-model_name_list = ["vectorized"]
-# model_name_list = ["resnet18", "mobv3", "bert", "vectorized"]
+model_name_list = ["gemm"]
+# model_name_list = ["resnet18", "mobv3", "bert", "vectorized", "gemm"]
 
 
 def create_folder(directory):
@@ -110,6 +122,7 @@ if __name__ == "__main__":
         "mobv3": 62,
         "bert": 3,
         "vectorized": 11,
+        "gemm": 4,
     }
 
     depthwise_layer_num = {
@@ -117,6 +130,7 @@ if __name__ == "__main__":
         "mobv3": [2, 5, 8, 11, 16, 21, 26, 29, 32, 35, 38, 43, 48, 53, 58],
         "bert": [],
         "vectorized": [],
+        "gemm": [],
     }
 
     model_name_dict= {
@@ -134,14 +148,21 @@ if __name__ == "__main__":
                        "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/vectorized/vectorized_M4096_K32_bool.yaml",
                        "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/vectorized/vectorized_M8192_K33_uint64.yaml",
                        "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/vectorized/vectorized_M4096_K32_uint32.yaml"],
+         "gemm":      ["/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/gemm/gemm_M16384_N132_K128.yaml",
+                       "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/gemm/gemm_M16384_N32_K1.yaml",
+                       "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/gemm/gemm_M8192_N132_K128.yaml",
+                       "/home/ubuntu/FEATHER/LayoutLoop/configurations/layer_shapes/gemm/gemm_M8192_N32_K1.yaml"],
     }
     for arch_prefix in arch_dict_list:
       for model_name in model_name_list:
           for layer_id in range(0, layer_num[model_name]-1):
               # Run the command and capture its output
-              if model_name == "vectorized":
+              if model_name == "gemm":
                 print(f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {gemm_map_constraint_dict[arch_prefix]} {model_name_dict[model_name][layer_id]}")
                 command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {gemm_map_constraint_dict[arch_prefix]} {model_name_dict[model_name][layer_id]}"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
+              elif model_name == "vectorized":
+                print(f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {model_name_dict[model_name][layer_id]}")
+                command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {model_name_dict[model_name][layer_id]}"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
               elif model_name == "bert":
                 command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {gemm_map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
               else:

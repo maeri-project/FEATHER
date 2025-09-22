@@ -400,7 +400,7 @@ module feather_controller #(
                 IACTS_PINGPONG_FILL_PING:
                 begin
                     //(w_iacts_pingpong_config ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG)
-                    if(i_iacts_write_addr == i_iacts_write_addr_end)
+                    if((i_iacts_write_addr == i_iacts_write_addr_end) && i_iacts_write_valid)
                     begin
                         r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG;
                         r_iacts_pingpong_rd_addr    <=  0;
@@ -410,7 +410,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG:
                 begin
-                    if(r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end)
+                    if((r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end) && i_iacts_write_valid)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_DRAIN_PONG)
                         begin
@@ -432,7 +432,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING:
                 begin
-                    if(r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end)
+                    if((r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end) && i_iacts_write_valid)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_DRAIN_PING)
                         begin
@@ -485,7 +485,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_FILL_PONG:
                 begin
-                    if(i_iacts_write_addr == i_iacts_write_addr_end)
+                    if((i_iacts_write_addr == i_iacts_write_addr_end) && i_iacts_write_valid)
                     begin
                         r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING;
                     end
@@ -517,7 +517,7 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_FILL_PING:
                 begin
-                    if(i_weights_write_addr ==  i_weights_write_addr_end)
+                    if((i_weights_write_addr ==  i_weights_write_addr_end) && i_weights_write_valid)
                     begin
                         if(w_weights_pingpong_config ==  WEIGHTS_PINGPONG_PING_FEED_DPE)
                         begin
@@ -530,7 +530,7 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_PING_FEED_DPE:
                 begin
-                    if(r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end)
+                    if((r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end) && i_weights_write_valid)
                     begin
                         if(w_weights_pingpong_config ==  WEIGHTS_PINGPONG_FILL_PONG)
                         begin
@@ -549,7 +549,7 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_FILL_PONG:
                 begin
-                    if(i_weights_write_addr == i_weights_write_addr_end)
+                    if((i_weights_write_addr == i_weights_write_addr_end) && i_weights_write_valid)
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_PONG_FEED_DPE;
                         r_weights_pingpong_rd_addr      <=  0;
@@ -559,7 +559,7 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_PONG_FEED_DPE:
                 begin
-                    if(r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end)
+                    if((r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end) && i_weights_write_valid)
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_FILL_PING;
                         r_weights_pingpong_rd_addr      <=  0;

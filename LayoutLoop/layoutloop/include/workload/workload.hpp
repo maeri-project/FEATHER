@@ -166,7 +166,7 @@ class Workload
   {
     coefficients_ = coefficients;
   }
-
+  
   void SetPaddings(const Paddings& paddings)
   {
     paddings_ = paddings;

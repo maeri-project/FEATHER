@@ -268,6 +268,7 @@ void MapperThread::Stats::UpdateFails(FailClass fail_class, std::string fail_rea
   }
 }
 
+
 MapperThread::MapperThread(
   unsigned thread_id,
   search::SearchAlgorithm* search,
@@ -297,6 +298,7 @@ MapperThread::MapperThread(
   layout::Layouts layout,
   bool layout_initialized,
   sparse::SparseOptimizationInfo* sparse_optimizations,
+  crypto::CryptoConfig* crypto,
   EvaluationResult* best
   ):
     thread_id_(thread_id),
@@ -327,6 +329,7 @@ MapperThread::MapperThread(
     layout_(layout),
     layout_initialized_(layout_initialized),
     sparse_optimizations_(sparse_optimizations),
+    crypto_(crypto),
     best_(best),
     thread_(),
     stats_()
@@ -382,13 +385,15 @@ void MapperThread::Run()
       if (valid_mappings > 0)
       {
         msg << std::setw(10) << OUT_FLOAT_FORMAT << std::setprecision(2) << OUT_PERCENT(stats_.thread_best.stats.utilization)
-            << std::setw(11) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats_.thread_best.stats.energy / stats_.thread_best.stats.algorithmic_computes
+            << std::setw(11) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats_.thread_best.stats.energy /
+          stats_.thread_best.stats.algorithmic_computes
             << std::setw(11) << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << stats_.thread_best.stats.cycles;
         msg << std::endl;
       }
 
       mutex_->lock();
       mvaddstr(thread_id_ + ncurses_line_offset, 0, msg.str().c_str());
+
       refresh();
       mutex_->unlock();
     }
@@ -450,15 +455,16 @@ void MapperThread::Run()
       terminate = true;
     }
 
-
     if ((log_orojenesis_mappings_ || log_all_mappings_) && terminate)
     {
       for (auto &index_factor_best : index_factor_best_vec)
       {
-
         // Re-evaluate the mapping
-        engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
-          
+        if (layout_initialized_){
+          engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+        }else
+          engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+
         if (index_factor_best.valid) {
             auto topology = engine.GetTopology();
             mutex_->lock();
@@ -483,6 +489,7 @@ void MapperThread::Run()
         refresh();
         mutex_->unlock();
       }
+
       std::cout << "done mapping search" << std::endl;
       std::cout << "optimal mapping: " << stats_.thread_best.mapping << std::endl;
       break;
@@ -609,15 +616,37 @@ void MapperThread::Run()
     }
 
     // Stage 3: Heavyweight evaluation.
-    if (layout_initialized_){
-      status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
+    if (layout_initialized_){ // ToDo: @Jianming modify here
+      status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
       success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
                                [](bool cur, const model::EvalStatus& status)
                                { return cur && status.success; });
     }else{
       // When layout is not initialized, just using bandwidth layout to search the mapping first.
       layoutspace_ = new layoutspace::Legal(arch_specs_, mapping, layout_);
-      layoutspace_->Init(arch_specs_, mapping, layout_); // need the layout for architecture information.
+
+      // --- Add AuthBlock nest with dummy values for DRAM and MainMemory ---
+      bool skip_authblock = true;
+      for(unsigned lvl = 0; lvl < layout_.size(); lvl++){
+        if (layout_[lvl].crypto_initialized){
+          skip_authblock = false;
+          for (const auto &ds : layout_[lvl].data_space){
+            if (layout_[lvl].target == "DRAM" or layout_[lvl].target == "MainMemory"){
+              layout::LayoutNest authblock_nest;
+              authblock_nest.data_space = ds;
+              authblock_nest.type = "authblock_lines";
+              authblock_nest.ranks = layout_[lvl].dataSpaceToRank[ds];
+              // Set all factors to 1 for dummy layout
+              for (const auto &r : authblock_nest.ranks)
+              {
+                authblock_nest.factors[r] = 1;
+              }
+              layout_[lvl].authblock_lines.push_back(authblock_nest);
+            }
+          }
+        }
+      }
+      layoutspace_->Init(arch_specs_, mapping, layout_, skip_authblock); // need the layout for architecture information.
       auto concordant_layout = layoutspace_->GetLayout();
       // Initialize global optimal tracking variables
       std::uint64_t mapping_specific_best_latency = UINT64_MAX;
@@ -627,9 +656,11 @@ void MapperThread::Run()
       
       // Track best IDs for each design space
       uint64_t local_best_layout_splitting_id = 0;
+      uint64_t local_best_layout_packing_id = 0;
+      // Phase 1: Search SplittingSpace (with cleared authblock_lines and default PackingSpace=0)
       for (uint64_t layout_splitting_id = 0; layout_splitting_id < layoutspace_->splitting_candidates; layout_splitting_id++)
       {
-        auto construction_status = layoutspace_->ConstructLayout(layout_splitting_id, 0, &layout_, mapping, false);
+        auto construction_status = layoutspace_->ConstructLayout(layout_splitting_id, 0, 0, &layout_, mapping, false);
         bool layout_success = std::accumulate(construction_status.begin(), construction_status.end(), true,
                                     [](bool cur, const layoutspace::Status& status)
                                     { return cur && status.success; });
@@ -637,7 +668,15 @@ void MapperThread::Run()
           continue;
         }
 
-        auto status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
+        layout::Layouts layout_no_auth = layout::Layouts(layout_);
+        for (unsigned lvl = 0; lvl < layout_no_auth.size(); lvl++) {
+          for (unsigned ds_idx = 0; ds_idx < layout_no_auth[lvl].authblock_lines.size(); ds_idx++) {
+            // Clear all authblock factors to eliminate their effect
+            layout_no_auth[lvl].authblock_lines[ds_idx].factors.clear();
+          }
+        }
+
+        auto status_per_level = engine.Evaluate(mapping, workload_, layout_no_auth, sparse_optimizations_, crypto_, !diagnostics_on_);
 
         // Extract run-time latency and energy efficiency from evaluation results
         std::uint64_t runtime_latency = engine.Cycles();
@@ -675,6 +714,7 @@ void MapperThread::Run()
       }
 
       // Phase 2: Search PackingSpace (with best SplittingSpace and default AuthSpace=0)
+      // Note: authblock_lines clearing from Phase 1 does not affect this phase as layout is reconstructed
       if (layoutspace_->packing_candidates > 1) {
         uint64_t visited_candidate_counter = 0;
         std::random_device rd;
@@ -683,7 +723,7 @@ void MapperThread::Run()
         for (uint64_t i = 0; i < layoutspace_->packing_candidates; i++)
         {
           uint64_t layout_packing_id = dist(gen);
-          auto construction_status = layoutspace_->ConstructLayout(local_best_layout_splitting_id, layout_packing_id,  &layout_, mapping, false);
+          auto construction_status = layoutspace_->ConstructLayout(local_best_layout_splitting_id, layout_packing_id, 0,  &layout_, mapping, false);
           bool layout_success = std::accumulate(construction_status.begin(), construction_status.end(), true,
                                       [](bool cur, const layoutspace::Status& status)
                                       { return cur && status.success; });
@@ -691,7 +731,15 @@ void MapperThread::Run()
             continue;
           }
 
-          auto status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
+          layout::Layouts layout_no_auth = layout::Layouts(layout_);
+          for (unsigned lvl = 0; lvl < layout_no_auth.size(); lvl++) {
+            for (unsigned ds_idx = 0; ds_idx < layout_no_auth[lvl].authblock_lines.size(); ds_idx++) {
+              // Clear all authblock factors to eliminate their effect
+              layout_no_auth[lvl].authblock_lines[ds_idx].factors.clear();
+            }
+          }
+
+          auto status_per_level = engine.Evaluate(mapping, workload_, layout_no_auth, sparse_optimizations_, crypto_, !diagnostics_on_);
 
           // Extract run-time latency and energy efficiency from evaluation results
           std::uint64_t runtime_latency = engine.Cycles();
@@ -717,6 +765,7 @@ void MapperThread::Run()
             mapping_specific_best_latency = runtime_latency;
             mapping_specific_best_energy_per_compute = energy_per_compute;
             mapping_specific_best_layout = layout_;
+            local_best_layout_packing_id = layout_packing_id;
             has_valid_layout = true;
           }
 
@@ -727,18 +776,80 @@ void MapperThread::Run()
         }
       }
 
+      // Phase 3: Search AuthSpace (with best SplittingSpace and best PackingSpace)
+      // Note: authblock_lines are fully functional in this phase
+      uint64_t layout_auth_id = 0;
+      if (layoutspace_->authblock_candidates > 1) {
+        mapping_specific_best_latency = UINT64_MAX;
+        mapping_specific_best_energy_per_compute = std::numeric_limits<double>::max();
+        uint32_t less_improvement_counter = 0;
+        uint64_t visited_candidate_counter = 0;
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<uint64_t> dist(0, layoutspace_->authblock_candidates - 1);
+        for (uint64_t i = 0; i < layoutspace_->authblock_candidates; i++)
+        {
+          layout_auth_id = dist(gen);
+          auto construction_status = layoutspace_->ConstructLayout(local_best_layout_splitting_id, local_best_layout_packing_id, layout_auth_id, &layout_, mapping, false);
+          bool layout_success = std::accumulate(construction_status.begin(), construction_status.end(), true,
+                                      [](bool cur, const layoutspace::Status& status)
+                                      { return cur && status.success; });
+          if(!layout_success) {
+            continue;
+          }
+
+          auto status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
+
+          // Extract run-time latency and energy efficiency from evaluation results
+          std::uint64_t runtime_latency = engine.Cycles();
+          double total_energy = engine.Energy();
+          std::uint64_t actual_computes = engine.GetTopology().ActualComputes();
+          double energy_per_compute = (actual_computes > 0) ? (total_energy / actual_computes) : 0.0;
+
+          // Check if better than current best
+          bool is_better = false;
+          std::string improvement_reason = "";
+
+          if (runtime_latency < mapping_specific_best_latency) {
+            is_better = true;
+            improvement_reason = "AuthSpace: better latency";
+            less_improvement_counter = 0;
+          }
+          else if (runtime_latency == mapping_specific_best_latency && energy_per_compute < mapping_specific_best_energy_per_compute) {
+            is_better = true;
+            improvement_reason = "AuthSpace: same latency, better energy efficiency";
+            if ((mapping_specific_best_energy_per_compute - energy_per_compute) < 0.1) {
+              less_improvement_counter++;
+            }
+          }
+
+          if (is_better) {
+            visited_candidate_counter = 0;
+            mapping_specific_best_latency = runtime_latency;
+            mapping_specific_best_energy_per_compute = energy_per_compute;
+            mapping_specific_best_layout = layout_;
+          }
+
+          if (less_improvement_counter > LESS_IMPROVEMENT_COUNTER_THRESHOLD || visited_candidate_counter > std::min(std::max(victory_condition_, (uint32_t)1), (uint32_t)100)) {
+            break;
+          }
+          visited_candidate_counter++;
+        }
+      }
+
       // Update the best result with the optimal layout
       if (has_valid_layout) {
         // Update the thread best with the optimal layout and re-evaluate to get final stats
         layout_ = mapping_specific_best_layout;
-        status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
+        status_per_level = engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
         success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
                                  [](bool cur, const model::EvalStatus& status)
                                  { return cur && status.success; });
 
       } else {
         layoutspace_->SequentialFactorizeLayout(concordant_layout);
-        status_per_level = engine.Evaluate(mapping, workload_, concordant_layout, sparse_optimizations_, !diagnostics_on_);
+        status_per_level = engine.Evaluate(mapping, workload_, concordant_layout, sparse_optimizations_, crypto_, !diagnostics_on_);
         success &= std::accumulate(status_per_level.begin(), status_per_level.end(), true,
                                  [](bool cur, const model::EvalStatus& status)
                                  { return cur && status.success; });
@@ -770,7 +881,7 @@ void MapperThread::Run()
     // Output results at log interval
     auto topology =  engine.GetTopology();
     auto stats = topology.GetStats();
-    EvaluationResult result = { true, mapping, stats, layout_ };
+    EvaluationResult result = { true, mapping, stats, layout_ };  // Include layout_ in result
 
     if(log_all_mappings_)
     {
@@ -786,7 +897,7 @@ void MapperThread::Run()
       {
 
         // Re-evaluate the mapping
-        engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, !diagnostics_on_);
+        engine.Evaluate(index_factor_best.mapping, workload_, layout_, sparse_optimizations_, crypto_, !diagnostics_on_);
 
         auto topology = engine.GetTopology();
 
@@ -807,13 +918,13 @@ void MapperThread::Run()
     }
 
     valid_mappings++;
-    if (log_stats_)
-    {
-      mutex_->lock();
-      log_stream_ << "[" << thread_id_ << "] INVALID " << total_mappings << " " << valid_mappings
-                  << " " << invalid_mappings_mapcnstr + invalid_mappings_eval << std::endl;
-      mutex_->unlock();
-    }
+    // if (log_stats_)
+    // {
+    //   mutex_->lock();
+    //   log_stream_ << "[" << thread_id_ << "] INVALID " << total_mappings << " " << valid_mappings
+    //               << " " << invalid_mappings_mapcnstr + invalid_mappings_eval << std::endl;
+    //   mutex_->unlock();
+    // }
     invalid_mappings_mapcnstr = 0;
     invalid_mappings_eval = 0;
     search_->Report(search::Status::Success, Cost(stats, optimization_metrics_.at(0)));

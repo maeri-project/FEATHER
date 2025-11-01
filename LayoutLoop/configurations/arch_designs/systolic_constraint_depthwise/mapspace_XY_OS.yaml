@@ -22,4 +22,7 @@ mapspace_constraints:
   - target: GlobalBuffer
     type: spatial
     factors: R=1 S=1 P<=16 Q<=16 N=1 C<=16
+  - target: RegisterFile
+    type: temporal
+    factors: R=1 S=1 P=1 Q=1 N=1 C=1
 

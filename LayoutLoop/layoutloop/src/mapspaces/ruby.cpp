@@ -99,7 +99,7 @@ void Ruby::Init(config::CompoundConfigNode config, config::CompoundConfigNode ar
     std::cout << "Mapspace Dimension [" << mapspace::Dimension(i)
               << "] Size: " << size_[i] << std::endl;
   }
-    
+
   // Check for integer overflow in the above multiplications.
   uint128_t de_cumulative_prod = Size();
 
@@ -115,7 +115,7 @@ void Ruby::Init(config::CompoundConfigNode config, config::CompoundConfigNode ar
     exit(1);
   }
 }
-  
+
 //
 // InitIndexFactorizationSpace()
 //

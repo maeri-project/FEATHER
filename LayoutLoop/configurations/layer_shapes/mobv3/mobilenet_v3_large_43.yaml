@@ -53,14 +53,14 @@ problem:
       projection:
       - - - N
       - - - C
-      - - - Q
       - - - P
+      - - - Q
       read_write: true
       ranks:
       - N
       - L
-      - Q
       - P
+      - Q
     dimensions:
     - C
     - R

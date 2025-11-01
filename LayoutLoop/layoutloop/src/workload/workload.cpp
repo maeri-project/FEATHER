@@ -180,17 +180,15 @@ void ParseWorkloadInstance(config::CompoundConfigNode config, Workload& workload
   }
   workload.SetCoefficients(coefficients);
 
-  // ToDo: make this cleaner
   Workload::Paddings paddings;
-  paddings["Hpadding"] = 0;
-  if (config.exists("Hpadding"))
+  for (auto rank : GetShape()->Ranks)
   {
-    config.lookupValue("Hpadding", paddings["Hpadding"]);
-  }
-  paddings["Wpadding"] = 0;
-  if (config.exists("Wpadding"))
-  {
-    config.lookupValue("Wpadding", paddings["Wpadding"]);
+    std::string rank_padding = rank + "padding";
+    paddings[rank_padding] = 0;
+    if (config.exists(rank_padding))
+    {
+      config.lookupValue(rank_padding, paddings[rank_padding]);
+    }
   }
   workload.SetPaddings(paddings);
 

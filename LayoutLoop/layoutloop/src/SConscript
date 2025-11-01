@@ -183,6 +183,7 @@ model/sparse-optimization-info.cpp
 model/sparse-optimization-parser.cpp
 model/util.cpp
 layout/layout.cpp
+crypto/crypto.cpp
 util/banner.cpp
 util/args.cpp
 util/numeric.cpp
@@ -222,16 +223,16 @@ mapping/constraints.cpp
 applications/model/model.cpp
 """)
 
-layoutspace_sources = Split("""
-layoutspaces/layoutspace.cpp
-""")
-
 mapspace_sources = Split("""
 mapspaces/mapspace-base.cpp
 mapspaces/mapspace-factory.cpp
 mapspaces/subspaces.cpp
 mapspaces/uber.cpp
 mapspaces/ruby.cpp
+""")
+
+layoutspace_sources = Split("""
+layoutspaces/layoutspace.cpp
 """)
 
 search_sources = Split("""

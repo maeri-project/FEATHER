@@ -43,6 +43,7 @@
 #include "model/sparse-optimization-parser.hpp"
 
 #include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
 //--------------------------------------------//
 //                Application                 //
 //--------------------------------------------//
@@ -76,9 +77,13 @@ class Model
   // been parsed.
 
   // The layout modeling
+  crypto::CryptoConfig* crypto_; 
+  bool crypto_initialized_ = false;
+
+  // The layout modeling
   layout::Layouts layout_; 
   bool layout_initialized_ = false;
-    
+  
   // The mapping.
   Mapping* mapping_;
 

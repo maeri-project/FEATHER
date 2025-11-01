@@ -104,14 +104,14 @@ if __name__ == "__main__":
 
     for model_name in model_name_list:
         for layer_id in range(1, layer_num[model_name]+1):
-            # Run the command and capture its output
+            # Run the command and display its output
             if model_name == "bert":
-              command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {gemm_map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
+              command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {gemm_map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, executable="/bin/bash") # Ensure using bash if needed
             else:
               if model_name == "mobv3" and layer_id in depthwise_layer_num[model_name]:
-                command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {depthwise_map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
+                command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {depthwise_map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, executable="/bin/bash") # Ensure using bash if needed
               else:
-                command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, capture_output=True, text=True, executable="/bin/bash") # Ensure using bash if needed
+                command_output = subprocess.run([f"source ~/.setup.sh && timeloop-mapper {arch_dict[arch_prefix]} {map_policy_dict[arch_prefix]} {map_constraint_dict[arch_prefix]} ../layer_shapes/{model_name}/{model_name_dict[model_name]}_{layer_id}.yaml"], shell=True, check=True, executable="/bin/bash") # Ensure using bash if needed
             # absolute path
             src_path = os.path.join(work_directory, 'timeloop-mapper.map.yaml')
             dst_path = os.path.join(mapping_directory, f"{model_name}_{layer_id}.mapping.yaml")

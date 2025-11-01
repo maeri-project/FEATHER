@@ -349,7 +349,7 @@ class Topology : public Module
   unsigned NumNetworks() const;
 
   std::vector<EvalStatus> PreEvaluationCheck(const Mapping& mapping, analysis::NestAnalysis* analysis, sparse::SparseOptimizationInfo* sparse_optimizations, bool break_on_failure);
-  std::vector<EvalStatus> Evaluate(Mapping& mapping, analysis::NestAnalysis* analysis, sparse::SparseOptimizationInfo* sparse_optimizations, bool break_on_failure);
+  std::vector<EvalStatus> Evaluate(Mapping& mapping, analysis::NestAnalysis* analysis, sparse::SparseOptimizationInfo* sparse_optimizations, bool break_on_failure, crypto::CryptoConfig* crypto_config = nullptr);
 
   inline const Stats& GetStats() const { return stats_; }
   inline const Specs& GetSpecs() const { return specs_; }

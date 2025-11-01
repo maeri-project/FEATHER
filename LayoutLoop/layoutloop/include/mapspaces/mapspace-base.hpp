@@ -108,7 +108,7 @@ class MapSpace
   {
     return size_[int(dim)];
   }
-  
+
   uint128_t Size()
   {
     uint128_t size = 1;

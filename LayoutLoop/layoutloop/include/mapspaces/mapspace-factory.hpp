@@ -44,4 +44,5 @@ MapSpace* ParseAndConstruct(config::CompoundConfigNode config,
                             const problem::Workload& workload,
                             bool filter_spatial_fanout = true);
 
+
 } // namespace mapspace

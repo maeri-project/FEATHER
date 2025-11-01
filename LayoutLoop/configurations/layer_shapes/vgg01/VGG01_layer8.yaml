@@ -24,13 +24,13 @@ problem:
     data_spaces:
     - name: Weights
       projection:
-      - - - C
       - - - M
+      - - - C
       - - - R
       - - - S
       ranks:
+      - M
       - C
-      - K
       - R
       - S
     - name: Inputs
@@ -54,14 +54,14 @@ problem:
       projection:
       - - - N
       - - - M
-      - - - Q
       - - - P
+      - - - Q
       read_write: true
       ranks:
       - N
       - L
-      - Q
       - P
+      - Q
     dimensions:
     - C
     - M
@@ -71,3 +71,4 @@ problem:
     - P
     - Q
     name: CNN_Layer
+

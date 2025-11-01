@@ -23,16 +23,19 @@ problem:
       name: Wdilation
     - default: 1
       name: Hdilation
-    data-spaces:
+    data_spaces:
     - name: Weights
-      ranks: [C, K, R, S]
       projection:
-      - - - C
       - - - M
+      - - - C
       - - - R
       - - - S
+      ranks:
+      - M
+      - C
+      - R
+      - S
     - name: Inputs
-      ranks: [N, V, H, W]
       projection:
       - - - N
       - - - C
@@ -44,14 +47,23 @@ problem:
           - Hdilation
         - - Q
           - Hstride
+      ranks:
+      - N
+      - V
+      - H
+      - W
     - name: Outputs
-      ranks: [N, L, Q, P]
       projection:
       - - - N
       - - - M
-      - - - Q
       - - - P
-      read-write: true
+      - - - Q
+      read_write: true
+      ranks:
+      - N
+      - L
+      - P
+      - Q
     dimensions:
     - C
     - M
@@ -60,4 +72,4 @@ problem:
     - N
     - P
     - Q
-    name: CNN-Layer
+    name: CNN_Layer

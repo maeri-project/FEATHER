@@ -51,7 +51,7 @@ namespace layout
   Layouts
   ParseAndConstruct(
       config::CompoundConfigNode layoutArray, problem::Workload &workload,
-      std::vector<std::pair<std::string, std::pair<uint32_t, uint32_t>>> &targetToPortValue)
+      std::vector<std::pair<std::string, std::pair<uint32_t, uint32_t>>> &targetToPortValue, bool crypto_initialized)
   {
     // ToDo: Current memory logic only supports 3 levels, need to directly support more levels defined by architecture file.
     std::map<std::string, std::vector<std::uint32_t>>
@@ -199,6 +199,7 @@ namespace layout
     {
       Layout layout;
       layout.target = t;
+
       // Find the target in the vector
       auto it = std::find_if(targetToPortValue.begin(), targetToPortValue.end(),
                             [&t](const auto& pair) { return pair.first == t; });
@@ -210,6 +211,7 @@ namespace layout
         layout.num_read_ports = 1;
         layout.num_write_ports = 1;
       }
+
       layout.data_space = data_space_vec;
       layout.dataSpaceToRank = dataSpaceToRank;
       layout.rankToCoefficient = rankToCoefficient;
@@ -223,6 +225,7 @@ namespace layout
       layout.rank_list = globalRankList;
 
       // ToDo: make these configurable, and also separately configurable per memory level
+      layout.crypto_initialized = crypto_initialized;
       layout.assume_zero_padding = true;
       layout.assume_row_buffer = true;
       layout.assume_reuse = true;
@@ -289,6 +292,30 @@ namespace layout
           }
         }
         layout.intraline.push_back(intranest);
+
+        // --- AuthBlock nest---
+        LayoutNest authblock_nest;
+        authblock_nest.data_space = ds;
+        authblock_nest.type = "authblock_lines";
+        if (config_layout[t].find("authblock_lines") != config_layout[t].end()) // Only push AuthBlock if the layout file specifies it
+        {
+          std::string perm = config_layout[t]["authblock_lines"].first;
+          std::map<std::string, std::uint32_t> factors = config_layout[t]["authblock_lines"].second;
+          std::vector<std::string> order;
+          for (char c : perm)
+          {
+            std::string r(1, c);
+            const auto &ranks = layout.dataSpaceToRank[ds];
+            if (std::find(ranks.begin(), ranks.end(), r) != ranks.end())
+            {
+              order.push_back(r);
+            }
+          }
+          std::reverse(order.begin(), order.end());
+          authblock_nest.ranks = order;
+          authblock_nest.factors = factors;
+          layout.authblock_lines.push_back(authblock_nest);
+        }
       }
 
       layouts.push_back(layout);
@@ -302,7 +329,7 @@ namespace layout
   // InitializeDummyLayout()
   // This function creates a dummy layout for each target.
   //
-  // For each unique target, a Layout is created holding one interline nest and 
+  // For each unique target, a Layout is created holding one interline nest and
   // one intraline nest with all factors set to 1. Also, factor_order is
   // recorded and max_dim_perline is computed from the intraline nest.
   Layouts
@@ -364,7 +391,7 @@ namespace layout
 
     // Create default permutation based on dimension order
     std::string samplePermutation;
-    
+
     // Derive the dimension order from dimensionToDimID by sorting the mapping by
     // value.
     std::vector<std::pair<std::string, unsigned>> dims;
@@ -375,7 +402,7 @@ namespace layout
     std::sort(dims.begin(), dims.end(),
               [](auto &a, auto &b)
               { return a.second < b.second; });
-    
+
     // Create default permutation from computed dimension order
     for (auto &p : dims)
     {
@@ -412,7 +439,7 @@ namespace layout
     {
       Layout layout;
       layout.target = t;
-      
+
       // Find the target in the vector
       auto it = std::find_if(targetToPortValue.begin(), targetToPortValue.end(),
                             [&t](const auto& pair) { return pair.first == t; });
@@ -424,7 +451,7 @@ namespace layout
         layout.num_read_ports = 1;
         layout.num_write_ports = 1;
       }
-      
+
       layout.data_space = data_space_vec;
       layout.dataSpaceToRank = dataSpaceToRank;
       layout.rankToCoefficient = rankToCoefficient;
@@ -582,14 +609,48 @@ namespace layout
           std::cout << ", factor=" << factor << std::endl;
         }
       }
+      // Add AuthBlock nests printing
+      for (const auto &nest : layout.authblock_lines)
+      {
+        std::cout << "  Data space: " << nest.data_space << std::endl;
+        std::cout << "  Type: " << nest.type << std::endl;
+        for (const auto &r : nest.ranks)
+        {
+          int factor = (nest.factors.find(r) != nest.factors.end()
+                            ? nest.factors.at(r)
+                            : 1);
+          auto dims = layout.rankToFactorizedDimensionID.at(r);
+          std::cout << "    Rank: " << r << " dimension=";
+          if (dims.size() == 1)
+          {
+            std::cout << dims[0] << "-"
+                      << layout.rankToDimensionName.at(r)[0];
+          }
+          else
+          {
+            std::cout << "(";
+            for (size_t i = 0; i < dims.size(); i++)
+            {
+              std::cout << dims[i] << (i != dims.size() - 1 ? "," : "");
+            }
+            std::cout << ")-(";
+            auto names = layout.rankToDimensionName.at(r);
+            for (size_t i = 0; i < names.size(); i++)
+            {
+              std::cout << names[i]
+                        << (i != names.size() - 1 ? "," : "");
+            }
+            std::cout << ")";
+          }
+          std::cout << ", factor=" << factor << std::endl;
+        }
+      }
     }
   }
 
-
-
   //------------------------------------------------------------------------------
   // PrintOverallLayoutConcise
-  // Prints layout information in a concise format, grouping by data space and 
+  // Prints layout information in a concise format, grouping by data space and
   // showing factors in rank=factor format on single lines.
   void
   PrintOverallLayoutConcise(Layouts layouts)
@@ -622,12 +683,14 @@ namespace layout
         data_spaces.insert(nest.data_space);
       for (const auto &nest : layout.intraline)
         data_spaces.insert(nest.data_space);
+      for (const auto &nest : layout.authblock_lines)
+        data_spaces.insert(nest.data_space);
 
       // For each data space, print all nest types in a compact format
       for (const auto &ds : data_spaces)
       {
         std::cout << "  Data space: " << ds << std::endl;
-        
+
         // Print interline factors
         for (const auto &nest : layout.interline)
         {
@@ -646,7 +709,7 @@ namespace layout
             break;
           }
         }
-        
+
         // Print intraline factors
         for (const auto &nest : layout.intraline)
         {
@@ -665,10 +728,28 @@ namespace layout
             break;
           }
         }
+
+        // Print authblock_lines factors (only if it exists and has factors)
+        for (const auto &nest : layout.authblock_lines)
+        {
+          if (nest.data_space == ds && !nest.factors.empty())
+          {
+            std::cout << "    authblock_lines: ";
+            bool first = true;
+            for (const auto &r : nest.ranks)
+            {
+              if (!first) std::cout << ", ";
+              int factor = (nest.factors.find(r) != nest.factors.end() ? nest.factors.at(r) : 1);
+              std::cout << r << "=" << factor;
+              first = false;
+            }
+            std::cout << std::endl;
+            break;
+          }
+        }
       }
     }
   }
-
 
   void
   PrintOverallLayoutConcise(Layouts layouts, std::ostream &os)
@@ -701,12 +782,14 @@ namespace layout
         data_spaces.insert(nest.data_space);
       for (const auto &nest : layout.intraline)
         data_spaces.insert(nest.data_space);
+      for (const auto &nest : layout.authblock_lines)
+        data_spaces.insert(nest.data_space);
 
       // For each data space, print all nest types in a compact format
       for (const auto &ds : data_spaces)
       {
         os << "  Data space: " << ds << std::endl;
-        
+
         // Print interline factors
         for (const auto &nest : layout.interline)
         {
@@ -725,7 +808,7 @@ namespace layout
             break;
           }
         }
-        
+
         // Print intraline factors
         for (const auto &nest : layout.intraline)
         {
@@ -744,10 +827,28 @@ namespace layout
             break;
           }
         }
+
+        // Print authblock_lines factors (only if it exists and has factors)
+        for (const auto &nest : layout.authblock_lines)
+        {
+          if (nest.data_space == ds && !nest.factors.empty())
+          {
+            os << "    authblock_lines: ";
+            bool first = true;
+            for (const auto &r : nest.ranks)
+            {
+              if (!first) os << ", ";
+              int factor = (nest.factors.find(r) != nest.factors.end() ? nest.factors.at(r) : 1);
+              os << r << "=" << factor;
+              first = false;
+            }
+            os << std::endl;
+            break;
+          }
+        }
       }
     }
   }
-
 
   void
   PrintOneLvlLayout(Layout layout)
@@ -768,7 +869,7 @@ namespace layout
       std::cout << r << " ";
     std::cout << std::endl
               << std::endl;
-    assert(layout.rank_list.size() == layout.rankToFactorizedDimensionID.size());
+    // assert(layout.rank_list.size() == layout.rankToFactorizedDimensionID.size());
 
     {
       std::cout << "Target: " << layout.target << std::endl;
@@ -847,7 +948,6 @@ namespace layout
       std::cout << std::endl;
     }
   }
-
 
   void
   PrintOneLvlLayoutDataSpace(Layout layout, std::string data_space_in)
@@ -953,103 +1053,107 @@ namespace layout
     }
   }
 
-
-  //------------------------------------------------------------------------------
-  // DumpLayoutToYAML
-  // Dumps the layout to a YAML file following the pattern in test_layout.yaml
-  //------------------------------------------------------------------------------
-  void DumpLayoutToYAML(const Layouts& layouts, const std::string& filename)
+//------------------------------------------------------------------------------
+// DumpLayoutToYAML
+// Dumps the layout to a YAML file following the pattern in test_layout.yaml
+//------------------------------------------------------------------------------
+void DumpLayoutToYAML(const Layouts& layouts, const std::string& filename)
+{
+  std::ofstream yaml_file(filename);
+  if (!yaml_file.is_open())
   {
-    std::ofstream yaml_file(filename);
-    if (!yaml_file.is_open())
-    {
-      std::cerr << "Error: Could not open " << filename << " for writing." << std::endl;
-      return;
-    }
+    std::cerr << "Error: Could not open " << filename << " for writing." << std::endl;
+    return;
+  }
 
-    yaml_file << "layout:" << std::endl;
-    
-    for (auto it = layouts.rbegin(); it != layouts.rend(); ++it)
+  yaml_file << "layout:" << std::endl;
+
+  for (auto it = layouts.rbegin(); it != layouts.rend(); ++it)
+  {
+    const auto& layout = *it;
+    // Process each nest type (interline, intraline, authblock_lines)
+    std::vector<std::string> nest_types = {"interline", "intraline", "authblock_lines"};
+
+    for (const auto& nest_type : nest_types)
     {
-      const auto& layout = *it;
-      // Process each nest type (interline, intraline)
-      std::vector<std::string> nest_types = {"interline", "intraline"};
-      
-      for (const auto& nest_type : nest_types)
+      // Collect all factors and ranks across all dataspaces for this target and type
+      std::map<std::string, uint32_t> combined_factors;
+      std::vector<std::string> combined_ranks;
+      bool has_data = false;
+
+      // Get the appropriate nest vector based on type
+      std::vector<layout::LayoutNest> nests;
+      if (nest_type == "interline")
+        nests = layout.interline;
+      else if (nest_type == "intraline")
+        nests = layout.intraline;
+      else if (nest_type == "authblock_lines")
+        nests = layout.authblock_lines;
+
+      // Combine factors from all dataspaces
+      for (const auto& nest : nests)
       {
-        // Collect all factors and ranks across all dataspaces for this target and type
-        std::map<std::string, uint32_t> combined_factors;
-        std::vector<std::string> combined_ranks;
-        bool has_data = false;
-        
-              // Get the appropriate nest vector based on type
-        std::vector<layout::LayoutNest> nests;
-        if (nest_type == "interline")
-          nests = layout.interline;
-        else if (nest_type == "intraline")
-          nests = layout.intraline;
+        if (nest_type == "authblock_lines" && nest.factors.empty())
+          continue; // Skip empty authblock_lines
 
-        // Combine factors from all dataspaces
-        for (const auto& nest : nests)
+        has_data = true;
+
+        // Collect ranks in order (avoid duplicates)
+        for (const auto& rank : nest.ranks)
         {
-
-          has_data = true;
-          
-          // Collect ranks in order (avoid duplicates)
-          for (const auto& rank : nest.ranks)
+          if (std::find(combined_ranks.begin(), combined_ranks.end(), rank) == combined_ranks.end())
           {
-            if (std::find(combined_ranks.begin(), combined_ranks.end(), rank) == combined_ranks.end())
-            {
-              combined_ranks.push_back(rank);
-            }
-          }
-          
-                  // Collect factors (use the factor from each dataspace, taking max if rank appears multiple times)
-          for (const auto& rank : nest.ranks)
-          {
-            auto factor_it = nest.factors.find(rank);
-            uint32_t factor = (factor_it != nest.factors.end()) ? factor_it->second : 1;
-            
-            if (combined_factors.find(rank) == combined_factors.end())
-            {
-              combined_factors[rank] = factor;
-            }
-            else
-            {
-              combined_factors[rank] = std::max(combined_factors[rank], factor); // Take maximum factor across dataspaces
-            }
+            combined_ranks.push_back(rank);
           }
         }
-        
-        // Write the combined block if there's data
-        if (has_data)
+
+        // Collect factors (use the factor from each dataspace, taking max if rank appears multiple times)
+        for (const auto& rank : nest.ranks)
         {
-          yaml_file << "  - target: " << layout.target << std::endl;
-          yaml_file << "    type: " << nest_type << std::endl;
-          
-          // Generate combined factors string using the combined_ranks order
-          std::string factors_str = "";
-          for (const auto& rank : combined_ranks)
+          auto factor_it = nest.factors.find(rank);
+          uint32_t factor = (factor_it != nest.factors.end()) ? factor_it->second : 1;
+
+          if (combined_factors.find(rank) == combined_factors.end())
           {
-            auto factor_it = combined_factors.find(rank);
-            uint32_t factor = (factor_it != combined_factors.end()) ? factor_it->second : 1;
-            if (!factors_str.empty()) factors_str += " ";
-            factors_str += rank + "=" + std::to_string(factor);
+            combined_factors[rank] = factor;
           }
-          yaml_file << "    factors: " << factors_str << std::endl;
-          
-          // Generate combined permutation string
-          std::string permutation_str = "";
-          for (const auto& rank : combined_ranks)
+          else
           {
-            permutation_str += rank;
+            combined_factors[rank] = std::max(combined_factors[rank], factor); // Take maximum factor across dataspaces
           }
-          yaml_file << "    permutation: " << permutation_str << std::endl;
         }
       }
+
+      // Write the combined block if there's data
+      if (has_data)
+      {
+        yaml_file << "  - target: " << layout.target << std::endl;
+        yaml_file << "    type: " << nest_type << std::endl;
+
+        // Generate combined factors string using the combined_ranks order
+        std::string factors_str = "";
+        for (const auto& rank : combined_ranks)
+        {
+          auto factor_it = combined_factors.find(rank);
+          uint32_t factor = (factor_it != combined_factors.end()) ? factor_it->second : 1;
+          if (!factors_str.empty()) factors_str += " ";
+          factors_str += rank + "=" + std::to_string(factor);
+        }
+        yaml_file << "    factors: " << factors_str << std::endl;
+
+        // Generate combined permutation string
+        std::string permutation_str = "";
+        for (const auto& rank : combined_ranks)
+        {
+          permutation_str += rank;
+        }
+        yaml_file << "    permutation: " << permutation_str << std::endl;
+      }
     }
-    
-    yaml_file.close();
-    std::cout << "Layout dumped to " << filename << std::endl;
   }
+
+  yaml_file.close();
+  std::cout << "Layout dumped to " << filename << std::endl;
+}
+
 } // namespace layout

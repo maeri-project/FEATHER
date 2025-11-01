@@ -1,7 +1,0 @@
-BasedOnStyle: GNU
-PointerAlignment: Left
-SpaceBeforeParens: ControlStatements
-AlwaysBreakAfterReturnType: None
-PenaltyReturnTypeOnItsOwnLine: 100
-AccessModifierOffset: -1
-SpaceAfterTemplateKeyword: false

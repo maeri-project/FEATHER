@@ -35,6 +35,7 @@
 #include "model/sparse-optimization-info.hpp"
 #include "search/search.hpp"
 #include "layout/layout.hpp"
+#include "crypto/crypto.hpp"
 #include "layoutspaces/layoutspace.hpp"
 
 
@@ -120,6 +121,7 @@ class MapperThread
   layout::Layouts layout_;
   bool layout_initialized_;
   sparse::SparseOptimizationInfo* sparse_optimizations_;
+  crypto::CryptoConfig* crypto_;
   EvaluationResult* best_;
 
   // Thread-local data (stats etc.).
@@ -156,8 +158,9 @@ class MapperThread
     layout::Layouts layout,
     bool layout_initialized,
     sparse::SparseOptimizationInfo* sparse_optimizations,
+    crypto::CryptoConfig* crypto,
     EvaluationResult* best
-    );
+  );
 
   void Start();
 

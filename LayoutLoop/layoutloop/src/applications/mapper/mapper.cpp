@@ -1,29 +1,29 @@
 /* Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NVIDIA CORPORATION nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+*  * Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*  * Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*  * Neither the name of NVIDIA CORPORATION nor the names of its
+*    contributors may be used to endorse or promote products derived
+*    from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+* EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+* PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+* CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+* EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+* PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+* PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+* OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <fstream>
 #include <thread>
@@ -36,6 +36,7 @@
 #include "applications/mapper/mapper.hpp"
 #include "layout/layout.hpp"
 #include "layoutspaces/layoutspace.hpp"
+#include "crypto/crypto.hpp"
 
 //--------------------------------------------//
 //                Application                 //
@@ -54,8 +55,8 @@ void Mapper::serialize(Archive& ar, const unsigned int version)
 }
 
 Mapper::Mapper(config::CompoundConfig* config,
-               std::string output_dir,
-               std::string name) :
+              std::string output_dir,
+              std::string name) :
     name_(name)
 {
   auto rootNode = config->getRoot();
@@ -75,6 +76,58 @@ Mapper::Mapper(config::CompoundConfig* config,
   auto problem = rootNode.lookup("problem");
   problem::ParseWorkload(problem, workload_);
   std::cout << "Problem configuration complete." << std::endl;
+  std::cout << "Print out overall CoefficientIDToName of the given problem" << std::endl;
+  for (auto pro: workload_.GetShape()->CoefficientIDToName){
+    std::cout << pro.first << " " << pro.second  << " " ;
+  }
+  std::cout << std::endl;
+  for (auto pro: workload_.GetShape()->DefaultCoefficients){
+    std::cout << pro.first << " " << pro.second  << " " ;
+  }
+  std::cout << std::endl;
+
+  std::cout << "Print out overall FactorizedDimensionNameToID of the given problem" << std::endl;
+  for (auto pro: workload_.GetShape()->FactorizedDimensionNameToID){
+    std::cout << pro.first << ":" << pro.second << " ";
+  }
+  std::cout << std::endl;
+  std::cout << "Print out overall workload_.GetFactorizedBounds()->GetCoordinates from problem" << std::endl;
+  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
+  {
+    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " ";
+  }
+  std::cout << std::endl;
+  for (auto pro: workload_.GetFactorizedBounds().GetCoordinates()){
+    std::cout << pro << " ";
+  }
+  std::cout << std::endl;
+
+  std::cout << "Print out DataSpaceIDToDimensionIDVector from problem" << std::endl;
+  for (unsigned index =0; index < workload_.GetShape()->NumDataSpaces; index++){
+    std::cout << workload_.GetShape()->DataSpaceIDToName.at(index) << ":";
+    for(auto pro2: workload_.GetShape()->DataSpaceIDToDimensionIDVector[index]){
+      std::cout << pro2  << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+  std::cout << "Overall Workload Dimension" << std::endl;
+  for (int dim = 0; dim < int(workload_.GetShape()->NumFlattenedDimensions); dim++)
+  {
+    std::cout << workload_.GetShape()->FlattenedDimensionIDToName.at(dim) << " = "
+              << workload_.GetFlattenedBound(dim) << std::endl;
+  }
+  std::cout << std::endl;
+  std::cout << "Print out overall DataSpaceIDToName of the given problem" << std::endl;
+  for (auto pro:  workload_.GetShape()->DataSpaceIDToName){
+    std::cout << pro.first << " " << pro.second << " ";
+  }
+  std::cout << std::endl;
+
+  // std::cout << "Print out overall GetCoIteratedDimensions of the given problem" << std::endl;
+  // for (const auto& pro: shape_problem->GetCoIteratedDimensions()){
+  //   std::cout << pro << " ";
+  // }
 
   // Mapper (this application) configuration.
   auto mapper = rootNode.lookup("mapper");
@@ -275,7 +328,7 @@ Mapper::Mapper(config::CompoundConfig* config,
               << "mapspace constraints." << std::endl;
     exit(1);
   }
- 
+
   if (rootNode.exists("mapspace"))
     mapspace = rootNode.lookup("mapspace");
   else if (rootNode.exists("mapspace_constraints"))
@@ -314,7 +367,38 @@ Mapper::Mapper(config::CompoundConfig* config,
   {
     cfg_string_ = nullptr;
   }
-  
+
+  // crypto modeling
+  std::cout << "Start Parsering Crypto" << std::endl;
+  config::CompoundConfigNode compound_config_node_crypto;
+  bool existing_crypto = rootNode.lookup("crypto", compound_config_node_crypto);
+  crypto_ = new crypto::CryptoConfig();
+
+  if (existing_crypto){
+    crypto_ = crypto::ParseAndConstruct(compound_config_node_crypto);
+
+    crypto_->crypto_initialized_ = true;
+
+    std::cout << "Crypto Configuration:\n";
+    std::cout << "  Name: " << crypto_->name << "\n";
+    std::cout << "  Family: " << crypto_->family << "\n";
+    std::cout << "  Datapath: " << crypto_->datapath << "\n";
+    std::cout << "  Auth Additional Cycle Per Block: " << crypto_->auth_additional_cycle_per_block << "\n";
+    std::cout << "  Auth Additional Energy Per Block: " << crypto_->auth_additional_energy_per_block << "\n";
+    std::cout << "  Auth Cycle Per Datapath: " << crypto_->auth_cycle_per_datapath << "\n";
+    std::cout << "  Auth Enc Parallel: " << (crypto_->auth_enc_parallel ? "true" : "false") << "\n";
+    std::cout << "  Auth Energy Per Datapath: " << crypto_->auth_energy_per_datapath << "\n";
+    std::cout << "  Enc Cycle Per Datapath: " << crypto_->enc_cycle_per_datapath << "\n";
+    std::cout << "  Enc Energy Per Datapath: " << crypto_->enc_energy_per_datapath << "\n";
+    std::cout << "  Hash Size: " << crypto_->hash_size << "\n";
+    std::cout << "  Xor Cycle: " << crypto_->xor_cycle << "\n";
+    std::cout << "  Xor Energy Per Datapath: " << crypto_->xor_energy_per_datapath << "\n";
+  }
+  else{
+    crypto_->crypto_initialized_ = false;
+    std::cout << "No Crypto specified" << std::endl;
+  }
+
   // layout modeling
   std::cout << "Start Parsering Layout" << std::endl;
   config::CompoundConfigNode compound_config_node_layout;
@@ -325,15 +409,16 @@ Mapper::Mapper(config::CompoundConfig* config,
       externalPortMapping.push_back({i, {arch_specs_.topology.GetStorageLevel(i)->num_ports.Get(), arch_specs_.topology.GetStorageLevel(i)->num_ports.Get()}});
     std::cout << "Storage Level " << i << " has " << arch_specs_.topology.GetStorageLevel(i)->num_ports.Get() << " ports" << std::endl;
   }
+
   if (existing_layout){
-    layout_ = layout::ParseAndConstruct(compound_config_node_layout, workload_, externalPortMapping);
+    layout_ = layout::ParseAndConstruct(compound_config_node_layout, workload_, externalPortMapping, crypto_->crypto_initialized_);
 
     layout_initialized_ = true;
     layout::PrintOverallLayout(layout_);
   }
   else{
     layout_initialized_ = false;
-    std::cout << "No Layout specified, using layout searching." << std::endl;
+    std::cout << "No Layout specified, using concordant layout with authblock_lines searching." << std::endl;
     layout_ = layout::InitializeDummyLayout(workload_, externalPortMapping);
     layout::PrintOverallLayout(layout_);
   }
@@ -444,6 +529,7 @@ Mapper::Result Mapper::Run()
                                         layout_,
                                         layout_initialized_,
                                         sparse_optimizations_,
+                                        crypto_,
                                         &best_));
   }
 
@@ -541,7 +627,10 @@ Mapper::Result Mapper::Run()
         model::Engine engine;
         engine.Spec(arch_specs_);
 
-        engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, false);
+        if (layout_initialized_){ // ToDo: @Jianming modify here
+          engine.Evaluate(mapping, workload_, layout_, sparse_optimizations_, crypto_, false);
+        }else
+          engine.Evaluate(mapping, workload_, sparse_optimizations_, crypto_, false);
 
         mapping.PrettyPrint(std::cout, arch_specs_.topology.StorageLevelNames(),
                             engine.GetTopology().GetStats().utilized_capacities,
@@ -560,8 +649,11 @@ Mapper::Result Mapper::Run()
   // Select the best mapping from each thread.
   for (unsigned t = 0; t < num_threads_; t++)
   {
+    // Each thread tracks its own best result
     auto& thread_best = threads_.at(t)->GetStats().thread_best;
     global_best_.UpdateIfBetter(thread_best, optimization_metrics_);
+    // std::cout << "Thread " << t << " best layout:" << std::endl;
+    // layout::PrintOverallLayoutConcise(global_best_.layout);
   }
 
   std::cout << std::endl;
@@ -581,8 +673,8 @@ Mapper::Result Mapper::Run()
   if (global_best_.valid)
   {
     global_best_.mapping.PrettyPrint(map_txt_str, arch_specs_.topology.StorageLevelNames(),
-                                     global_best_.stats.utilized_capacities,
-                                     global_best_.stats.tile_sizes);
+                                    global_best_.stats.utilized_capacities,
+                                    global_best_.stats.tile_sizes);
 
     // std::ofstream map_yaml_file(map_yaml_file_name);
     // global_best_.mapping.PrintAsConstraints(map_yaml_file_name);
@@ -592,8 +684,11 @@ Mapper::Result Mapper::Run()
     // that can be printed out hierarchically.
     model::Engine engine;
     engine.Spec(arch_specs_);
-    
-    engine.Evaluate(global_best_.mapping, workload_, global_best_.layout, sparse_optimizations_);
+
+    if (layout_initialized_){
+      engine.Evaluate(global_best_.mapping, workload_, layout_, sparse_optimizations_, crypto_);
+    }else
+      engine.Evaluate(global_best_.mapping, workload_, global_best_.layout, sparse_optimizations_, crypto_);
 
     stats_str << engine << std::endl;
 
@@ -614,7 +709,7 @@ Mapper::Result Mapper::Run()
         global_best_.stats.algorithmic_computes
                 << " | pJ/Compute = " << std::setw(8)
                 << OUT_FLOAT_FORMAT << PRINTFLOAT_PRECISION << global_best_.stats.energy /
-        global_best_.stats.actual_computes 
+        global_best_.stats.actual_computes
                 << " | Cycles = " << global_best_.stats.cycles << std::endl;
     }
     else

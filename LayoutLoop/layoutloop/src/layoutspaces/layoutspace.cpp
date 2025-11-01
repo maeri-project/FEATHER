@@ -33,7 +33,8 @@
  #include <functional>
  // #define DEBUG_CONCORDANT_LAYOUT
  // #define DEBUG_BUFFER_CAPACITY_CONSTRAINT
- // #define DEBUG_CONSTRUCTION_LAYOUT
+//  #define DEBUG_CONSTRUCTION_LAYOUT
+//  #define DEBUG_CREATE_AUTH_SPACE
  // #define DEBUG_CREATE_INTRALINE_FACTOR_SPACE
  #define PACKING_PRUNING_RATIO 0.9
 
@@ -46,7 +47,8 @@
 
   void Legal::Init(model::Engine::Specs arch_specs,
     const Mapping& mapping,
-    layout::Layouts& layout)
+    layout::Layouts& layout,
+    bool skip_authblock)
   {
     arch_specs_ = arch_specs;
     layout_ = layout::Layouts(layout);
@@ -60,6 +62,27 @@
 
     // Step 2: Create design spaces for layout optimization
     CreateIntralineFactorSpace(arch_specs, mapping);
+
+    // Step 3: Create AuthSpace
+    if (!skip_authblock) {
+      bool has_non_empty_authblock = false;
+      for (unsigned lvl = 0; lvl < num_storage_levels; lvl++)
+      {
+        // Check if authblock_lines vector has enough elements first
+        if (layout_.at(lvl).authblock_lines.size() >= num_data_spaces){
+          for (unsigned ds_idx = 0; ds_idx < num_data_spaces; ds_idx++){
+            if (!layout_.at(lvl).authblock_lines.at(ds_idx).factors.empty()){
+              has_non_empty_authblock = true;
+              break;
+            }
+          }
+        }
+      }
+      if (!has_non_empty_authblock) {
+        throw std::runtime_error("No non-empty authblock_lines found in any dataspace");
+      }
+      CreateAuthSpace(arch_specs);
+    }
   };
 
   // Helper function to find all divisors of a number
@@ -342,22 +365,24 @@
 
 
   //
-  // ConstructLayout() - Two-parameter version with separate layout_splitting_id and layout_packing_id
+  // ConstructLayout() - Three-parameter version with separate layout_splitting_id, layout_auth_id, and layout_packing_id
   //
-  std::vector<Status> Legal::ConstructLayout(uint64_t layout_splitting_id, uint64_t layout_packing_id, layout::Layouts* layouts, Mapping mapping, bool break_on_failure)
+  std::vector<Status> Legal::ConstructLayout(uint64_t layout_splitting_id, uint64_t layout_packing_id, uint64_t layout_auth_id, layout::Layouts* layouts, Mapping mapping, bool break_on_failure)
   {
     (void)break_on_failure; // Suppress unused parameter warning
 
     // This function takes separate IDs for all three design spaces:
     // - layout_splitting_id: for SplittingSpace (intraline-to-interline splitting)
     // - layout_packing_id: for PackingSpace (interline-to-intraline packing)
+    // - layout_auth_id: for AuthSpace (authblock factor variations)
 
     // Create a deep copy of the layout to ensure modifications don't affect the original
     CreateConcordantLayout(mapping);
 
     #ifdef DEBUG_CONSTRUCTION_LAYOUT
       std::cout << "\n=== LAYOUT CONSTRUCTION START ===" << std::endl;
-      std::cout << "Layout IDs: IntraLine=" << layout_splitting_id << ", Packing=" << layout_packing_id << std::endl;
+      std::cout << "Layout IDs: IntraLine=" << layout_splitting_id << ", Auth=" << layout_auth_id
+                << ", Packing=" << layout_packing_id << std::endl;
       std::cout << "Initial original layout:" << std::endl;
       layout::PrintOverallLayoutConcise(layout_);
     #endif
@@ -380,6 +405,26 @@
       Status error_status;
       error_status.success = false;
       error_status.fail_reason = " layout_packing_id " + std::to_string(layout_packing_id) + " exceeds PackingSpace size " + std::to_string(packing_candidates);
+      return {error_status};
+    }
+
+    // Determine if crypto is enabled for this layout (any level)
+    bool crypto_enabled = false;
+    for (const auto& lvl_layout : layout_)
+    {
+      if (lvl_layout.crypto_initialized)
+      {
+        crypto_enabled = true;
+        break;
+      }
+    }
+
+    // Validate layout_auth_id range only if crypto is enabled
+    if (crypto_enabled && !variable_authblock_factors_.empty() && layout_auth_id > authblock_candidates)
+    {
+      Status error_status;
+      error_status.success = false;
+      error_status.fail_reason = " layout_auth_id " + std::to_string(layout_auth_id) + " exceeds AuthSpace size " + std::to_string(authblock_candidates);
       return {error_status};
     }
 
@@ -452,6 +497,34 @@
       }
       std::cout << std::endl;
     #endif
+
+    // Decode AuthBlockSpace choices using layout_auth_id (authblock factor variations) only if crypto is enabled
+    std::vector<uint32_t> authblock_choices;
+    if (crypto_enabled)
+    {
+      authblock_choices.resize(variable_authblock_factors_.size());
+      std::uint64_t remaining_auth_id = layout_auth_id;
+
+      for (size_t i = 0; i < variable_authblock_factors_.size(); i++)
+      {
+        const auto& divisors = authblock_factor_ranges_[i];
+        assert(divisors.size() > 0 && "Division by zero in authblock choice calculation");
+        uint32_t divisor_index = remaining_auth_id % divisors.size();
+        authblock_choices[i] = divisors[divisor_index];
+        remaining_auth_id /= divisors.size();
+      }
+
+      #ifdef DEBUG_CONSTRUCTION_LAYOUT
+        std::cout << "Layout IDs: Splitting=" << layout_splitting_id  << ", Packing=" << layout_packing_id << ", Auth=" << layout_auth_id << std::endl;
+        std::cout << "  AuthSpace (layout_auth_id): " << layout_auth_id << ", choices: [";
+        for (size_t i = 0; i < authblock_choices.size(); i++)
+        {
+          std::cout << authblock_choices[i];
+          if (i < authblock_choices.size() - 1) std::cout << ", ";
+        }
+        std::cout << "]" << std::endl;
+      #endif
+    }
 
       // Apply SplittingSpace choices (both single-rank and multi-rank splitting: intraline-to-interline)
     #ifdef DEBUG_CONSTRUCTION_LAYOUT
@@ -618,6 +691,46 @@
           intraline_nest.factors[unique_rank] = new_intraline_factor;
           interline_nest.factors[unique_rank] = new_interline_factor;
         }
+      }
+    }
+
+    // Apply AuthSpace factor choices (using layout_auth_id) only if crypto is enabled
+    if (crypto_enabled)
+    {
+      for (size_t i = 0; i < variable_authblock_factors_.size(); i++)
+      {
+        auto& var_factor = variable_authblock_factors_[i];
+        unsigned lvl = std::get<0>(var_factor);
+        unsigned ds_idx = std::get<1>(var_factor);
+        std::string rank = std::get<2>(var_factor);
+        uint32_t chosen_factor = authblock_choices[i];
+
+        // Apply the chosen factor to the authblock_lines nest
+        auto& authblock_nest = layout_[lvl].authblock_lines[ds_idx];
+        auto& interline_nest = layout_[lvl].interline[ds_idx];
+
+        // Check if rank exists in the authblock nest
+        auto rank_it = std::find(authblock_nest.ranks.begin(), authblock_nest.ranks.end(), rank);
+        if (rank_it == authblock_nest.ranks.end())
+        {
+          Status error_status;
+          error_status.success = false;
+          error_status.fail_reason = "Rank " + rank + " not found in authblock_lines nest for level " + std::to_string(lvl) + ", dataspace " + std::to_string(ds_idx);
+          return {error_status};
+        }
+
+        // Set the chosen factor value
+        authblock_nest.factors[rank] = std::min(chosen_factor, interline_nest.factors[rank]);
+
+        #ifdef DEBUG_CONSTRUCTION_LAYOUT
+          // Get the old factor for comparison
+          uint32_t old_authblock_factor = (authblock_nest.factors.find(rank) != authblock_nest.factors.end()
+                                          ? authblock_nest.factors.at(rank) : 1);
+
+          std::cout << "[AuthSpace] Storage storage level " << lvl << ", DataSpace " << ds_idx
+                    << ", Rank '" << rank << "': authblock_lines factor "
+                    << old_authblock_factor << " -> " << chosen_factor << std::endl;
+        #endif
       }
     }
 
@@ -1274,9 +1387,180 @@
   }
 
 
+  //
+  // CreateAuthSpace() - Step 3: Generate all possible authblock_lines factor combinations
+  //
+  void Legal::CreateAuthSpace(model::Engine::Specs arch_specs)
+  {
+    (void) arch_specs; // Suppress unused parameter warning
+    #ifdef DEBUG_CREATE_AUTH_SPACE
+      std::cout << "Step 3: Creating layout candidate space from authblock_lines factors..." << std::endl;
+    #endif
+    CreateConcordantLayout(mapping_);
+    num_storage_levels = layout_.size();
+    num_data_spaces = layout_.at(0).intraline.size();
+
+    // Identify storage levels with non-empty authblock_lines and collect variable factors
+    variable_authblock_factors_.clear();
+
+    for (unsigned lvl = 0; lvl < num_storage_levels; lvl++)
+    {
+      bool has_non_empty_authblock = false;
+
+      // Check if authblock_lines vector has enough elements first
+      if (layout_.at(lvl).authblock_lines.size() >= num_data_spaces)
+      {
+        for (unsigned ds_idx = 0; ds_idx < num_data_spaces; ds_idx++)
+        {
+          if (!layout_.at(lvl).authblock_lines.at(ds_idx).factors.empty() && layout_.at(lvl).crypto_initialized)
+          {
+            has_non_empty_authblock = true;
+            break;
+          }
+        }
+      }
+
+      if (has_non_empty_authblock)
+      {
+        #ifdef DEBUG_CREATE_AUTH_SPACE
+          std::cout << "  storage level " << lvl << " has non-empty authblock_lines, will generate candidates" << std::endl;
+        #endif
+
+        // Collect variable authblock_lines factors for this level
+        for (unsigned ds_idx = 0; ds_idx < num_data_spaces; ds_idx++)
+        {
+          const auto& authblock_nest = layout_.at(lvl).authblock_lines.at(ds_idx);
+          const auto& inter_nest = layout_.at(lvl).interline.at(ds_idx);
+
+          // Check if this nest has non-empty factors
+          if (!authblock_nest.factors.empty())
+          {
+            for (const auto& rank : authblock_nest.ranks)
+            {
+              // Calculate max_factor as product of ratios between consecutive levels
+              uint32_t max_factor = 1;
+
+              // Get dimension IDs for this rank
+              auto dims = layout_.at(lvl).rankToFactorizedDimensionID.at(rank);
+
+              max_factor = (inter_nest.factors.find(rank) != inter_nest.factors.end()
+                                                  ? inter_nest.factors.at(rank) : 1);
+              //// Calculate product of ratios for all dimensions of this rank
+              //// Only proceed if we have at least 2 levels for comparison
+              //if (lvl >= 2)
+              //{
+              //  for (uint32_t dim_id : dims)
+              //  {
+              //    auto cumulative_it_lvl = cumulatively_product_dimval[lvl].find(dim_id);
+              //    auto cumulative_it_lvl_minus_1 = cumulatively_intraline_dimval[lvl].find(dim_id);
+
+              //    if (cumulative_it_lvl != cumulatively_product_dimval[lvl].end() &&
+              //        cumulative_it_lvl_minus_1 != cumulatively_intraline_dimval[lvl].end() &&
+              //        cumulative_it_lvl_minus_1->second != 0)
+              //    {
+              //      assert(cumulative_it_lvl_minus_1->second > 0 && "Division by zero in ratio calculation");
+              //      uint32_t ratio = cumulative_it_lvl->second / cumulative_it_lvl_minus_1->second;
+              //      max_factor *= ratio;
+              //    }
+              //    else
+              //    {
+              //      #ifdef DEBUG_CREATE_AUTH_SPACE
+              //        std::cout << "Warning: dimension ID " << dim_id << " not found or zero division in cumulatively_product_dimval for level " << lvl << " or cumulatively_intraline_dimval for level " << lvl << std::endl;
+              //      #endif
+              //    }
+              //  }
+              //}
+
+              #ifdef DEBUG_CREATE_AUTH_SPACE
+                std::cout << " lvl=" << lvl << " ds_idx=" << ds_idx << " rank=" << rank << " dims=[";
+                for (size_t i = 0; i < dims.size(); i++)
+                {
+                  std::cout << dims[i];
+                  if (i < dims.size() - 1) std::cout << ",";
+                }
+                std::cout << "] max_factor(product of ratios cumulatively_product_dimval[" << lvl << "]/cumulatively_intraline_dimval[" << lvl << "])=" << max_factor << std::endl;
+              #endif
+
+              // Only add if max_factor > 1 (there are variations possible)
+              if (max_factor > 1)
+              {
+                variable_authblock_factors_.push_back(std::make_tuple(lvl, ds_idx, rank, max_factor));
+
+                // Show the divisors that will be used
+                std::vector<uint32_t> divisors = FindDivisors(max_factor);
+                #ifdef DEBUG_CREATE_AUTH_SPACE
+                  std::cout << "  Variable factor: storage level " << lvl
+                            << ", DataSpace " << ds_idx
+                            << ", Rank " << rank
+                            << ", Dimensions: [";
+                  for (size_t i = 0; i < dims.size(); i++)
+                  {
+                    std::cout << dims[i];
+                    if (i < dims.size() - 1) std::cout << ",";
+                  }
+                  std::cout << "], max_factor: " << max_factor << ", divisors: [";
+                  for (size_t i = 0; i < divisors.size(); i++)
+                  {
+                    std::cout << divisors[i];
+                    if (i < divisors.size() - 1) std::cout << ",";
+                  }
+                  std::cout << "]" << std::endl;
+                #endif
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        #ifdef DEBUG_CREATE_AUTH_SPACE
+          std::cout << "  storage level " << lvl << " has empty authblock_lines, skipping candidate generation" << std::endl;
+        #endif
+      }
+    }
+
+    // Calculate total number of combinations from authblock factors
+    authblock_candidates = 1;
+    if (!variable_authblock_factors_.empty())
+    {
+      authblock_factor_ranges_.clear();
+      for (const auto& var_factor : variable_authblock_factors_)
+      {
+        uint32_t max_factor = std::get<3>(var_factor);
+        std::vector<uint32_t> divisors = FindDivisors(max_factor);
+        authblock_factor_ranges_.push_back(divisors); // Store all divisors of max_factor
+        authblock_candidates *= divisors.size();
+      }
+      #ifdef DEBUG_CREATE_AUTH_SPACE
+        std::cout << "  Authblock_lines layout candidates: " << authblock_candidates << std::endl;
+      #endif
+    }
+    else
+    {
+      #ifdef DEBUG_CREATE_AUTH_SPACE
+        std::cout << "  No variable authblock_lines factors found." << std::endl;
+      #endif
+      authblock_candidates = 0;
+    }
+
+    // Total layout candidates is the sum of all three design spaces
+    num_layout_candidates = authblock_candidates + splitting_candidates + packing_candidates;
+    #ifdef DEBUG_CREATE_AUTH_SPACE
+      std::cout << "  Splitting Candidates: " << splitting_candidates << std::endl;
+      std::cout << "  Packing Candidates: " << packing_candidates << std::endl;
+      std::cout << "  Total combined layout candidates: " << num_layout_candidates << std::endl;
+      std::cout << "  Variable factors count: " << variable_authblock_factors_.size() << std::endl;
+      std::cout << "  Note: Only using divisors of max_factor for each variable factor" << std::endl;
+      std::cout << "  ✓ Layout candidate space created successfully" << std::endl;
+    #endif
+  }
+
   void Legal::SequentialFactorizeLayout(layout::Layouts& layout){
     for (unsigned lvl = 0; lvl < num_storage_levels; lvl++)
     {
+      #ifdef DEBUG_CREATE_AUTH_SPACE
+        std::cout << "lvl=" << lvl << " storage_level_line_capacity[lvl]=" << storage_level_line_capacity[lvl] << std::endl;
+      #endif
       for (unsigned ds_idx = 0; ds_idx < num_data_spaces; ds_idx++)
       {
         // Check if this dataspace is bypassed at this storage level
@@ -1294,22 +1578,39 @@
 
           float splitting_factor = (float)intraline_per_ds / (float)storage_level_line_capacity[lvl];
           // Check if the intraline product of dataspaces is greater than the storage level line capacity
+          #ifdef DEBUG_CREATE_AUTH_SPACE
+            std::cout << "Initial splitting_factor: " << splitting_factor << std::endl;
+          #endif
           for (const auto &r : layout.at(lvl).intraline.at(ds_idx).ranks)
           {
+            #ifdef DEBUG_CREATE_AUTH_SPACE
+              std::cout << "  Processing rank " << r << ", current factor: " << layout.at(lvl).intraline.at(ds_idx).factors[r] << std::endl;
+            #endif
             if (layout.at(lvl).intraline.at(ds_idx).factors[r] > 1)
             {
+              #ifdef DEBUG_CREATE_AUTH_SPACE
+                std::cout << "  rank: " << r << " intraline factor: " << layout.at(lvl).intraline.at(ds_idx).factors[r] << " -> 1 ";
+              #endif
               layout.at(lvl).interline.at(ds_idx).factors[r] *= layout.at(lvl).intraline.at(ds_idx).factors[r];
-              splitting_factor = splitting_factor / (float) layout.at(lvl).intraline.at(ds_idx).factors[r];
+              #ifdef DEBUG_CREATE_AUTH_SPACE
+                splitting_factor = splitting_factor / (float) layout.at(lvl).intraline.at(ds_idx).factors[r];
+              #endif
               layout.at(lvl).intraline.at(ds_idx).factors[r] = 1;
+              #ifdef DEBUG_CREATE_AUTH_SPACE
+                std::cout << " new splitting_factor: " << splitting_factor << std::endl;
+              #endif
             }
             if (splitting_factor < 1.0)
             {
               break;
             }
+            #ifdef DEBUG_CREATE_AUTH_SPACE
+              std::cout << "Final splitting_factor for this iteration: " << splitting_factor << std::endl;
+            #endif
           }
         }
       }
     }
-  }
+  };
 
 } // namespace layoutspace

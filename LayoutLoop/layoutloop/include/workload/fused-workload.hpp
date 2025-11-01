@@ -77,9 +77,9 @@ class FusedWorkload
 
   std::tuple<int, int> GetRankShape(DimensionId einsum_rank) const;
 
-  double GetTensorSize(DataSpaceId dspace) const;
+  int GetTensorSize(DataSpaceId dspace) const;
 
-  double GetOspaceVolume(EinsumId einsum) const;
+  int GetOspaceVolume(EinsumId einsum) const;
 
  private:
   std::map<std::string, EinsumId> einsum_name_to_id_;

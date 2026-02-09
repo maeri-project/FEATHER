@@ -9,6 +9,8 @@ import os, inspect, sys
 # arch_prefix = "simba"
 # arch_prefix = "sigma"
 arch_prefix = "systolic_array"
+# arch_prefix = "feather"
+
 ########### Must Change
 
 map_policy_dict = {
@@ -16,7 +18,8 @@ map_policy_dict = {
     "eyeriss": "../mapper/mapper_eyeriss.yaml",
     "simba": "../mapper/mapper.yaml",
     "sigma": "../mapper/mapper_sigma.yaml",
-    "systolic_array": "../mapper/mapper_systolic_array.yaml",
+    "systolic_array": "../mapper/mapper_systolic_array.yaml",    
+    "feather": "../mapper/mapper_feather.yaml",
 }
 
 map_constraint_dict = {
@@ -25,6 +28,8 @@ map_constraint_dict = {
     "simba": "../arch_designs/simba_like/constraints/*",
     "sigma": "",
     "systolic_array": "../arch_designs/systolic_constraint/mapspace_XY_OS.yaml",
+    "feather": "", # Need to be implemented, ToDo.
+    
 }
 
 gemm_map_constraint_dict = {
@@ -41,6 +46,7 @@ depthwise_map_constraint_dict = {
     "simba": "../arch_designs/simba_like/constraints_depthwise/*",
     "sigma": "",
     "systolic_array": "",
+    "feather": "../arch_designs/feather_like/feather_256_gemm_constraints.yaml",
 }
 
 arch_dict = {
@@ -49,6 +55,7 @@ arch_dict = {
     "simba": "../arch_designs/simba_like/arch/simba_like.yaml ../arch_designs/simba_like/arch/components/*",
     "sigma": "../arch_designs/vector_256.yaml",
     "systolic_array": "../arch_designs/vector_256.yaml",
+    "feather": "../arch_designs/feather_like/feather_256.yaml",
 }
 
 model_name_list = ["resnet18", "mobv3", "bert"]
@@ -119,9 +126,12 @@ if __name__ == "__main__":
             src_layout_path = os.path.join(work_directory, 'timeloop-mapper.layout.yaml')
             dst_layout_path = os.path.join(mapping_directory, f"{model_name}_{layer_id}.layout.yaml")
             shutil.move(src_layout_path, dst_layout_path)
-            src_layout_path = os.path.join(work_directory, 'timeloop-mapper.stats.txt')
-            dst_layout_path = os.path.join(mapping_directory, f"{model_name}_{layer_id}.stats.txt")
-            shutil.move(src_layout_path, dst_layout_path)
+            src_stats_path = os.path.join(work_directory, 'timeloop-mapper.stats.txt')
+            dst_stats_path = os.path.join(mapping_directory, f"{model_name}_{layer_id}.stats.txt")
+            shutil.move(src_stats_path, dst_stats_path)
+            src_map_path = os.path.join(work_directory, 'timeloop-mapper.map.txt')
+            dst_map_path = os.path.join(mapping_directory, f"{model_name}_{layer_id}.map.txt")
+            shutil.move(src_map_path, dst_map_path)
 
             # Read Utilization, Cycles, and Energy directly from stats file
             utilization = 0.0

@@ -1,0 +1,21 @@
+#
+# The following constraints are limitations of the hardware architecture and dataflow
+#
+
+architecture_constraints:
+  targets:
+  # certain buffer only stores certain datatypes
+  - target: WeightsBuffer
+    type: bypass
+    bypass: [Inputs, Outputs]
+    keep: [Weights]
+  - target: OutputBuffer
+    type: bypass
+    bypass: [Inputs, Weights]
+    keep: [Outputs]
+  - target: WeightsBuffer
+    type: temporal
+    factors: K=16
+  - target: GlobalBuffer
+    type: spatial
+    factors: N<=128 K<=16

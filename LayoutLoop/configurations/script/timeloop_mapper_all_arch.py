@@ -8,8 +8,8 @@ import os, inspect, sys
 # arch_prefix = "eyeriss" # victory
 # arch_prefix = "simba"
 # arch_prefix = "sigma"
-arch_prefix = "systolic_array"
-# arch_prefix = "feather"
+# arch_prefix = "systolic_array"
+arch_prefix = "feather"
 
 ########### Must Change
 
@@ -38,6 +38,7 @@ gemm_map_constraint_dict = {
     "simba": "../arch_designs/simba_like/constraints_gemm/*",
     "sigma": "",
     "systolic_array": "",
+    "feather": "../arch_designs/feather_like/feather_256_gemm_constraints.yaml",
 }
 
 depthwise_map_constraint_dict = {
@@ -46,7 +47,7 @@ depthwise_map_constraint_dict = {
     "simba": "../arch_designs/simba_like/constraints_depthwise/*",
     "sigma": "",
     "systolic_array": "",
-    "feather": "../arch_designs/feather_like/feather_256_gemm_constraints.yaml",
+    "feather": "",
 }
 
 arch_dict = {
@@ -58,7 +59,8 @@ arch_dict = {
     "feather": "../arch_designs/feather_like/feather_256.yaml",
 }
 
-model_name_list = ["resnet18", "mobv3", "bert"]
+model_name_list = ["bert"]
+# model_name_list = ["resnet18", "mobv3", "bert"]
 
 
 def create_folder(directory):

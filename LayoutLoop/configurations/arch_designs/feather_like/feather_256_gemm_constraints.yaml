@@ -5,15 +5,17 @@
 architecture_constraints:
   targets:
   # certain buffer only stores certain datatypes
-  - target: WeightsBuffer
+  - target: weight_reg
     type: bypass
     bypass: [Inputs, Outputs]
     keep: [Weights]
-  - target: OutputBuffer
+  - target: psum_reg
     type: bypass
     bypass: [Inputs, Weights]
     keep: [Outputs]
-  - target: WeightsBuffer
+
+
+  - target: weight_reg
     type: temporal
     factors: K=16
   - target: GlobalBuffer

@@ -8,11 +8,11 @@ architecture:
     - name: MainMemory
       class: DRAM
       attributes:
-        width: 1024
-        block_size: 128
+        width: 128
+        block_size: 16
         word_bits: 8
-        read_bandwidth: 128
-        write_bandwidth: 128
+        read_bandwidth: 16
+        write_bandwidth: 16
 
     subtree:
     - name: Chip
@@ -24,22 +24,22 @@ architecture:
         class: SRAM
         attributes:
           depth: 8192
-          width: 1024
-          block_size: 128
+          width: 128
+          block_size: 16
           word_bits: 8
-          read_bandwidth: 128
-          write_bandwidth: 128
+          read_bandwidth: 16
+          write_bandwidth: 16
       subtree:
       - name: PE
         local:
-        - name: WeightsBuffer[0..255]
+        - name: weight_reg[0..255]
           class: regfile
           attributes:
             depth: 16
             width: 8
             block_size: 1
             word_bits: 8
-        - name: OutputBuffer[0..255]
+        - name: psum_reg[0..255]
           class: regfile
           attributes:
             depth: 1

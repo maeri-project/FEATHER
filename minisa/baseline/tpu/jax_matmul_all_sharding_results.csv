@@ -1,0 +1,132 @@
+operation_name,category,operation,M,K,N,Sharding_Strategy,num_devices,Latency_us,Latency_ms
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N88_shard_M,FHE,Bootstrapping BConv,65536,40,88,shard_M,8,29.9125,0.0299125
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N88_shard_N,FHE,Bootstrapping BConv,65536,40,88,shard_N,8,25.5725,0.0255725
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N88_shard_MN,FHE,Bootstrapping BConv,65536,40,88,shard_MN,8,28.793672,0.028793672
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N92_shard_M,FHE,Bootstrapping BConv,65536,40,92,shard_M,8,73.735,0.073735
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N92_shard_MN,FHE,Bootstrapping BConv,65536,40,92,shard_MN,8,93.706328,0.093706328
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N84_shard_M,FHE,Bootstrapping BConv,65536,40,84,shard_M,8,53.663906,0.053663906
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N84_shard_MN,FHE,Bootstrapping BConv,65536,40,84,shard_MN,8,93.506328,0.093506328
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N120_shard_M,FHE,Bootstrapping BConv,65536,40,120,shard_M,8,39.17,0.03917
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N120_shard_N,FHE,Bootstrapping BConv,65536,40,120,shard_N,8,85.628672,0.08562867199999999
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N120_shard_MN,FHE,Bootstrapping BConv,65536,40,120,shard_MN,8,89.393594,0.08939359399999999
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N116_shard_M,FHE,Bootstrapping BConv,65536,40,116,shard_M,8,93.225078,0.093225078
+matmul_FHE_Bootstrapping_BConv_M65536_K40_N116_shard_MN,FHE,Bootstrapping BConv,65536,40,116,shard_MN,8,116.658672,0.11665867199999999
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N100_shard_M,FHE,Bootstrapping BConv,65536,44,100,shard_M,8,101.3825,0.10138249999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N100_shard_MN,FHE,Bootstrapping BConv,65536,44,100,shard_MN,8,72.26375,0.07226375
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N96_shard_M,FHE,Bootstrapping BConv,65536,44,96,shard_M,8,68.419922,0.068419922
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N96_shard_N,FHE,Bootstrapping BConv,65536,44,96,shard_N,8,92.545078,0.092545078
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N96_shard_MN,FHE,Bootstrapping BConv,65536,44,96,shard_MN,8,67.858828,0.067858828
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N128_shard_M,FHE,Bootstrapping BConv,65536,44,128,shard_M,8,22.567578,0.022567578
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N128_shard_N,FHE,Bootstrapping BConv,65536,44,128,shard_N,8,88.283828,0.088283828
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N128_shard_MN,FHE,Bootstrapping BConv,65536,44,128,shard_MN,8,58.443672,0.058443672
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N104_shard_M,FHE,Bootstrapping BConv,65536,44,104,shard_M,8,97.10375,0.09710375
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N104_shard_N,FHE,Bootstrapping BConv,65536,44,104,shard_N,8,69.76375,0.06976375
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N104_shard_MN,FHE,Bootstrapping BConv,65536,44,104,shard_MN,8,120.94,0.12093999999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N136_shard_M,FHE,Bootstrapping BConv,65536,44,136,shard_M,8,20.770078,0.020770078
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N136_shard_N,FHE,Bootstrapping BConv,65536,44,136,shard_N,8,40.763906,0.040763905999999996
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N136_shard_MN,FHE,Bootstrapping BConv,65536,44,136,shard_MN,8,15.215,0.015215
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N132_shard_M,FHE,Bootstrapping BConv,65536,44,132,shard_M,8,16.651172,0.016651172
+matmul_FHE_Bootstrapping_BConv_M65536_K44_N132_shard_MN,FHE,Bootstrapping BConv,65536,44,132,shard_MN,8,54.04,0.05404
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N112_shard_M,FHE,Bootstrapping BConv,65536,48,112,shard_M,8,70.355156,0.07035515599999999
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N112_shard_N,FHE,Bootstrapping BConv,65536,48,112,shard_N,8,81.562422,0.081562422
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N112_shard_MN,FHE,Bootstrapping BConv,65536,48,112,shard_MN,8,29.43125,0.02943125
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N108_shard_M,FHE,Bootstrapping BConv,65536,48,108,shard_M,8,77.903906,0.07790390600000001
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N108_shard_MN,FHE,Bootstrapping BConv,65536,48,108,shard_MN,8,100.607422,0.100607422
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N140_shard_M,FHE,Bootstrapping BConv,65536,48,140,shard_M,8,8.2725,0.0082725
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N140_shard_MN,FHE,Bootstrapping BConv,65536,48,140,shard_MN,8,16.082578,0.016082578
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N132_shard_M,FHE,Bootstrapping BConv,65536,48,132,shard_M,8,73.063828,0.073063828
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N132_shard_MN,FHE,Bootstrapping BConv,65536,48,132,shard_MN,8,11.35875,0.01135875
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N148_shard_M,FHE,Bootstrapping BConv,65536,48,148,shard_M,8,8.261172,0.008261172
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N148_shard_MN,FHE,Bootstrapping BConv,65536,48,148,shard_MN,8,11.29625,0.01129625
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N144_shard_M,FHE,Bootstrapping BConv,65536,48,144,shard_M,8,8.143828,0.008143827999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N144_shard_N,FHE,Bootstrapping BConv,65536,48,144,shard_N,8,16.401328,0.016401328
+matmul_FHE_Bootstrapping_BConv_M65536_K48_N144_shard_MN,FHE,Bootstrapping BConv,65536,48,144,shard_MN,8,29.815078,0.029815078
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N124_shard_M,FHE,Bootstrapping BConv,65536,52,124,shard_M,8,7.767422,0.0077674219999999995
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N124_shard_MN,FHE,Bootstrapping BConv,65536,52,124,shard_MN,8,29.228672,0.029228672
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N120_shard_M,FHE,Bootstrapping BConv,65536,52,120,shard_M,8,7.498594,0.007498594
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N120_shard_N,FHE,Bootstrapping BConv,65536,52,120,shard_N,8,16.78375,0.01678375
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N120_shard_MN,FHE,Bootstrapping BConv,65536,52,120,shard_MN,8,11.2575,0.0112575
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N152_shard_M,FHE,Bootstrapping BConv,65536,52,152,shard_M,8,61.533906,0.061533906
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N152_shard_N,FHE,Bootstrapping BConv,65536,52,152,shard_N,8,117.238828,0.117238828
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N152_shard_MN,FHE,Bootstrapping BConv,65536,52,152,shard_MN,8,77.05125,0.07705125
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N128_shard_M,FHE,Bootstrapping BConv,65536,52,128,shard_M,8,45.75375,0.045753749999999996
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N128_shard_N,FHE,Bootstrapping BConv,65536,52,128,shard_N,8,67.518906,0.067518906
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N128_shard_MN,FHE,Bootstrapping BConv,65536,52,128,shard_MN,8,34.551328,0.034551328
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N160_shard_M,FHE,Bootstrapping BConv,65536,52,160,shard_M,8,20.011328,0.020011328
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N160_shard_N,FHE,Bootstrapping BConv,65536,52,160,shard_N,8,62.39125,0.06239125
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N160_shard_MN,FHE,Bootstrapping BConv,65536,52,160,shard_MN,8,19.582578,0.019582578000000003
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N156_shard_M,FHE,Bootstrapping BConv,65536,52,156,shard_M,8,100.695156,0.100695156
+matmul_FHE_Bootstrapping_BConv_M65536_K52_N156_shard_MN,FHE,Bootstrapping BConv,65536,52,156,shard_MN,8,51.215078,0.051215078
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N136_shard_M,FHE,Bootstrapping BConv,65536,56,136,shard_M,8,48.018828,0.048018828
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N136_shard_N,FHE,Bootstrapping BConv,65536,56,136,shard_N,8,98.636406,0.098636406
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N136_shard_MN,FHE,Bootstrapping BConv,65536,56,136,shard_MN,8,128.8675,0.1288675
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N132_shard_M,FHE,Bootstrapping BConv,65536,56,132,shard_M,8,110.23875,0.11023875
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N132_shard_MN,FHE,Bootstrapping BConv,65536,56,132,shard_MN,8,117.00375,0.11700374999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N144_shard_M,FHE,Bootstrapping BConv,65536,60,144,shard_M,8,52.448594,0.052448594
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N144_shard_N,FHE,Bootstrapping BConv,65536,60,144,shard_N,8,41.05125,0.041051250000000004
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N144_shard_MN,FHE,Bootstrapping BConv,65536,60,144,shard_MN,8,108.31625,0.10831625
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N140_shard_M,FHE,Bootstrapping BConv,65536,56,140,shard_M,8,71.47125,0.07147125
+matmul_FHE_Bootstrapping_BConv_M65536_K56_N140_shard_MN,FHE,Bootstrapping BConv,65536,56,140,shard_MN,8,87.193828,0.087193828
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N152_shard_M,FHE,Bootstrapping BConv,65536,60,152,shard_M,8,89.98875,0.08998874999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N152_shard_N,FHE,Bootstrapping BConv,65536,60,152,shard_N,8,91.277578,0.09127757800000001
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N152_shard_MN,FHE,Bootstrapping BConv,65536,60,152,shard_MN,8,79.2075,0.0792075
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N148_shard_M,FHE,Bootstrapping BConv,65536,60,148,shard_M,8,34.598906,0.034598906
+matmul_FHE_Bootstrapping_BConv_M65536_K60_N148_shard_MN,FHE,Bootstrapping BConv,65536,60,148,shard_MN,8,126.48125,0.12648125
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N84_shard_M,FHE,Bootstrapping BConv,65536,28,84,shard_M,8,77.929922,0.077929922
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N84_shard_MN,FHE,Bootstrapping BConv,65536,28,84,shard_MN,8,46.708672,0.046708672
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N80_shard_M,FHE,Bootstrapping BConv,65536,28,80,shard_M,8,69.722422,0.06972242199999999
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N80_shard_N,FHE,Bootstrapping BConv,65536,28,80,shard_N,8,167.1275,0.16712749999999998
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N80_shard_MN,FHE,Bootstrapping BConv,65536,28,80,shard_MN,8,89.91125,0.08991125
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N92_shard_M,FHE,Bootstrapping BConv,65536,32,92,shard_M,8,64.773594,0.064773594
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N92_shard_MN,FHE,Bootstrapping BConv,65536,32,92,shard_MN,8,60.938672,0.060938672
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N88_shard_M,FHE,Bootstrapping BConv,65536,28,88,shard_M,8,108.489844,0.108489844
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N88_shard_N,FHE,Bootstrapping BConv,65536,28,88,shard_N,8,89.308672,0.089308672
+matmul_FHE_Bootstrapping_BConv_M65536_K28_N88_shard_MN,FHE,Bootstrapping BConv,65536,28,88,shard_MN,8,61.62375,0.06162375
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N100_shard_M,FHE,Bootstrapping BConv,65536,32,100,shard_M,8,92.351094,0.09235109400000001
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N100_shard_MN,FHE,Bootstrapping BConv,65536,32,100,shard_MN,8,100.35625,0.10035625000000001
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N96_shard_M,FHE,Bootstrapping BConv,65536,32,96,shard_M,8,43.752344,0.043752344
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N96_shard_N,FHE,Bootstrapping BConv,65536,32,96,shard_N,8,88.333672,0.088333672
+matmul_FHE_Bootstrapping_BConv_M65536_K32_N96_shard_MN,FHE,Bootstrapping BConv,65536,32,96,shard_MN,8,8.435078,0.008435078
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N76_shard_M,FHE,Bootstrapping BConv,65536,36,76,shard_M,8,47.087344,0.047087344
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N76_shard_MN,FHE,Bootstrapping BConv,65536,36,76,shard_MN,8,40.4875,0.040487499999999996
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N72_shard_M,FHE,Bootstrapping BConv,65536,36,72,shard_M,8,68.97,0.06897
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N72_shard_N,FHE,Bootstrapping BConv,65536,36,72,shard_N,8,25.954922,0.025954922
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N72_shard_MN,FHE,Bootstrapping BConv,65536,36,72,shard_MN,8,9.307656,0.009307656
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N104_shard_M,FHE,Bootstrapping BConv,65536,36,104,shard_M,8,15.496094,0.015496094
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N104_shard_N,FHE,Bootstrapping BConv,65536,36,104,shard_N,8,16.120078,0.016120078
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N104_shard_MN,FHE,Bootstrapping BConv,65536,36,104,shard_MN,8,81.004844,0.081004844
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N80_shard_M,FHE,Bootstrapping BConv,65536,36,80,shard_M,8,24.9225,0.0249225
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N80_shard_N,FHE,Bootstrapping BConv,65536,36,80,shard_N,8,15.52,0.015519999999999999
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N80_shard_MN,FHE,Bootstrapping BConv,65536,36,80,shard_MN,8,53.838672,0.053838672000000004
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N112_shard_M,FHE,Bootstrapping BConv,65536,36,112,shard_M,8,6.933828,0.006933828
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N112_shard_N,FHE,Bootstrapping BConv,65536,36,112,shard_N,8,14.973828,0.014973828
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N112_shard_MN,FHE,Bootstrapping BConv,65536,36,112,shard_MN,8,61.299844,0.061299844
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N108_shard_M,FHE,Bootstrapping BConv,65536,36,108,shard_M,8,40.58625,0.04058625
+matmul_FHE_Bootstrapping_BConv_M65536_K36_N108_shard_MN,FHE,Bootstrapping BConv,65536,36,108,shard_MN,8,80.3525,0.08035250000000001
+matmul_FHE_NTT_M64_K1024_N1024_shard_M,FHE,NTT,64,1024,1024,shard_M,8,53.375,0.053375
+matmul_FHE_NTT_M64_K1024_N1024_shard_N,FHE,NTT,64,1024,1024,shard_N,8,66.24375,0.06624375
+matmul_FHE_NTT_M64_K1024_N1024_shard_MN,FHE,NTT,64,1024,1024,shard_MN,8,66.908672,0.066908672
+matmul_FHE_NTT_M64_K2048_N2048_shard_M,FHE,NTT,64,2048,2048,shard_M,8,105.991094,0.10599109400000001
+matmul_FHE_NTT_M64_K2048_N2048_shard_N,FHE,NTT,64,2048,2048,shard_N,8,82.196172,0.082196172
+matmul_FHE_NTT_M64_K2048_N2048_shard_MN,FHE,NTT,64,2048,2048,shard_MN,8,106.943594,0.106943594
+matmul_FHE_NTT_M128_K2048_N2048_shard_M,FHE,NTT,128,2048,2048,shard_M,8,91.037344,0.091037344
+matmul_FHE_NTT_M128_K2048_N2048_shard_N,FHE,NTT,128,2048,2048,shard_N,8,5.87375,0.0058737500000000005
+matmul_FHE_NTT_M128_K2048_N2048_shard_MN,FHE,NTT,128,2048,2048,shard_MN,8,85.41,0.08541
+matmul_FHE_NTT_M128_K4096_N4096_shard_M,FHE,NTT,128,4096,4096,shard_M,8,82.481406,0.08248140600000001
+matmul_FHE_NTT_M128_K4096_N4096_shard_N,FHE,NTT,128,4096,4096,shard_N,8,32.561328,0.032561328
+matmul_FHE_NTT_M128_K4096_N4096_shard_MN,FHE,NTT,128,4096,4096,shard_MN,8,38.423594,0.038423594
+matmul_FHE_NTT_M256_K4096_N4096_shard_M,FHE,NTT,256,4096,4096,shard_M,8,119.40125,0.11940125
+matmul_FHE_NTT_M256_K4096_N4096_shard_N,FHE,NTT,256,4096,4096,shard_N,8,111.955078,0.111955078
+matmul_FHE_NTT_M256_K4096_N4096_shard_MN,FHE,NTT,256,4096,4096,shard_MN,8,19.0475,0.0190475
+matmul_ChatGPT_OSS_Q_M256_K2880_N4096_shard_M,ChatGPT OSS,Q,256,2880,4096,shard_M,8,118.157422,0.118157422
+matmul_ChatGPT_OSS_Q_M256_K2880_N4096_shard_N,ChatGPT OSS,Q,256,2880,4096,shard_N,8,10.5475,0.0105475
+matmul_ChatGPT_OSS_Q_M256_K2880_N4096_shard_MN,ChatGPT OSS,Q,256,2880,4096,shard_MN,8,50.123594,0.050123594
+matmul_ChatGPT_OSS_fused_QKV_M256_K2880_N5120_shard_M,ChatGPT OSS,fused QKV,256,2880,5120,shard_M,8,92.671172,0.092671172
+matmul_ChatGPT_OSS_fused_QKV_M256_K2880_N5120_shard_N,ChatGPT OSS,fused QKV,256,2880,5120,shard_N,8,12.100078,0.012100078
+matmul_ChatGPT_OSS_fused_QKV_M256_K2880_N5120_shard_MN,ChatGPT OSS,fused QKV,256,2880,5120,shard_MN,8,16.08,0.016079999999999997
+matmul_ChatGPT_OSS_attn_out_M256_K4096_N2880_shard_M,ChatGPT OSS,attn out,256,4096,2880,shard_M,8,102.423672,0.102423672
+matmul_ChatGPT_OSS_attn_out_M256_K4096_N2880_shard_N,ChatGPT OSS,attn out,256,4096,2880,shard_N,8,72.582344,0.07258234400000001
+matmul_ChatGPT_OSS_attn_out_M256_K4096_N2880_shard_MN,ChatGPT OSS,attn out,256,4096,2880,shard_MN,8,29.070078,0.029070078
+matmul_ChatGPT_OSS_scores_per_group_M256_K64_N2048_shard_M,ChatGPT OSS,scores per group,256,64,2048,shard_M,8,71.151172,0.071151172
+matmul_ChatGPT_OSS_scores_per_group_M256_K64_N2048_shard_N,ChatGPT OSS,scores per group,256,64,2048,shard_N,8,95.901172,0.095901172
+matmul_ChatGPT_OSS_scores_per_group_M256_K64_N2048_shard_MN,ChatGPT OSS,scores per group,256,64,2048,shard_MN,8,60.566172,0.060566172

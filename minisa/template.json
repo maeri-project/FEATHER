@@ -1,0 +1,55 @@
+{
+  "FEATHER_spec": {
+    "AH": "TBD",
+    "AW": "TBD",
+    "D_StaB": "TBD",
+    "D_StrB": "TBD",
+    "D_OB": "TBD"
+  },
+  "traces": [
+    {
+      "L1": [
+        {
+          "WVN": {
+            "order": "TBD",
+            "N_L1": "TBD",
+            "N_L0": "TBD",
+            "K_L1": "TBD"
+          }
+        },
+        {
+          "IVN": {
+            "order": "TBD",
+            "M_L1": "TBD",
+            "M_L0": "TBD",
+            "J_L1": "TBD"
+          }
+        },
+        {
+          "OVN": {
+            "order": "TBD",
+            "P_L1": "TBD",
+            "P_L0": "TBD",
+            "Q_L1": "TBD"
+          }
+        },
+        {
+          "invations": [
+            {
+              "ExecuteMapping": [],
+              "ExecuteStreaming": []
+            },
+            {
+              "ExecuteMapping": [],
+              "ExecuteStreaming": []
+            }
+          ]
+        },
+        {
+          "latency": "TBD",
+          "utilization": "TBD"
+        }
+      ]
+    }
+  ]
+}

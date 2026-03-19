@@ -75,4 +75,14 @@ Tushar Krishna
    keywords = {flexible accelerator, dataflow-layout coswitching}, 
    location = {Argentina}, 
    series = {ISCA '24} }
+
+@inproceedings{tong2026MINISA,
+  author = {Tong, Jianming and Li, Yujie and Jain, Devansh and Mendis, Charith and Krishna, Tushar},
+  title = {MINISA: Minimal Instruction Set Architecture for Next-gen Reconfigurable Inference Accelerator},
+  year = {2026},
+  booktitle = {Proceedings of the 34th Annual International Symposium on Performance Analysis of Systems and Software},
+  keywords = {minimal instruction set architecture, reconfigurable accelerator, virtual neurons},
+  location = {Seoul, Korea},
+  series = {ISPASS '26}
+}
 ```

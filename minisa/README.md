@@ -6,7 +6,7 @@ MINISA ISA 2.0 defines **8 variable-width instructions** for the FEATHER+ reconf
 
 ### Design Principles
 
-1. **Parametric encoding**: Six parameters $\theta = (r_0, c_0, G_r, G_c, s_r, s_c)$ generate the entire $\text{AH} \times \text{AW}$ PE-to-WVN mapping algebraically, replacing $\text{AH} \times \text{AW}$ per-PE config fields.
+1. **Parametric encoding**: Six parameters $\theta = (r_{0}, c_{0}, G_{r}, G_{c}, s_{r}, s_{c})$ generate the entire $\text{AH} \times \text{AW}$ PE-to-WVN mapping algebraically, replacing $\text{AH} \times \text{AW}$ per-PE config fields.
 2. **Buffer-aware sizing**: Field widths are derived from on-chip buffer depths, not fixed constants.
 3. **Per-VN variable size**: The `vn_size` field in ExecuteStreaming supports K dimensions not divisible by AH.
 4. **Dual dataflow**: A single-bit `dataflow` field selects weight-output-stationary (WO-S) or input-output-stationary (IO-S). Under IO-S, IVN is loaded into stationary buffer while streaming WVNs. Under WO-S, WVN is loaded in to stationary buffer while streaming IVNs. During the search, we simply transpose M,K,N into N,K,M as a new matrix multiplication when toggling dataflow.
@@ -42,15 +42,15 @@ MINISA operates on three on-chip SRAM buffers, each banked by AW (one bank per P
 
 Per-bank scalar depth (no AH in denominator):
 
-$$D_\text{str} = \frac{\text{stream}\_\text{bytes}}{\text{AW} \times \text{in}\_\text{bytes}}$$
+$$D_{\text{str}} = \frac{\text{stream-bytes}}{\text{AW} \times \text{in-bytes}}$$
 
-$$D_\text{sta} = \frac{\text{stationary}\_\text{bytes}}{\text{AW} \times \text{w}\_\text{bytes}}$$
+$$D_{\text{sta}} = \frac{\text{stationary-bytes}}{\text{AW} \times \text{w-bytes}}$$
 
-$$D_\text{ob} = \frac{\text{output}\_\text{bytes}}{\text{AW} \times \text{out}\_\text{bytes}}$$
+$$D_{\text{ob}} = \frac{\text{output-bytes}}{\text{AW} \times \text{out-bytes}}$$
 
-VN row count per bank: $\text{vn}\_\text{rows} = D / \text{AH}$
+VN row count per bank: $\text{vn-rows} = D / \text{AH}$
 
-Total VN capacity: $\text{vn}\_\text{total} = \text{vn}\_\text{rows} \times \text{AW}$
+Total VN capacity: $\text{vn-total} = \text{vn-rows} \times \text{AW}$
 
 ---
 
@@ -71,11 +71,11 @@ The ISA encoding widths are derived from a single parameter set:
 
 | Symbol | Formula | Used In |
 |--------|---------|---------|
-| $b_\text{aw}$ | $\lceil \log_2(\text{AW}) \rceil$ | L0 fields, G_r, G_c |
-| $b_\text{str}\_\text{rows}$ | $\lceil \log_2(D_\text{str} / \text{AH}) \rceil$ | SetIVNLayout, SetOVNLayout, ExecuteStreaming |
-| $b_\text{sta}\_\text{rows}$ | $\lceil \log_2(D_\text{sta} / \text{AH}) \rceil$ | SetWVNLayout, ExecuteMapping s_c |
-| $b_\text{sta}\_\text{total}$ | $\lceil \log_2(D_\text{sta} / \text{AH} \times \text{AW}) \rceil$ | ExecuteMapping r_0, c_0, s_r |
-| $b_\text{vn}\_\text{size}$ | $\lceil \log_2(\text{AH}) \rceil$ | ExecuteStreaming vn_size |
+| $b_{\text{aw}}$ | $\lceil \log_{2}(\text{AW}) \rceil$ | L0 fields, G_r, G_c |
+| $b_{\text{str-rows}}$ | $\lceil \log_{2}(D_{\text{str}} / \text{AH}) \rceil$ | SetIVNLayout, SetOVNLayout, ExecuteStreaming |
+| $b_{\text{sta-rows}}$ | $\lceil \log_{2}(D_{\text{sta}} / \text{AH}) \rceil$ | SetWVNLayout, ExecuteMapping s_c |
+| $b_{\text{sta-total}}$ | $\lceil \log_{2}(D_{\text{sta}} / \text{AH} \times \text{AW}) \rceil$ | ExecuteMapping r_0, c_0, s_r |
+| $b_{\text{vn-size}}$ | $\lceil \log_{2}(\text{AH}) \rceil$ | ExecuteStreaming vn_size |
 
 ---
 
@@ -89,13 +89,13 @@ Configures the stationary buffer layout for weight VNs. Defines the 3-level addr
 |-------|-------------|-------------|
 | opcode | 3 | `000` |
 | order | 3 | Permutation order (0--5) for outer/middle/inner dim |
-| N_L0 | $b_\text{aw}$ | Inner N-dimension factor (number of banks) |
-| N_L1 | $b_\text{sta}\_\text{rows}$ | Middle N-dimension factor |
-| K_L1 | $b_\text{sta}\_\text{rows}$ | Outer K-dimension factor |
+| N_L0 | $b_{\text{aw}}$ | Inner N-dimension factor (number of banks) |
+| N_L1 | $b_{\text{sta-rows}}$ | Middle N-dimension factor |
+| K_L1 | $b_{\text{sta-rows}}$ | Outer K-dimension factor |
 
 The six permutation orders define which of `{nL0, nL1, kL1}` maps to the outer, middle, and inner position in the linear address calculation:
 
-$$\text{addr} = \text{outer} \times (\text{mid}\_\text{size} \times \text{inner}\_\text{size}) + \text{middle} \times \text{inner}\_\text{size} + \text{inner}$$
+$$\text{addr} = \text{outer} \times (\text{mid-size} \times \text{inner-size}) + \text{middle} \times \text{inner-size} + \text{inner}$$
 
 $$\text{bank} = \text{addr} \bmod \text{AW}$$
 
@@ -107,52 +107,52 @@ Configures the streaming buffer layout for input VNs.
 |-------|-------------|-------------|
 | opcode | 3 | `001` |
 | order | 3 | Permutation order (0--5) |
-| M_L0 | $b_\text{aw}$ | Inner M-dimension factor |
-| M_L1 | $b_\text{str}\_\text{rows}$ | Middle M-dimension factor |
-| J_L1 | $b_\text{str}\_\text{rows}$ | Outer reduction-tile (J) factor |
+| M_L0 | $b_{\text{aw}}$ | Inner M-dimension factor |
+| M_L1 | $b_{\text{str-rows}}$ | Middle M-dimension factor |
+| J_L1 | $b_{\text{str-rows}}$ | Outer reduction-tile (J) factor |
 
 ### SetOVNLayout (opcode `010`)
 
-Configures the output buffer layout for output VNs. P_L1 and Q_L1 use the streaming buffer VN row width ($b_\text{str}\_\text{rows}$) to allow the output layout to address the same VN row range as the streaming buffer (needed for ping-pong swap between output and streaming buffers).
+Configures the output buffer layout for output VNs. P_L1 and Q_L1 use the streaming buffer VN row width ($b_{\text{str-rows}}$) to allow the output layout to address the same VN row range as the streaming buffer (needed for ping-pong swap between output and streaming buffers).
 
 | Field | Width (bits) | Description |
 |-------|-------------|-------------|
 | opcode | 3 | `010` |
 | order | 3 | Permutation order (0--5) |
-| P_L0 | $b_\text{aw}$ | Inner M-dimension factor |
-| P_L1 | $b_\text{str}\_\text{rows}$ | Middle M-dimension factor |
-| Q_L1 | $b_\text{str}\_\text{rows}$ | Outer N-subgroup factor |
+| P_L0 | $b_{\text{aw}}$ | Inner M-dimension factor |
+| P_L1 | $b_{\text{str-rows}}$ | Middle M-dimension factor |
+| Q_L1 | $b_{\text{str-rows}}$ | Outer N-subgroup factor |
 
 ### ExecuteMapping (opcode `111`)
 
 Configures the PE-to-WVN mapping. All AW PE columns are always active. The mapping is:
 
-$$r(a_h, a_w) = r_0 + \left\lfloor \frac{a_w}{G_r} \right\rfloor$$
+$$r(a_{h}, a_{w}) = r_{0} + \left\lfloor \frac{a_{w}}{G_{r}} \right\rfloor$$
 
-$$c(a_h, a_w) = c_0 + s_r \cdot a_h + s_c \cdot (a_w \bmod G_c)$$
+$$c(a_{h}, a_{w}) = c_{0} + s_{r} \cdot a_{h} + s_{c} \cdot (a_{w} \bmod G_{c})$$
 
-where $(r, c)$ selects $\text{WVN}(r, c)$ for PE $(a_h, a_w)$. Out-of-bounds $(r, c)$ values are zero-padded.
+where $(r, c)$ selects $\text{WVN}(r, c)$ for PE $(a_{h}, a_{w})$. Out-of-bounds $(r, c)$ values are zero-padded.
 
 | Field | Width (bits) | Description |
 |-------|-------------|-------------|
 | opcode | 3 | `111` |
-| G_r | $b_\text{aw}$ | Row-sharing group size (consecutive PE columns per WVN row) |
-| G_c | $b_\text{aw}$ | Replication period of horizontal WVN-column pattern |
-| r_0 | $b_\text{sta}\_\text{total}$ | Base WVN row index |
-| c_0 | $b_\text{sta}\_\text{total}$ | Base WVN column index |
-| s_r | $b_\text{sta}\_\text{total}$ | Temporal stride (WVN column advance per PE row) |
-| s_c | $b_\text{sta}\_\text{rows}$ | Spatial stride (WVN column spacing within one G_c period) |
+| G_r | $b_{\text{aw}}$ | Row-sharing group size (consecutive PE columns per WVN row) |
+| G_c | $b_{\text{aw}}$ | Replication period of horizontal WVN-column pattern |
+| r_0 | $b_{\text{sta-total}}$ | Base WVN row index |
+| c_0 | $b_{\text{sta-total}}$ | Base WVN column index |
+| s_r | $b_{\text{sta-total}}$ | Temporal stride (WVN column advance per PE row) |
+| s_c | $b_{\text{sta-rows}}$ | Spatial stride (WVN column spacing within one G_c period) |
 
 **Parameter semantics:**
 
-- **$r_0$**: Starting WVN row. Selects where the compute tile begins along the K-reduction dimension.
-- **$G_r$**: Row-sharing group width. PE columns $[0, G_r)$ share WVN row $r_0$, columns $[G_r, 2G_r)$ share row $r_0+1$, etc. Controls the granularity of K-distribution across PE columns.
-- **$c_0$**: Starting WVN column anchor point.
-- **$s_r$**: Temporal stride. As data streams down a PE column (increasing $a_h$), the WVN column advances by $s_r$ per PE row. Typically 1.
-- **$G_c$**: Replication period. The horizontal $(c)$-pattern repeats every $G_c$ PE columns. Equal to $\lceil N_t / \text{AH} \rceil$ (number of distinct N-subgroups).
-- **$s_c$**: Spatial stride within one $G_c$-period. Adjacent PE columns within a period differ by $s_c$ WVN columns. Equal to AH when $G_c > 1$, else 0.
+- **$r_{0}$**: Starting WVN row. Selects where the compute tile begins along the K-reduction dimension.
+- **$G_{r}$**: Row-sharing group width. PE columns $[0, G_{r})$ share WVN row $r_{0}$, columns $[G_{r}, 2G_{r})$ share row $r_{0}+1$, etc. Controls the granularity of K-distribution across PE columns.
+- **$c_{0}$**: Starting WVN column anchor point.
+- **$s_{r}$**: Temporal stride. As data streams down a PE column (increasing $a_{h}$), the WVN column advances by $s_{r}$ per PE row. Typically 1.
+- **$G_{c}$**: Replication period. The horizontal $(c)$-pattern repeats every $G_{c}$ PE columns. Equal to $\lceil N_{t} / \text{AH} \rceil$ (number of distinct N-subgroups).
+- **$s_{c}$**: Spatial stride within one $G_{c}$-period. Adjacent PE columns within a period differ by $s_{c}$ WVN columns. Equal to AH when $G_{c} > 1$, else 0.
 
-**Mixed $G_r$**: Different ExecuteMapping instructions within one tile can have different $G_r$ values. This occurs when K-groups are packed into EM batches of varying size (e.g., the last batch has fewer K-groups).
+**Mixed $G_{r}$**: Different ExecuteMapping instructions within one tile can have different $G_{r}$ values. This occurs when K-groups are packed into EM batches of varying size (e.g., the last batch has fewer K-groups).
 
 ### ExecuteStreaming (opcode `011`)
 
@@ -162,12 +162,12 @@ Configures operand streaming parameters. Paired with ExecuteMapping.
 |-------|-------------|-------------|
 | opcode | 3 | `011` |
 | dataflow | 1 | 0 = IO-S (input stationary), 1 = WO-S (weight stationary) |
-| m_0 | $b_\text{str}\_\text{rows}$ | Base streaming row index |
-| s_m | $b_\text{str}\_\text{rows}$ | Streaming row stride |
-| T | $b_\text{str}\_\text{rows}$ | Number of streaming steps per column |
-| vn_size | $b_\text{vn}\_\text{size}$ | Active VN height minus 1 (encoded as $\text{vn}\_\text{size} - 1$) |
+| m_0 | $b_{\text{str-rows}}$ | Base streaming row index |
+| s_m | $b_{\text{str-rows}}$ | Streaming row stride |
+| T | $b_{\text{str-rows}}$ | Number of streaming steps per column |
+| vn_size | $b_{\text{vn-size}}$ | Active VN height minus 1 (encoded as $\text{vn-size} - 1$) |
 
-**vn_size encoding**: The field stores $\text{vn}\_\text{size} - 1$, so a value of 0 means VN height = 1 and a value of $\text{AH} - 1$ means full VN height = AH. This supports K dimensions not divisible by AH: for example, $K=25, \text{AH}=16$ produces two EMs, one with vn_size=15 (16 elements) and one with vn_size=8 (9 elements).
+**vn_size encoding**: The field stores $\text{vn-size} - 1$, so a value of 0 means VN height = 1 and a value of $\text{AH} - 1$ means full VN height = AH. This supports K dimensions not divisible by AH: for example, $K=25, \text{AH}=16$ produces two EMs, one with vn_size=15 (16 elements) and one with vn_size=8 (9 elements).
 
 ### Load (opcode `101`)
 
@@ -216,9 +216,9 @@ The total on-chip SRAM capacity is fixed per AH group — all AW values within t
 | 8  | 16 MB     | 6.4 MB          | 6.4 MB           | 3.2 MB       |
 | 16 | 64 MB     | 25.6 MB         | 25.6 MB          | 12.8 MB      |
 
-Per-bank scalar depths for all 9 configurations ($D = \text{buffer}\_\text{bytes} / (\text{AW} \times \text{element}\_\text{bytes})$):
+Per-bank scalar depths for all 9 configurations ($D = \text{buffer-bytes} / (\text{AW} \times \text{element-bytes})$):
 
-| Config | Total SRAM | $D_\text{str}$ | $D_\text{sta}$ | $D_\text{ob}$ | str/sta VN rows | ob VN rows |
+| Config | Total SRAM | $D_{\text{str}}$ | $D_{\text{sta}}$ | $D_{\text{ob}}$ | str/sta VN rows | ob VN rows |
 |--------|-----------|-----------------|-----------------|----------------|-----------------|------------|
 | 4×4    | 4 MB      | 419,430         | 419,430         | 52,428         | 104,857         | 13,107     |
 | 4×16   | 4 MB      | 104,857         | 104,857         | 13,107         | 26,214          | 3,276      |
@@ -253,24 +253,24 @@ All widths in bits. SRAM allocation: 0.4 / 0.4 / 0.2 (str / sta / ob). Total SRA
 
 With fixed SRAM per AH, increasing AW increases the number of buffer banks while decreasing the per-bank depth. This creates **opposing scaling effects**:
 
-**L0 fields** (N_L0, M_L0, P_L0, G_r, G_c): Grow with $\lceil \log_2 \text{AW} \rceil$ — 2b (AW=4) → 8b (AW=256).
+**L0 fields** (N_L0, M_L0, P_L0, G_r, G_c): Grow with $\lceil \log_{2} \text{AW} \rceil$ — 2b (AW=4) → 8b (AW=256).
 
-**L1 fields** (N_L1, K_L1, M_L1, J_L1, P_L1, Q_L1): Shrink with $\lceil \log_2(D / \text{AH}) \rceil$ — 17b (square) → 13b (AW=16×AH). Since $D = \text{SRAM} \times \text{frac} / (\text{AW} \times \text{elem}\_\text{bytes})$, larger AW means fewer VN rows per bank.
+**L1 fields** (N_L1, K_L1, M_L1, J_L1, P_L1, Q_L1): Shrink with $\lceil \log_{2}(D / \text{AH}) \rceil$ — 17b (square) → 13b (AW=16×AH). Since $D = \text{SRAM} \times \text{frac} / (\text{AW} \times \text{elem-bytes})$, larger AW means fewer VN rows per bank.
 
-**Net effect on layout instructions**: L0 grows by +6b while L1 shrinks by −8b (×2 fields) from 4×4 to 4×64, yielding a net **decrease** of 4 bits. All three layout instructions have identical widths (P_L1/Q_L1 use $b_\text{str}\_\text{rows}$).
+**Net effect on layout instructions**: L0 grows by +6b while L1 shrinks by −8b (×2 fields) from 4×4 to 4×64, yielding a net **decrease** of 4 bits. All three layout instructions have identical widths (P_L1/Q_L1 use $b_{\text{str-rows}}$).
 
-**ExecuteMapping**: Grows modestly (+14b from 4×4 to 16×256). The $b_\text{sta}\_\text{total} = \lceil \log_2(\text{sta}\_\text{vn}\_\text{rows} \times \text{AW}) \rceil$ fields (r_0, c_0, s_r) grow by +2b each because total VN count increases with AW, while the s_c field shrinks.
+**ExecuteMapping**: Grows modestly (+14b from 4×4 to 16×256). The $b_{\text{sta-total}} = \lceil \log_{2}(\text{sta-vn-rows} \times \text{AW}) \rceil$ fields (r_0, c_0, s_r) grow by +2b each because total VN count increases with AW, while the s_c field shrinks.
 
-**ExecuteStreaming**: Shrinks significantly (−12b from 4×4 to 4×64). Three fields (m_0, s_m, T) each shrink with $b_\text{str}\_\text{rows}$, while vn_size grows only with $\lceil \log_2 \text{AH} \rceil$.
+**ExecuteStreaming**: Shrinks significantly (−12b from 4×4 to 4×64). Three fields (m_0, s_m, T) each shrink with $b_{\text{str-rows}}$, while vn_size grows only with $\lceil \log_{2} \text{AH} \rceil$.
 
 **Fixed-width instructions**: Load/Store (33b) and Activation (11b) are constant across all configurations.
 
 | Scaling factor | Fields affected | Direction with AW↑ |
 |---------------|----------------|-------------------|
-| $\lceil \log_2 \text{AW} \rceil$ | L0, G_r, G_c | ↑ grows |
-| $\lceil \log_2(D/\text{AH}) \rceil$ | L1, s_c, m_0, s_m, T | ↓ shrinks |
-| $\lceil \log_2(D/\text{AH} \times \text{AW}) \rceil$ | r_0, c_0, s_r | ↑ grows (slowly) |
-| $\lceil \log_2 \text{AH} \rceil$ | vn_size | constant per AH |
+| $\lceil \log_{2} \text{AW} \rceil$ | L0, G_r, G_c | ↑ grows |
+| $\lceil \log_{2}(D/\text{AH}) \rceil$ | L1, s_c, m_0, s_m, T | ↓ shrinks |
+| $\lceil \log_{2}(D/\text{AH} \times \text{AW}) \rceil$ | r_0, c_0, s_r | ↑ grows (slowly) |
+| $\lceil \log_{2} \text{AH} \rceil$ | vn_size | constant per AH |
 
 ---
 
@@ -291,82 +291,82 @@ When `dataflow = "auto"`, the compiler runs both dataflows and selects the one w
 
 ### Stage 1: Tile
 
-Enumerate legal tiling choices $(M_t, K_t, N_t)$ that fit on-chip buffers.
+Enumerate legal tiling choices $(M_{t}, K_{t}, N_{t})$ that fit on-chip buffers.
 
-**Knob: tile sizes** $(M_t, K_t, N_t)$ — power-of-2 values from AH up to each dimension.
+**Knob: tile sizes** $(M_{t}, K_{t}, N_{t})$ — power-of-2 values from AH up to each dimension.
 
 Feasibility constraints:
-- $\text{IVN count} = M_t \times \lceil K_t / \text{AH} \rceil \leq \text{cap}\_\text{stream}$
-- $\text{WVN count} = N_t \times \lceil K_t / \text{AH} \rceil \leq \text{cap}\_\text{stationary}$
-- $\text{OVN count} = M_t \times \lceil N_t / \text{AH} \rceil \leq \text{cap}\_\text{output}$
+- $\text{IVN count} = M_{t} \times \lceil K_{t} / \text{AH} \rceil \leq \text{cap-stream}$
+- $\text{WVN count} = N_{t} \times \lceil K_{t} / \text{AH} \rceil \leq \text{cap-stationary}$
+- $\text{OVN count} = M_{t} \times \lceil N_{t} / \text{AH} \rceil \leq \text{cap-output}$
 
-Candidates are sorted by tile volume $M_t \times K_t \times N_t$ descending (up to 512 candidates).
+Candidates are sorted by tile volume $M_{t} \times K_{t} \times N_{t}$ descending (up to 512 candidates).
 
 ### Stage 2: Lower
 
-Lower each tile into VN structure. No knobs — deterministic from $(M_t, K_t, N_t)$ and AH.
+Lower each tile into VN structure. No knobs — deterministic from $(M_{t}, K_{t}, N_{t})$ and AH.
 
 **Derived quantities:**
-- $K_g = \lceil K_t / \text{AH} \rceil$ — number of K-groups (reduction tiles)
-- `vn_sizes` $= (v_0, v_1, \ldots, v_{K_g-1})$ — per-K-group VN sizes. All $v_{k_g} = \text{AH}$ except possibly $v_{K_g-1} = K_t \bmod \text{AH}$ when $K_t$ is not divisible by AH. Example: $K_t=25, \text{AH}=16 \to (16, 9)$.
-- $n_\text{col}\_\text{types} = \lceil N_t / \text{AH} \rceil$ — number of N-subgroups
+- $K_{g} = \lceil K_{t} / \text{AH} \rceil$ — number of K-groups (reduction tiles)
+- `vn_sizes` $= (v_{0}, v_{1}, \ldots, v_{K_{g}-1})$ — per-K-group VN sizes. All $v_{k_{g}} = \text{AH}$ except possibly $v_{K_{g}-1} = K_{t} \bmod \text{AH}$ when $K_{t}$ is not divisible by AH. Example: $K_{t}=25, \text{AH}=16 \to (16, 9)$.
+- $n_{\text{col-types}} = \lceil N_{t} / \text{AH} \rceil$ — number of N-subgroups
 
 **VN rank variables:**
 
-Each VN is a vector of $v_{k_g}$ elements (or AH for full-sized groups). VNs are indexed by rank variables:
+Each VN is a vector of $v_{k_{g}}$ elements (or AH for full-sized groups). VNs are indexed by rank variables:
 
 | VN type | Rank variables | Count formula | Description |
 |---------|---------------|---------------|-------------|
-| $\text{IVN}(m_t, k_g)$ | $m_t \in [0, M_t)$, $k_g \in [0, K_g)$ | $M_t \times K_g$ | Input activation vector for output row $m_t$, K-group $k_g$ |
-| $\text{WVN}(k_g, n_t)$ | $k_g \in [0, K_g)$, $n_t \in [0, N_t)$ | $K_g \times N_t$ | Weight vector for K-group $k_g$, output column $n_t$ |
-| $\text{OVN}(m_t, n_t)$ | $m_t \in [0, M_t)$, $n_t \in [0, n_\text{col}\_\text{types})$ | $M_t \times n_\text{col}\_\text{types}$ | Output partial sum for row $m_t$, N-subgroup $n_t$ |
+| $\text{IVN}(m_{t}, k_{g})$ | $m_{t} \in [0, M_{t})$, $k_{g} \in [0, K_{g})$ | $M_{t} \times K_{g}$ | Input activation vector for output row $m_{t}$, K-group $k_{g}$ |
+| $\text{WVN}(k_{g}, n_{t})$ | $k_{g} \in [0, K_{g})$, $n_{t} \in [0, N_{t})$ | $K_{g} \times N_{t}$ | Weight vector for K-group $k_{g}$, output column $n_{t}$ |
+| $\text{OVN}(m_{t}, n_{t})$ | $m_{t} \in [0, M_{t})$, $n_{t} \in [0, n_{\text{col-types}})$ | $M_{t} \times n_{\text{col-types}}$ | Output partial sum for row $m_{t}$, N-subgroup $n_{t}$ |
 
 ### Stage 3: Group
 
-Form VN groups $\text{VG}(m_t, k_g, n_t)$ where $m_t \in [0, M_t)$, $k_g \in [0, K_g)$, $n_t \in [0, n_\text{col}\_\text{types})$.
+Form VN groups $\text{VG}(m_{t}, k_{g}, n_{t})$ where $m_{t} \in [0, M_{t})$, $k_{g} \in [0, K_{g})$, $n_{t} \in [0, n_{\text{col-types}})$.
 
-**Knob: WVN column stride** $\in \{\text{block}, \text{strided}\}$ (only meaningful when $n_\text{col}\_\text{types} > 1$, i.e., $N_t > \text{AH}$)
+**Knob: WVN column stride** $\in \{\text{block}, \text{strided}\}$ (only meaningful when $n_{\text{col-types}} > 1$, i.e., $N_{t} > \text{AH}$)
 
-Each $\text{VG}(m_t, k_g, n_t)$ contains:
-- 1 IVN: $\text{IVN}(m_t, k_g)$
-- Up to AH WVNs: $\{\text{WVN}(k_g, n_t \cdot \text{AH} + i) \mid i \in [0, \min(\text{AH}, N_t - n_t \cdot \text{AH}))\}$
+Each $\text{VG}(m_{t}, k_{g}, n_{t})$ contains:
+- 1 IVN: $\text{IVN}(m_{t}, k_{g})$
+- Up to AH WVNs: $\{\text{WVN}(k_{g}, n_{t} \cdot \text{AH} + i) \mid i \in [0, \min(\text{AH}, N_{t} - n_{t} \cdot \text{AH}))\}$
 
-The WVN column stride knob controls how these WVN columns are mapped to PE rows within a column, which determines the $s_r$ and $s_c$ values in ExecuteMapping:
+The WVN column stride knob controls how these WVN columns are mapped to PE rows within a column, which determines the $s_{r}$ and $s_{c}$ values in ExecuteMapping:
 
-| WVN column stride | $s_r$ | $s_c$ | WVN column pattern across PE rows |
+| WVN column stride | $s_{r}$ | $s_{c}$ | WVN column pattern across PE rows |
 |-------------------|-------|-------|-----------------------------------|
-| **block** (default) | $1$ | $\text{AH}$ if $G_c > 1$, else $0$ | Consecutive WVN columns within each N-subgroup |
-| **strided** | $n_\text{col}\_\text{types}$ | $1$ | WVN columns interleaved across N-subgroups |
+| **block** (default) | $1$ | $\text{AH}$ if $G_{c} > 1$, else $0$ | Consecutive WVN columns within each N-subgroup |
+| **strided** | $n_{\text{col-types}}$ | $1$ | WVN columns interleaved across N-subgroups |
 
-**Block example** ($N_t = 8$, $\text{AH} = 4$, $G_c = 2$): PE row $a_h$ in subgroup 0 reads WVN column $a_h$; in subgroup 1 reads WVN column $4 + a_h$. Stride $s_r = 1$, $s_c = 4$.
+**Block example** ($N_{t} = 8$, $\text{AH} = 4$, $G_{c} = 2$): PE row $a_{h}$ in subgroup 0 reads WVN column $a_{h}$; in subgroup 1 reads WVN column $4 + a_{h}$. Stride $s_{r} = 1$, $s_{c} = 4$.
 
-**Strided example** ($N_t = 8$, $\text{AH} = 4$, $G_c = 2$): PE row $a_h$ in subgroup 0 reads WVN column $2 \cdot a_h$; in subgroup 1 reads WVN column $2 \cdot a_h + 1$. Stride $s_r = 2$, $s_c = 1$.
+**Strided example** ($N_{t} = 8$, $\text{AH} = 4$, $G_{c} = 2$): PE row $a_{h}$ in subgroup 0 reads WVN column $2 \cdot a_{h}$; in subgroup 1 reads WVN column $2 \cdot a_{h} + 1$. Stride $s_{r} = 2$, $s_{c} = 1$.
 
 The strided pattern changes which WVN addresses are accessed concurrently across PE columns, potentially resolving bank conflicts that the block pattern cannot avoid.
 
-Total VN groups: $M_t \times K_g \times n_\text{col}\_\text{types}$.
+Total VN groups: $M_{t} \times K_{g} \times n_{\text{col-types}}$.
 
 ### Stage 4: Combine
 
 Combine VN groups sharing the same WVN set into combined columns (CGs).
 
-**Knob: duplication factor** $d \in [1, d_\text{max}]$ where $d_\text{max} = \lfloor \text{AW} / n_\text{col}\_\text{types} \rfloor$.
+**Knob: duplication factor** $d \in [1, d_{\text{max}}]$ where $d_{\text{max}} = \lfloor \text{AW} / n_{\text{col-types}} \rfloor$.
 
 The duplication factor controls the trade-off between M-parallelism and K-packing:
 
-| Pattern | $d$ value | K-groups per EM | Replicas ($n_\text{rep}$) | When preferred |
+| Pattern | $d$ value | K-groups per EM | Replicas ($n_{\text{rep}}$) | When preferred |
 |---------|-----------|---------------|---------------------------|----------------|
-| **broadcast** | $d_\text{max}$ | 1 | $d_\text{max}$ | Small $K$, large $M$ |
-| **contiguous** | $1 < d < d_\text{max}$ | $\text{AW} / (d \cdot n_\text{col}\_\text{types})$ | $d$ | Balanced |
-| **interleaved** | $1$ | $\text{AW} / n_\text{col}\_\text{types}$ | 1 | Large $K$, small $M$ |
+| **broadcast** | $d_{\text{max}}$ | 1 | $d_{\text{max}}$ | Small $K$, large $M$ |
+| **contiguous** | $1 < d < d_{\text{max}}$ | $\text{AW} / (d \cdot n_{\text{col-types}})$ | $d$ | Balanced |
+| **interleaved** | $1$ | $\text{AW} / n_{\text{col-types}}$ | 1 | Large $K$, small $M$ |
 
 Derived relationships:
-- Columns per K-group: $n_\text{col}\_\text{types} \times d$
-- K-groups per EM: $k_\text{em} = \lfloor \text{AW} / (n_\text{col}\_\text{types} \times d) \rfloor$
-- Replicas: $n_\text{rep} = \lfloor \text{AW} / (k_\text{em} \times n_\text{col}\_\text{types}) \rfloor$
-- IVNs per column: $\lceil M_t / n_\text{rep} \rceil$
+- Columns per K-group: $n_{\text{col-types}} \times d$
+- K-groups per EM: $k_{\text{em}} = \lfloor \text{AW} / (n_{\text{col-types}} \times d) \rfloor$
+- Replicas: $n_{\text{rep}} = \lfloor \text{AW} / (k_{\text{em}} \times n_{\text{col-types}}) \rfloor$
+- IVNs per column: $\lceil M_{t} / n_{\text{rep}} \rceil$
 
-All variants use **interleaved stride distribution** for IVN assignment: replica $r$ takes output rows $\{r, r + n_\text{rep}, r + 2 \cdot n_\text{rep}, \ldots\}$ to ensure bank-conflict-free streaming buffer access.
+All variants use **interleaved stride distribution** for IVN assignment: replica $r$ takes output rows $\{r, r + n_{\text{rep}}, r + 2 \cdot n_{\text{rep}}, \ldots\}$ to ensure bank-conflict-free streaming buffer access.
 
 The search evaluates all valid $d$ values and de-duplicates those that produce identical ExecuteMapping parameter signatures.
 
@@ -374,63 +374,63 @@ The search evaluates all valid $d$ values and de-duplicates those that produce i
 
 Derive (ExecuteMapping, ExecuteStreaming) parameter pairs from combined columns. Each compute tile produces one paired instruction.
 
-**Knob: IVN distribution** $\in \{\text{interleaved}, \text{consecutive}\}$ (only meaningful when $n_\text{rep} > 1$, i.e., duplication is active)
+**Knob: IVN distribution** $\in \{\text{interleaved}, \text{consecutive}\}$ (only meaningful when $n_{\text{rep}} > 1$, i.e., duplication is active)
 
 #### ExecuteMapping parameters
 
-$\theta_\text{EM} = (r_0, c_0, G_r, G_c, s_r, s_c)$ — derived per EM batch starting at K-group $j_\text{start}$ with $k_\text{actual}$ K-groups:
+$\theta_{\text{EM}} = (r_{0}, c_{0}, G_{r}, G_{c}, s_{r}, s_{c})$ — derived per EM batch starting at K-group $j_{\text{start}}$ with $k_{\text{actual}}$ K-groups:
 
 | Parameter | Formula (block) | Formula (strided) | Meaning |
 |-----------|----------------|-------------------|---------|
-| $r_0$ | $j_\text{start}$ | $j_\text{start}$ | Base WVN row (first K-group in batch) |
-| $c_0$ | $0$ | $0$ | Base WVN column |
-| $G_r$ | $\lfloor \text{AW} / k_\text{actual} \rfloor$ | $\lfloor \text{AW} / k_\text{actual} \rfloor$ | PE columns sharing one WVN row |
-| $G_c$ | $n_\text{col}\_\text{types}$ | $n_\text{col}\_\text{types}$ | Replication period (N-subgroups) |
-| $s_r$ | $1$ | $n_\text{col}\_\text{types}$ | Temporal stride per PE row |
-| $s_c$ | $\text{AH}$ if $G_c > 1$, else $0$ | $1$ if $G_c > 1$, else $0$ | Spatial stride within one period |
+| $r_{0}$ | $j_{\text{start}}$ | $j_{\text{start}}$ | Base WVN row (first K-group in batch) |
+| $c_{0}$ | $0$ | $0$ | Base WVN column |
+| $G_{r}$ | $\lfloor \text{AW} / k_{\text{actual}} \rfloor$ | $\lfloor \text{AW} / k_{\text{actual}} \rfloor$ | PE columns sharing one WVN row |
+| $G_{c}$ | $n_{\text{col-types}}$ | $n_{\text{col-types}}$ | Replication period (N-subgroups) |
+| $s_{r}$ | $1$ | $n_{\text{col-types}}$ | Temporal stride per PE row |
+| $s_{c}$ | $\text{AH}$ if $G_{c} > 1$, else $0$ | $1$ if $G_{c} > 1$, else $0$ | Spatial stride within one period |
 
-**Mixed $G_r$**: When the last EM batch has fewer K-groups ($k_\text{actual} < k_\text{em}$), its $G_r$ is larger (more weight duplication). This is intentional and reduces total streaming passes.
+**Mixed $G_{r}$**: When the last EM batch has fewer K-groups ($k_{\text{actual}} < k_{\text{em}}$), its $G_{r}$ is larger (more weight duplication). This is intentional and reduces total streaming passes.
 
-**VN-size boundary splitting**: EM batches are split at VN-size boundaries so that all K-groups within one EM share the same `vn_size`. This ensures correct PE register loading when $K_t$ is not divisible by AH.
+**VN-size boundary splitting**: EM batches are split at VN-size boundaries so that all K-groups within one EM share the same `vn_size`. This ensures correct PE register loading when $K_{t}$ is not divisible by AH.
 
 #### ExecuteStreaming parameters
 
-$\theta_\text{ES} = (\text{dataflow}, m_0, s_m, T, \text{vn}\_\text{size})$ — derived from the same combined column structure:
+$\theta_{\text{ES}} = (\text{dataflow}, m_{0}, s_{m}, T, \text{vn-size})$ — derived from the same combined column structure:
 
 | Parameter | Formula (interleaved) | Formula (consecutive) | Meaning |
 |-----------|----------------------|----------------------|---------|
 | dataflow | $0$ (IO-S) or $1$ (WO-S) | same | Selected by pre-stage dataflow knob |
-| $m_0$ | $0$ | $0$ | Base streaming row index (start of IVN sequence) |
-| $s_m$ | $n_\text{rep}$ | $1$ | Streaming row stride |
-| $T$ | $\lceil M_t / n_\text{rep} \rceil$ | $\lceil M_t / n_\text{rep} \rceil$ | Number of streaming steps per column |
-| vn_size | $v_{k_g} - 1$ (encoded) | same | Active VN height for this compute tile |
+| $m_{0}$ | $0$ | $0$ | Base streaming row index (start of IVN sequence) |
+| $s_{m}$ | $n_{\text{rep}}$ | $1$ | Streaming row stride |
+| $T$ | $\lceil M_{t} / n_{\text{rep}} \rceil$ | $\lceil M_{t} / n_{\text{rep}} \rceil$ | Number of streaming steps per column |
+| vn_size | $v_{k_{g}} - 1$ (encoded) | same | Active VN height for this compute tile |
 
-**IVN distribution modes**: When duplication is active ($n_\text{rep} > 1$), $M_t$ IVN rows are distributed across $n_\text{rep}$ replicas. The IVN distribution knob controls the assignment:
+**IVN distribution modes**: When duplication is active ($n_{\text{rep}} > 1$), $M_{t}$ IVN rows are distributed across $n_{\text{rep}}$ replicas. The IVN distribution knob controls the assignment:
 
-| IVN distribution | Replica $r$ streams rows | $s_m$ | Pattern |
+| IVN distribution | Replica $r$ streams rows | $s_{m}$ | Pattern |
 |------------------|-------------------------|-------|---------|
-| **interleaved** (default) | $\{r, r + n_\text{rep}, r + 2 \cdot n_\text{rep}, \ldots\}$ | $n_\text{rep}$ | Strided across replicas |
+| **interleaved** (default) | $\{r, r + n_{\text{rep}}, r + 2 \cdot n_{\text{rep}}, \ldots\}$ | $n_{\text{rep}}$ | Strided across replicas |
 | **consecutive** | $\{r \cdot T, r \cdot T + 1, \ldots, r \cdot T + T - 1\}$ | $1$ | Contiguous blocks per replica |
 
-**Interleaved** ensures that at each streaming step, the $n_\text{rep}$ concurrently-accessed IVN rows have consecutive $m_t$ values (stride = 1 in physical addressing), which typically avoids bank conflicts. **Consecutive** groups contiguous $m_t$ blocks per replica, which may resolve conflicts in cases where the interleaved pattern creates address collisions with a particular layout.
+**Interleaved** ensures that at each streaming step, the $n_{\text{rep}}$ concurrently-accessed IVN rows have consecutive $m_{t}$ values (stride = 1 in physical addressing), which typically avoids bank conflicts. **Consecutive** groups contiguous $m_{t}$ blocks per replica, which may resolve conflicts in cases where the interleaved pattern creates address collisions with a particular layout.
 
-**Relationship between $T$ and $n_\text{rep}$**: $n_\text{rep} = \lfloor G_r / G_c \rfloor$ replicas each handle $T = \lceil M_t / n_\text{rep} \rceil$ IVN streaming steps.
+**Relationship between $T$ and $n_{\text{rep}}$**: $n_{\text{rep}} = \lfloor G_{r} / G_{c} \rfloor$ replicas each handle $T = \lceil M_{t} / n_{\text{rep}} \rceil$ IVN streaming steps.
 
-**Per-tile vn_size**: Derived from `vn_sizes` (Stage 2). For K-group $k_g$:
+**Per-tile vn_size**: Derived from `vn_sizes` (Stage 2). For K-group $k_{g}$:
 
-$$\text{vn}\_\text{size}(k_g) = \begin{cases} \text{AH} & \text{if } k_g < K_g - 1 \text{ or } K_t \bmod \text{AH} = 0 \\ K_t \bmod \text{AH} & \text{otherwise (last K-group)} \end{cases}$$
+$$\text{vn-size}(k_{g}) = \begin{cases} \text{AH} & \text{if } k_{g} < K_{g} - 1 \text{ or } K_{t} \bmod \text{AH} = 0 \\ K_{t} \bmod \text{AH} & \text{otherwise (last K-group)} \end{cases}$$
 
-The `vn_size` field is encoded as $\text{vn}\_\text{size} - 1$ (so 0 means height 1, AH$-1$ means full height). This affects the per-tile execution timing: WVN load = $\text{vn}\_\text{size}^2$, IVN streaming = $T \times \text{vn}\_\text{size}$, pipeline fill = $\text{vn}\_\text{size}$ cycles.
+The `vn_size` field is encoded as $\text{vn-size} - 1$ (so 0 means height 1, AH$-1$ means full height). This affects the per-tile execution timing: WVN load = $\text{vn-size}^2$, IVN streaming = $T \times \text{vn-size}$, pipeline fill = $\text{vn-size}$ cycles.
 
-**Example**: $M_t = 64$, $K_t = 25$, $\text{AH} = 16$, $\text{AW} = 16$ (broadcast, $n_\text{rep} = 16$):
-- K-group 0: ExecuteMapping $(r_0=0, G_r=16, \ldots)$ + ExecuteStreaming $(T=4, \text{vn}\_\text{size}=15)$ → 16 elements
-- K-group 1: ExecuteMapping $(r_0=1, G_r=16, \ldots)$ + ExecuteStreaming $(T=4, \text{vn}\_\text{size}=8)$ → 9 elements
+**Example**: $M_{t} = 64$, $K_{t} = 25$, $\text{AH} = 16$, $\text{AW} = 16$ (broadcast, $n_{\text{rep}} = 16$):
+- K-group 0: ExecuteMapping $(r_{0}=0, G_{r}=16, \ldots)$ + ExecuteStreaming $(T=4, \text{vn-size}=15)$ → 16 elements
+- K-group 1: ExecuteMapping $(r_{0}=1, G_{r}=16, \ldots)$ + ExecuteStreaming $(T=4, \text{vn-size}=8)$ → 9 elements
 
 ### Stage 6: Layout
 
 Search for bank-conflict-free buffer address permutation orders.
 
-**Knob: layout orders** $(\text{order}\_\text{w}, \text{order}\_\text{i}, \text{order}\_\text{o}) \in \{0,1,2,3,4,5\}^3$
+**Knob: layout orders** $(\text{order-w}, \text{order-i}, \text{order-o}) \in \{0,1,2,3,4,5\}^3$
 
 Each order selects one of 6 permutations of the 3-level address factors `(L0, L1_inner, L1_outer)`:
 
@@ -457,22 +457,22 @@ When Stage 6 fails to find any valid layout combination for the current design c
 |----------|-------------------|------------------|------------|
 | 1 (default) | block | interleaved | Always (first attempt) |
 | 2 | block | consecutive | If priority 1 fails |
-| 3 | strided | interleaved | If priorities 1–2 fail (only when $n_\text{col}\_\text{types} > 1$) |
-| 4 | strided | consecutive | If priorities 1–3 fail (only when $n_\text{col}\_\text{types} > 1$) |
+| 3 | strided | interleaved | If priorities 1–2 fail (only when $n_{\text{col-types}} > 1$) |
+| 4 | strided | consecutive | If priorities 1–3 fail (only when $n_{\text{col-types}} > 1$) |
 
-The strided WVN column stride is skipped when $n_\text{col}\_\text{types} \leq 1$ (it produces identical results to block in that case). This fallback is particularly important for **rectangular configurations** (AW >> AH, e.g., AH=4,AW=16 or AH=8,AW=32) where the default (block, interleaved) design cannot find bank-conflict-free layouts.
+The strided WVN column stride is skipped when $n_{\text{col-types}} \leq 1$ (it produces identical results to block in that case). This fallback is particularly important for **rectangular configurations** (AW >> AH, e.g., AH=4,AW=16 or AH=8,AW=32) where the default (block, interleaved) design cannot find bank-conflict-free layouts.
 
 ### Search Space Summary
 
 | Stage | Knob | Range | Typical count |
 |-------|------|-------|---------------|
 | Pre | Dataflow | $\{\text{WO-S}, \text{IO-S}\}$ | 2 (or 1 if $M=N$) |
-| S1 | Tile $(M_t, K_t, N_t)$ | Power-of-2 values fitting on-chip | ≤ 512 |
+| S1 | Tile $(M_{t}, K_{t}, N_{t})$ | Power-of-2 values fitting on-chip | ≤ 512 |
 | S2 | — (deterministic) | — | 1 |
-| S3 | WVN column stride | $\{\text{block}, \text{strided}\}$ | 2 (or 1 if $n_\text{col}\_\text{types} \leq 1$) |
-| S4 | Duplication factor $d$ | $[1, \lfloor \text{AW}/n_\text{col}\_\text{types} \rfloor]$ | 1–256 |
-| S5 | IVN distribution | $\{\text{interleaved}, \text{consecutive}\}$ | 2 (or 1 if $n_\text{rep} = 1$) |
-| S6 | Layout orders $(o_w, o_i, o_o)$ | $\{0..5\}^3$ | 216 (exhaustive) or ≤18 (sequential) |
+| S3 | WVN column stride | $\{\text{block}, \text{strided}\}$ | 2 (or 1 if $n_{\text{col-types}} \leq 1$) |
+| S4 | Duplication factor $d$ | $[1, \lfloor \text{AW}/n_{\text{col-types}} \rfloor]$ | 1–256 |
+| S5 | IVN distribution | $\{\text{interleaved}, \text{consecutive}\}$ | 2 (or 1 if $n_{\text{rep}} = 1$) |
+| S6 | Layout orders $(o_{w}, o_{i}, o_{o})$ | $\{0..5\}^3$ | 216 (exhaustive) or ≤18 (sequential) |
 
 **Note**: S3 and S5 knobs are explored via the Stage 6 fallback mechanism (see above). The default choices (block, interleaved) are tried first; alternatives are only explored when the layout search fails.
 
@@ -497,26 +497,26 @@ ExecuteMapping and ExecuteStreaming are issued as a pair for each compute tile. 
 
 For each (ExecuteMapping, ExecuteStreaming) pair with `vn_size`:
 
-1. **WVN load to PE registers**: $\text{vn}\_\text{size}^2$ cycles (vn_size active PEs $\times$ vn_size elements each)
-2. **IVN streaming**: $T \times \text{vn}\_\text{size}$ cycles ($T$ streaming steps, vn_size cycles per step)
-3. **Pipeline fill**: $\text{vn}\_\text{size}$ cycles (last IVN element propagates through vn_size active PE rows)
-4. **BIRRD drain**: $2 \lceil \log_2(\text{AW}) \rceil$ cycles
+1. **WVN load to PE registers**: $\text{vn-size}^2$ cycles (vn_size active PEs $\times$ vn_size elements each)
+2. **IVN streaming**: $T \times \text{vn-size}$ cycles ($T$ streaming steps, vn_size cycles per step)
+3. **Pipeline fill**: $\text{vn-size}$ cycles (last IVN element propagates through vn_size active PE rows)
+4. **BIRRD drain**: $2 \lceil \log_{2}(\text{AW}) \rceil$ cycles
 
 ### Inter-EM Pipelining
 
 WVN load for the next EM overlaps with the current EM's IVN streaming. The effective period between consecutive EMs:
 
-$$\text{em}\_\text{period} = \max(\text{nest}\_\text{time}, \text{vn}\_\text{size}^2 - \text{vn}\_\text{size})$$
+$$\text{em-period} = \max(\text{nest-time}, \text{vn-size}^2 - \text{vn-size})$$
 
-where $\text{nest}\_\text{time} = T \times \text{vn}\_\text{size} + \text{vn}\_\text{size}$.
+where $\text{nest-time} = T \times \text{vn-size} + \text{vn-size}$.
 
-For $K_g$ consecutive EMs per K-tile (each with its own `vn_size`):
+For $K_{g}$ consecutive EMs per K-tile (each with its own `vn_size`):
 
-$$C = \text{vn}\_\text{size}_0^2 + \sum_{i=1}^{K_g-1} \text{em}\_\text{period}_i + \text{nest}\_\text{time}_{K_g-1} + \text{birrd}\_\text{drain}$$
+$$C = \text{vn-size}_{0}^2 + \sum_{i=1}^{K_{g}-1} \text{em-period}_{i} + \text{nest-time}_{K_{g}-1} + \text{birrd-drain}$$
 
 When all K-groups have the same `vn_size` (K divisible by AH), this simplifies to:
 
-$$C = \text{vn}\_\text{size}^2 + (K_g-1) \times \text{em}\_\text{period} + \text{nest}\_\text{time} + \text{birrd}\_\text{drain}$$
+$$C = \text{vn-size}^2 + (K_{g}-1) \times \text{em-period} + \text{nest-time} + \text{birrd-drain}$$
 
 ### Accumulation Semantics
 
@@ -526,7 +526,7 @@ Consecutive ExecuteMapping instructions accumulate partial sums into the same ou
 
 ## Typical Instruction Sequence
 
-For one output tile $C[M_t, N_t]$ accumulated over $\lceil K/K_t \rceil$ K-steps:
+For one output tile $C[M_{t}, N_{t}]$ accumulated over $\lceil K/K_{t} \rceil$ K-steps:
 
 ```
 SetOVNLayout  order, P_L0, P_L1, Q_L1     ; configure output buffer
@@ -593,3 +593,18 @@ All 50 workloads $\times$ 9 configurations verified at both ISA-level and config
 | Config expansion | `minisa/to_config.py` | `convert_trace_to_config()`, `compute_config_stream_summary()` |
 | Cycle model | `minisa/cycles.py` | `estimate_cycles_for_gemm()` |
 | Evaluation | `minisa/evaluate.py` | `python -m minisa.evaluate --csv ... --out-dir ... --ah 4,8,16 --aw "4,16,64/8,32,128/16,64,256"` |
+
+---
+
+# Citations
+```
+@inproceedings{tong2026MINISA,
+  author = {Tong, Jianming and Li, Yujie and Jain, Devansh and Mendis, Charith and Krishna, Tushar},
+  title = {MINISA: Minimal Instruction Set Architecture for Next-gen Reconfigurable Inference Accelerator},
+  year = {2026},
+  booktitle = {Proceedings of the 34th Annual International Symposium on Performance Analysis of Systems and Software},
+  keywords = {minimal instruction set architecture, reconfigurable accelerator, virtual neurons},
+  location = {Seoul, Korea},
+  series = {ISPASS '26}
+}
+```

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import itertools
 import math
+import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -36,6 +37,7 @@ from .layout import (
     choose_layout_W, choose_layout_I, choose_layout_O,
     choose_tile_sizes, LayoutSpec,
     check_ob_port_conflict, layouts_match, derive_ovn_from_ivn,
+    check_inter_layer_layout, OVN_TO_IVN_ORDER,
 )
 from .trace import generate_trace_gemm, estimate_minisa_inst_bytes
 from .cycles import estimate_cycles_for_gemm, model_instruction_fetch
@@ -1690,7 +1692,7 @@ def multi_layer_search(
                 if derived_o is not None:
                     prev_updated = LayerCandidate(
                         order_w=prev.order_w, order_i=prev.order_i,
-                        order_o=cand.layout_i.order_id,
+                        order_o=derived_o.order_id,
                         Mt=prev.Mt, Kt=prev.Kt, Nt=prev.Nt,
                         cycles_total=prev.cycles_total,
                         inst_bytes=prev.inst_bytes,
@@ -1710,6 +1712,19 @@ def multi_layer_search(
 
         selected.append(best_next)
         inter_matches.append(matched)
+
+    # Validate inter-layer layout continuity and warn on mismatches
+    for i in range(1, len(selected)):
+        prev_layer = selected[i - 1]
+        next_layer = selected[i]
+        prev_name = layers[i - 1].name if hasattr(layers[i - 1], "name") else str(i - 1)
+        next_name = layers[i].name if hasattr(layers[i], "name") else str(i)
+        errs = check_inter_layer_layout(
+            prev_layer.layout_o, next_layer.layout_i,
+            layer_i_name=prev_name, layer_next_name=next_name)
+        for err in errs:
+            warnings.warn(f"Inter-layer layout mismatch (layer {i-1}→{i}): {err}",
+                          stacklevel=2)
 
     total_cycles = sum(c.cycles_total for c in selected)
     total_inst_bytes = sum(c.inst_bytes for c in selected)

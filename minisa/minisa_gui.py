@@ -3062,15 +3062,17 @@ class MINISAGui:
         ttk.Spinbox(hw_frame, from_=1, to=4096, textvariable=self.sram_var, width=15).grid(row=1, column=1, padx=5, pady=2)
         self.sram_var.trace_add('write', self._on_sram_change)
 
-        # Workload config
-        wl_frame = ttk.LabelFrame(parent, text="Workload (GEMM)", padding=10)
+        # Workload config (derived from Set*VNLayout instructions)
+        wl_frame = ttk.LabelFrame(parent, text="Workload (GEMM) — derived from ISA trace", padding=10)
         wl_frame.pack(fill=tk.X, padx=5, pady=5)
 
         for i, (label, default) in enumerate([("M:", 16), ("K:", 16), ("N:", 16)]):
             ttk.Label(wl_frame, text=label).grid(row=0, column=i*2, sticky=tk.W, padx=2)
             var = tk.IntVar(value=default)
             setattr(self, f'{label[0].lower()}_var', var)
-            ttk.Spinbox(wl_frame, from_=1, to=65536, textvariable=var, width=8).grid(row=0, column=i*2+1, padx=2, pady=2)
+            lbl = ttk.Label(wl_frame, textvariable=var, width=8,
+                            relief='sunken', anchor='center')
+            lbl.grid(row=0, column=i*2+1, padx=2, pady=2)
 
         # ISA list
         isa_frame = ttk.LabelFrame(parent, text="ISA Trace Sequence", padding=10)
@@ -3290,6 +3292,61 @@ class MINISAGui:
 
         # Update buffer layout visualization from the current ISA trace
         self.buffer_visualizer.update_layout_from_instructions(self.instructions)
+
+        # Derive M, K, N from the Set*VNLayout instructions
+        self._derive_mkn_from_instructions()
+
+    def _derive_mkn_from_instructions(self, up_to_idx: int = -1):
+        """Derive workload M, K, N from the latest Set*VNLayout instructions.
+
+        Scans instructions (up to up_to_idx, or all if -1) and extracts
+        tile dimensions from the most recent SetIVNLayout, SetWVNLayout,
+        and SetOVNLayout:
+          - M = M_L0 * M_L1   (from SetIVNLayout) or P_L0 * P_L1 (from SetOVNLayout)
+          - K = J_L1 * AH      (from SetIVNLayout) or K_L1 * AH   (from SetWVNLayout)
+          - N = N_L0 * N_L1   (from SetWVNLayout) or Q_L1 * AH   (from SetOVNLayout)
+        """
+        AH = self.hw_config.AH
+        instrs = self.instructions
+        if up_to_idx >= 0:
+            instrs = instrs[:up_to_idx + 1]
+
+        M, K, N = None, None, None
+
+        # Scan in order so the last Set*VNLayout wins
+        for instr in instrs:
+            if instr.isa_type == ISAType.SetIVNLayout:
+                m_l0 = instr.params.get('M_L0', 1)
+                m_l1 = instr.params.get('M_L1', 1)
+                j_l1 = instr.params.get('J_L1', 1)
+                M = m_l0 * m_l1
+                K = j_l1 * AH
+            elif instr.isa_type == ISAType.SetWVNLayout:
+                n_l0 = instr.params.get('N_L0', 1)
+                n_l1 = instr.params.get('N_L1', 1)
+                k_l1 = instr.params.get('K_L1', 1)
+                N = n_l0 * n_l1
+                K = k_l1 * AH  # K from WVN overwrites IVN's K if seen later
+            elif instr.isa_type == ISAType.SetOVNLayout:
+                p_l0 = instr.params.get('P_L0', 1)
+                p_l1 = instr.params.get('P_L1', 1)
+                q_l1 = instr.params.get('Q_L1', 1)
+                if M is None:
+                    M = p_l0 * p_l1
+                if N is None:
+                    N = q_l1 * AH
+
+        if M is not None:
+            self.m_var.set(M)
+        if K is not None:
+            self.k_var.set(K)
+        if N is not None:
+            self.n_var.set(N)
+
+        # Sync to workload_config
+        self.workload_config.M = self.m_var.get()
+        self.workload_config.K = self.k_var.get()
+        self.workload_config.N = self.n_var.get()
 
     def _on_nest_size_change(self, event=None):
         """Handle NEST size change"""
@@ -3554,7 +3611,7 @@ class MINISAGui:
             self.birrd_visualizer.reset_display()
 
     def _on_instruction_select(self, event=None):
-        """Handle instruction selection - show details in info panel"""
+        """Handle instruction selection - show details and update derived M/K/N"""
         sel = self.isa_listbox.curselection()
         if not sel:
             return
@@ -3562,6 +3619,8 @@ class MINISAGui:
         idx = sel[0]
         if idx < len(self.instructions):
             instr = self.instructions[idx]
+            # Update M/K/N to reflect state at this program point
+            self._derive_mkn_from_instructions(up_to_idx=idx)
             self._show_instruction_details(instr, idx)
 
     def _show_instruction_details(self, instr: ISAInstruction, idx: int):
@@ -3579,6 +3638,13 @@ class MINISAGui:
             self.metrics_text.insert(tk.END, f"  {key}: ", 'param')
             self.metrics_text.insert(tk.END, f"{value}\n", 'value')
 
+        # Show derived workload at this program point
+        M = self.workload_config.M
+        K = self.workload_config.K
+        N = self.workload_config.N
+        self.metrics_text.insert(tk.END, f"\nDerived GEMM: ", 'header')
+        self.metrics_text.insert(tk.END, f"M={M}, K={K}, N={N}\n", 'value')
+
         # Order permutation description
         if instr.isa_type in [ISAType.SetIVNLayout, ISAType.SetWVNLayout, ISAType.SetOVNLayout]:
             order = instr.params.get('order', 0)
@@ -3594,9 +3660,6 @@ class MINISAGui:
                 self.metrics_text.insert(tk.END, f"{perm}\n", 'value')
 
         # Quick validation
-        self.workload_config.M = self.m_var.get()
-        self.workload_config.K = self.k_var.get()
-        self.workload_config.N = self.n_var.get()
         validator = ISAConfigValidator(self.hw_config, self.workload_config)
         is_valid, errors = validator.validate_instruction(instr)
 

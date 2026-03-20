@@ -23,6 +23,30 @@ TABLE_II_OUTER_TO_INNER: Dict[int, Dict[str, Tuple[str, str, str]]] = {
     5: {"W": ("nL1", "nL0", "kL1"), "I": ("mL1", "mL0", "jL1"), "O": ("qL1", "pL0", "pL1")},
 }
 
+# OVN→IVN order mapping for inter-layer ping-pong swap.
+#
+# After computing layer i, the output buffer (OVN) is swapped into the
+# streaming buffer (IVN) for layer i+1.  For the physical addresses to
+# match across the swap, the OVN and IVN permutation orders must produce
+# identical traversal patterns over the shared dimensions:
+#
+#   OVN dims  →  IVN dims
+#   pL0       →  mL0        (M-dimension bank factor)
+#   pL1       →  mL1        (M-dimension row factor)
+#   qL1       →  jL1        (K/N-dimension factor)
+#
+# Substituting these into each OVN permutation and matching to the IVN
+# table yields:  ivn_order = 5 - ovn_order.
+#
+#   OVN order 0 (pL1,pL0,qL1) ↔ IVN order 5 (mL1,mL0,jL1)
+#   OVN order 1 (pL1,qL1,pL0) ↔ IVN order 4 (mL1,jL1,mL0)
+#   OVN order 2 (pL0,pL1,qL1) ↔ IVN order 3 (mL0,mL1,jL1)
+#   OVN order 3 (pL0,qL1,pL1) ↔ IVN order 2 (mL0,jL1,mL1)
+#   OVN order 4 (qL1,pL1,pL0) ↔ IVN order 1 (jL1,mL1,mL0)
+#   OVN order 5 (qL1,pL0,pL1) ↔ IVN order 0 (jL1,mL0,mL1)
+OVN_TO_IVN_ORDER: Dict[int, int] = {o: 5 - o for o in range(6)}
+IVN_TO_OVN_ORDER: Dict[int, int] = {5 - o: o for o in range(6)}
+
 
 @dataclass(frozen=True)
 class LayoutSpec:
@@ -206,15 +230,16 @@ def layouts_match(
 ) -> bool:
     """Check whether SetOVNLayout^(i) matches SetIVNLayout^(i+1).
 
-    For inter-layer data continuity, the output layout of layer i must
-    equal the input layout of layer i+1. This avoids off-chip traffic
-    for re-layout between layers.
+    For inter-layer data continuity, the output buffer (OVN) of layer i
+    is ping-pong swapped into the streaming buffer (IVN) of layer i+1.
+    For the physical addresses to match, the OVN and IVN must produce
+    identical address layouts, which requires:
 
-    The match requires:
-      - Same permutation order
+      - OVN order maps to IVN order via OVN_TO_IVN_ORDER (= 5 - order)
       - Compatible dimensions (P_L0↔M_L0, P_L1↔M_L1, Q_L1↔J_L1)
     """
-    if layout_o_prev.order_id != layout_i_next.order_id:
+    required_ivn_order = OVN_TO_IVN_ORDER[layout_o_prev.order_id]
+    if layout_i_next.order_id != required_ivn_order:
         return False
 
     # O dimensions: P_L0, P_L1, Q_L1 must match I dimensions: M_L0, M_L1, J_L1
@@ -234,9 +259,9 @@ def derive_ovn_from_ivn(
 ) -> LayoutSpec:
     """Derive SetOVNLayout^(i) from SetIVNLayout^(i+1).
 
-    The output layout of layer i must match the input layout of
-    layer i+1. This function constructs the required OVN layout
-    from the next layer's IVN layout.
+    The output layout of layer i must produce physical addresses that
+    match the input layout of layer i+1 after the ping-pong swap.
+    The OVN order is derived as IVN_TO_OVN_ORDER[ivn_order] (= 5 - ivn_order).
 
     OB port conflict checking is deferred to the caller, which must
     call check_ob_port_conflict() with the actual ExecuteMapping
@@ -251,9 +276,55 @@ def derive_ovn_from_ivn(
     # Q_L1 for the output depends on the current layer's Nt, not the next layer's K
     Q_L1 = int(math.ceil(Nt_prev / cfg.AH))
 
+    ovn_order = IVN_TO_OVN_ORDER[layout_i_next.order_id]
     return LayoutSpec(
         operand="O",
-        order_id=layout_i_next.order_id,
+        order_id=ovn_order,
         a0=P_L0, a1=P_L1, a2=Q_L1,
         AH=cfg.AH, AW=cfg.AW,
     )
+
+
+def check_inter_layer_layout(
+    layout_o_prev: LayoutSpec,
+    layout_i_next: LayoutSpec,
+    layer_i_name: str = "",
+    layer_next_name: str = "",
+) -> List[str]:
+    """Validate SetOVNLayout^(i) against SetIVNLayout^(i+1) and return errors.
+
+    Returns a list of human-readable error strings.  An empty list means
+    the layouts are compatible for ping-pong swap.
+    """
+    errors: List[str] = []
+    prev_label = f"layer {layer_i_name}" if layer_i_name else "prev layer"
+    next_label = f"layer {layer_next_name}" if layer_next_name else "next layer"
+
+    # --- Order check ---
+    required_ivn = OVN_TO_IVN_ORDER[layout_o_prev.order_id]
+    actual_ivn = layout_i_next.order_id
+    if actual_ivn != required_ivn:
+        errors.append(
+            f"Order mismatch: SetOVNLayout of {prev_label} has order={layout_o_prev.order_id}, "
+            f"which requires SetIVNLayout of {next_label} to use order={required_ivn} "
+            f"(got order={actual_ivn}).  "
+            f"Rule: ivn_order = 5 - ovn_order."
+        )
+
+    # --- Dimension check ---
+    o_dims = layout_o_prev.dims()
+    i_dims = layout_i_next.dims()
+
+    dim_pairs = [("P_L0", "pL0", "M_L0", "mL0"),
+                 ("P_L1", "pL1", "M_L1", "mL1"),
+                 ("Q_L1", "qL1", "J_L1", "jL1")]
+    for o_name, o_key, i_name, i_key in dim_pairs:
+        o_val = o_dims.get(o_key, 0)
+        i_val = i_dims.get(i_key, 0)
+        if o_val != i_val:
+            errors.append(
+                f"Dimension mismatch: {prev_label} OVN {o_name}={o_val} != "
+                f"{next_label} IVN {i_name}={i_val}."
+            )
+
+    return errors

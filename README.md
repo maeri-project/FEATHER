@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD001 MD041 -->
 <p align="center">
-  <img alt="FEATHER" src="figure/feather_logo.png" width=25%>
+  <img alt="FEATHER" src="figure/feather_logo.png" width=15%>
 </p>
 
 <h3 align="center">
@@ -18,12 +18,9 @@ Open-Architecture, Open-ISA, Open-Compilation Flow
   <a href="https://youtu.be/FgTaYiEArrI"><b>ISCA Talk</b></a> | 
   <a href="https://youtu.be/FA6IMiRmQmw"><b>Deep Dive Talk</b></a> | 
 </p>
-<p align="center">
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-</p>
----
 
 # FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 # What's FEATHER?
 FEATHER is the first reconfigurable AI Accelerator that supports (dataflow, layout) co-switching per layer, with the architecture shown below.

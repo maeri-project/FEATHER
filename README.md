@@ -1,5 +1,26 @@
-# FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching [[arXiv]](https://arxiv.org/abs/2405.13170) [[Slides]](https://docs.google.com/presentation/d/1i5jPQ9XK964oEhLqXkZdEt094bnd_4vm/edit?usp=sharing&ouid=105409439591814518444&rtpof=true&sd=true) [[Video]](https://youtu.be/FgTaYiEArrI)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+<!-- markdownlint-disable MD001 MD041 -->
+<p align="center">
+  <img alt="FEATHER" src="assets/logos/thunderagent.png" width=55%>
+</p>
+
+<h3 align="center">
+End-to-end deployable reconfigurable AI accelerator.
+</h3>
+
+<p align="center">
+| <a href="https://deepwiki.com/HaoKang-Timmy/ThunderAgent"><b>Wiki</b></a> | <a href="https://thunderagent.ai"><b>Blog</b></a> | <a href="https://arxiv.org/pdf/2602.13692"><b>Paper</b></a> |
+</p>
+  <a href="https://arxiv.org/abs/2405.13170"><b>paper</b></a> | 
+  <a href="https://github.com/maeri-project/FEATHER"><b>code</b></a> | 
+  <a href="https://maeri-project.github.io/feather_tutorial/"><b>tutorial</b></a> | 
+  <a
+    href="https://docs.google.com/presentation/d/1b_yGpuQd70Zo1Lj_AB6o9Y7BOjgpJ0oh8RGTD_7-yG4/edit?usp=sharing">slide</a> | 
+  <a href="https://youtu.be/FgTaYiEArrI"><b>ISCA Talk</b></a> | 
+  <a href="https://youtu.be/FA6IMiRmQmw"><b>Deep Dive Talk</b></a> | 
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+---
+
+# FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching
 
 # What's FEATHER?
 FEATHER is the first reconfigurable AI Accelerator that supports (dataflow, layout) co-switching per layer, with the architecture shown below.

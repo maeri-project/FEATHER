@@ -10,7 +10,7 @@ FEATHER: End-to-end deployable reconfigurable AI accelerator.
 Open-Architecture, Open-ISA, Open-Compilation Flow
 </p>
 <p align="center">
-  |<a href="https://arxiv.org/abs/2405.13170"><b>paper</b></a> | 
+| <a href="https://arxiv.org/abs/2405.13170"><b>paper</b></a> | 
   <a href="https://github.com/maeri-project/FEATHER"><b>code</b></a> | 
   <a href="https://maeri-project.github.io/feather_tutorial/"><b>tutorial</b></a> | 
   <a

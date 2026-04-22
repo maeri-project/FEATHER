@@ -1,23 +1,26 @@
 <!-- markdownlint-disable MD001 MD041 -->
 <p align="center">
-  <img alt="FEATHER" src="figure/feather_logo.png" width=55%>
+  <img alt="FEATHER" src="figure/feather_logo.png" width=25%>
 </p>
 
 <h3 align="center">
-FEATHER: End-to-end deployable reconfigurable AI accelerator, Open-Architecture, Open-ISA, Open-Compilation Flow
+FEATHER: End-to-end deployable reconfigurable AI accelerator.
 </h3>
-
 <p align="center">
-  <a href="https://arxiv.org/abs/2405.13170"><b>paper</b></a> | 
+Open-Architecture, Open-ISA, Open-Compilation Flow
+</p>
+<p align="center">
+  |<a href="https://arxiv.org/abs/2405.13170"><b>paper</b></a> | 
   <a href="https://github.com/maeri-project/FEATHER"><b>code</b></a> | 
   <a href="https://maeri-project.github.io/feather_tutorial/"><b>tutorial</b></a> | 
   <a
-    href="https://docs.google.com/presentation/d/1b_yGpuQd70Zo1Lj_AB6o9Y7BOjgpJ0oh8RGTD_7-yG4/edit?usp=sharing">slide</a> | 
+    href="https://docs.google.com/presentation/d/1b_yGpuQd70Zo1Lj_AB6o9Y7BOjgpJ0oh8RGTD_7-yG4/edit?usp=sharing"><b>slide</b></a> | 
   <a href="https://youtu.be/FgTaYiEArrI"><b>ISCA Talk</b></a> | 
   <a href="https://youtu.be/FA6IMiRmQmw"><b>Deep Dive Talk</b></a> | 
 </p>
-
+<p align="center">
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+</p>
 ---
 
 # FEATHER: A Reconfigurable Accelerator with Data Reordering Support for Low-Cost On-Chip Dataflow Switching

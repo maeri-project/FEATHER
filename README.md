@@ -25,15 +25,21 @@ Open-Architecture, Open-ISA, Open-Compilation Flow
 # What's FEATHER?
 FEATHER is the first reconfigurable AI Accelerator that supports (dataflow, layout) co-switching per layer, with the architecture shown below.
 
-<img src="./figure/FEATHER_arch.png" width="400">
+<p align="center">
+  <img src="./figure/FEATHER_arch.png" alt="FEATHER architecture" width="420">
+</p>
 
 Functionality-wise, FEATHER supports arbitrary reordering to ensure arbitrary layout changes.
 
-<img src="./figure/arbitrary_reordering_function.png" width="400">
+<p align="center">
+  <img src="./figure/arbitrary_reordering_function.png" alt="Arbitrary reordering function" width="580">
+</p>
 
 Performance-wise, FEATHER implements Reorder In Reduction (RIR) to hide the reordering latency behind the critical path.
 
-![Reorder In Reduction (RIR) to hide the reordering latency](./figure/RAR_vs_RIR.png)
+<p align="center">
+  <img src="./figure/RAR_vs_RIR.png" alt="Reorder In Reduction (RIR) to hide the reordering latency" width="580">
+</p>
 
 - For dataflow switching, FEATHER proposes a reconfigurable 2D compute array, termed NEST (Neural Engine for Spatial forwarding and Temporal reduction)
 - For layout switching, FEATHER proposes a reconfigurable NoC, termed BIRRD (Butterfly Interconnect for Reordering in Reduction of Dataflow)

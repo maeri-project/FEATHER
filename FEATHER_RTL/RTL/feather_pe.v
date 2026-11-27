@@ -119,18 +119,23 @@ module feather_pe #(
 
     wire    [IACTS_DATA_WIDTH                               -1: 0]      w_iacts;
     wire    [WEIGHTS_DATA_WIDTH                             -1: 0]      w_selected_weight;
-    reg     [WEIGHTS_DATA_WIDTH                             -1: 0]      r_selected_weight;
     wire    [IACTS_DATA_WIDTH  +1                           -1: 0]      w_iacts_sub_zp;
     reg     [IACTS_DATA_WIDTH  +1                           -1: 0]      r_iacts_sub_zp;
     wire    [WEIGHTS_DATA_WIDTH+1                           -1: 0]      w_weights_sub_zp;
     reg     [WEIGHTS_DATA_WIDTH+1                           -1: 0]      r_weights_sub_zp;
     wire    [WEIGHTS_DATA_WIDTH  + IACTS_DATA_WIDTH + 2     -1: 0]      w_mul_iacts_weights;
     reg     [WEIGHTS_DATA_WIDTH  + IACTS_DATA_WIDTH + 2     -1: 0]      r_mul_iacts_weights;
+    wire                                                                w_weight_sel_and_use_is_equal                       ;
+    wire    [LOG2_WEIGHTS_DEPTH                             -1: 0]      w_weights_wr_idx                                    ;
+    reg                                                                 r_iacts_valid_d1                                    ;
+    reg                                                                 r_iacts_valid_d2                                    ;
     reg                                                                 r_weight_sel_and_use_is_equal_del_for_reg_weight_sel;
     reg                                                                 r_weight_sel_and_use_is_equal_del_for_reg_zub_zp    ;
     reg                                                                 r_output_ready                                      ;
-    reg                                                                 r_next_sum_in_prog                                  ;
     reg                                                                 r_out_data_valid                                    ;
+
+    // Reset local weight write pointer when switching between ping and pong banks
+    assign w_weights_wr_idx = (i_weights_ping_pong_sel != r_weights_ping_pong_sel) ? {LOG2_WEIGHTS_DEPTH{1'b0}} : r_weights_wr_cntr;
 
     integer i;
     /*
@@ -169,41 +174,45 @@ module feather_pe #(
             r_weights_ping_pong_sel     <=  i_weights_ping_pong_sel;
             r_pe_sel                    <=  i_pe_sel;
 
-            // to track the weight being used for multiplication
-            if((i_iacts_valid == 1) | (i_weights_valid == 1))
+            // to track the weight being used for multiplication (advance only on valid iacts; reset when idle)
+            if(i_iacts_valid == 1'b1)
             begin
                 if(r_weights_sel_for_iacts_use < i_weights_to_use)
                 begin
-                    r_weights_sel_for_iacts_use <=  r_weights_sel_for_iacts_use + 1;
+                    r_weights_sel_for_iacts_use <=  r_weights_sel_for_iacts_use + 1'b1;
                 end
                 else
                 begin
-                    r_weights_sel_for_iacts_use <=  0;
+                    r_weights_sel_for_iacts_use <=  {LOG2_WEIGHTS_DEPTH{1'b0}};
                 end
             end
+            else
+            begin
+                r_weights_sel_for_iacts_use <=  {LOG2_WEIGHTS_DEPTH{1'b0}};
+            end
 
-            if(i_weights_valid == 1)
+            if(i_weights_valid == 1'b1)
             begin
                 if(i_pe_sel == THIS_PE_ID)
                 begin
-                    if(r_weights_wr_cntr < WEIGHTS_DEPTH)
+                    if(i_weights_ping_pong_sel == 1'b0)
                     begin
-                        if(i_weights_ping_pong_sel == 0)
-                        begin
-                            r_local_weights_buffer_ping[r_weights_wr_cntr] <=  i_weights;
-                        end
-                        else
-                        begin
-                            r_local_weights_buffer_pong[r_weights_wr_cntr] <=  i_weights;
-                        end
-                        r_weights_wr_cntr   <=  r_weights_wr_cntr + 1;
+                        r_local_weights_buffer_ping[w_weights_wr_idx] <=  i_weights;
                     end
                     else
                     begin
-                        r_weights_wr_cntr   <=  0;
+                        r_local_weights_buffer_pong[w_weights_wr_idx] <=  i_weights;
                     end
+                    r_weights_wr_cntr   <=  w_weights_wr_idx + 1'b1;
                 end
-
+                else if(i_weights_ping_pong_sel != r_weights_ping_pong_sel)
+                begin
+                    r_weights_wr_cntr   <=  {LOG2_WEIGHTS_DEPTH{1'b0}};
+                end
+            end
+            else if(i_weights_ping_pong_sel != r_weights_ping_pong_sel)
+            begin
+                r_weights_wr_cntr   <=  {LOG2_WEIGHTS_DEPTH{1'b0}};
             end
         end
     end
@@ -222,67 +231,59 @@ module feather_pe #(
     assign w_weights_sub_zp                     =   {1'b0,w_selected_weight} - {1'b0,r_i_weights_zp};
     assign w_mul_iacts_weights                  =   r_iacts_sub_zp * r_weights_sub_zp;
 
-    assign w_weight_sel_and_use_is_equal        =   (r_weights_sel_for_iacts_use == i_weights_to_use)   ?   1'b1
-                                                                                                        :   1'b0;
+    assign w_weight_sel_and_use_is_equal        =   i_iacts_valid && (r_weights_sel_for_iacts_use == i_weights_to_use);
     always @(posedge clk or negedge rst_n)
     begin
         if(!rst_n)
         begin
-            r_out_data                                              <=  0;
-            r_sum                                                   <=  0;
-            r_i_iacts_zp                                            <=  0;
-            r_i_weights_zp                                          <=  0;
-            r_mul_iacts_weights                                     <=  0;
-            r_iacts_sub_zp                                          <=  0;
-            r_weights_sub_zp                                        <=  0;
-            r_selected_weight                                       <=  0;
-            r_weight_sel_and_use_is_equal_del_for_reg_weight_sel    <=  0;
-            r_weight_sel_and_use_is_equal_del_for_reg_zub_zp        <=  0;
-            r_output_ready                                          <=  0;
-            r_next_sum_in_prog                                      <=  0;
-            r_out_data_valid                                        <=  0;
+            r_out_data                                              <=  {PE_OUTPUT_WIDTH{1'b0}};
+            r_sum                                                   <=  {PE_OUTPUT_WIDTH{1'b0}};
+            r_i_iacts_zp                                            <=  {IACTS_DATA_WIDTH{1'b0}};
+            r_i_weights_zp                                          <=  {WEIGHTS_DATA_WIDTH{1'b0}};
+            r_mul_iacts_weights                                     <=  {(WEIGHTS_DATA_WIDTH + IACTS_DATA_WIDTH + 2){1'b0}};
+            r_iacts_sub_zp                                          <=  {(IACTS_DATA_WIDTH + 1){1'b0}};
+            r_weights_sub_zp                                        <=  {(WEIGHTS_DATA_WIDTH + 1){1'b0}};
+            r_iacts_valid_d1                                        <=  1'b0;
+            r_iacts_valid_d2                                        <=  1'b0;
+            r_weight_sel_and_use_is_equal_del_for_reg_weight_sel    <=  1'b0;
+            r_weight_sel_and_use_is_equal_del_for_reg_zub_zp        <=  1'b0;
+            r_output_ready                                          <=  1'b0;
+            r_out_data_valid                                        <=  1'b0;
         end
         else
         begin
             r_i_iacts_zp                <=  i_iacts_zp;
             r_i_weights_zp              <=  i_weights_zp;
-            r_selected_weight           <=  w_selected_weight;
 
             r_iacts_sub_zp              <=  w_iacts_sub_zp;
             r_weights_sub_zp            <=  w_weights_sub_zp;
 
             r_mul_iacts_weights         <=  w_mul_iacts_weights;
 
+            // Pipeline valid and end-of-reduction signals alongside sub_zp and mul stages
+            r_iacts_valid_d1                                        <=  i_iacts_valid;
+            r_iacts_valid_d2                                        <=  r_iacts_valid_d1;
+            r_weight_sel_and_use_is_equal_del_for_reg_weight_sel    <=  w_weight_sel_and_use_is_equal;
+            r_weight_sel_and_use_is_equal_del_for_reg_zub_zp        <=  r_weight_sel_and_use_is_equal_del_for_reg_weight_sel;
+            r_output_ready                                          <=  r_weight_sel_and_use_is_equal_del_for_reg_zub_zp;
+
             if(r_output_ready)
             begin
-                r_next_sum_in_prog  <=  1;
-            end
-            else if(r_weight_sel_and_use_is_equal_del_for_reg_zub_zp)
-            begin
-                r_next_sum_in_prog  <=  0;
-            end
-
-            r_weight_sel_and_use_is_equal_del_for_reg_weight_sel    <=   w_weight_sel_and_use_is_equal;
-            r_weight_sel_and_use_is_equal_del_for_reg_zub_zp        <=   r_weight_sel_and_use_is_equal_del_for_reg_weight_sel;
-            r_output_ready                                          <=   r_weight_sel_and_use_is_equal_del_for_reg_zub_zp;
-
-            if(i_iacts_valid==0)
-            begin
-                r_sum                   <=  0;  //  flushing the previous sum
+                r_out_data          <=  r_sum;                              //  sending the sum to output
+                r_out_data_valid    <=  1'b1;
+                r_sum               <=  r_iacts_valid_d2 ? {{(PE_OUTPUT_WIDTH-(WEIGHTS_DATA_WIDTH+IACTS_DATA_WIDTH+2)){1'b0}}, r_mul_iacts_weights}
+                                                         : {PE_OUTPUT_WIDTH{1'b0}};
             end
             else
             begin
-
-                if( r_output_ready)
+                r_out_data_valid    <=  1'b0;
+                if(r_iacts_valid_d2)
                 begin
-                    r_out_data          <=  r_sum;                              //  sending the sum to output
-                    r_sum               <=  r_mul_iacts_weights;                //  flushing the previous sum by overwriting with new product
-                    r_out_data_valid    <=  1;
+                    r_sum           <=  r_sum + {{(PE_OUTPUT_WIDTH-(WEIGHTS_DATA_WIDTH+IACTS_DATA_WIDTH+2)){1'b0}}, r_mul_iacts_weights}; // MAC
                 end
-                else if(r_next_sum_in_prog)
+                else
                 begin
-                    r_sum               <=  r_sum + r_mul_iacts_weights;        // MAC
-                    r_out_data_valid    <=  0;
+                    r_sum           <=  {PE_OUTPUT_WIDTH{1'b0}};            //  flushing when pipeline is idle
                 end
             end
 

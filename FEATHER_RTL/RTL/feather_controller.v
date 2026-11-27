@@ -168,6 +168,8 @@ module feather_controller #(
     localparam WEIGHTS_DEPTH                        =   DPE_ROW_NUM;                                        //
     localparam LOG2_WEIGHTS_DEPTH                   =   LOG2_DPE_ROW_NUM;                                   //
     localparam PE_SEL_WIDTH                         =   LOG2_DPE_COL_NUM + LOG2_WEIGHTS_DEPTH;              //
+    localparam [LOG2_WEIGHTS_DEPTH-1:0] WEIGHTS_TO_USE_MAX = WEIGHTS_DEPTH - 1;
+    localparam [PE_SEL_WIDTH-1:0]       PE_SEL_MAX         = (DPE_COL_NUM * WEIGHTS_DEPTH) - 1;
 
     localparam IACTS_PINGPONG_CONFIG_WIDTH          =   4;
     localparam WEIGHTS_PINGPONG_CONFIG_WIDTH        =   4;
@@ -287,6 +289,8 @@ module feather_controller #(
 
     reg     [IACTS_PINGPONG_CONFIG_WIDTH        -1: 0]  r_acts_buf_ping_pong_state          ;
     reg     [WEIGHTS_PINGPONG_CONFIG_WIDTH      -1: 0]  r_weights_buf_ping_pong_state       ;
+    reg     [IACTS_PINGPONG_CONFIG_WIDTH        -1: 0]  r_acts_buf_ping_pong_state_d1       ;
+    reg     [WEIGHTS_PINGPONG_CONFIG_WIDTH      -1: 0]  r_weights_buf_ping_pong_state_d1    ;
 
     reg     [IACTS_DATA_WIDTH                   -1: 0]  r_iacts_zp                          ;
     reg     [WEIGHTS_DATA_WIDTH/DPE_COL_NUM     -1: 0]  r_weights_zp                        ;
@@ -294,6 +298,8 @@ module feather_controller #(
 
     reg     [IACTS_SRAM_BANK_ADDR_WIDTH         -1: 0]  r_iacts_pingpong_rd_addr            ;
     reg     [WEIGHTS_SRAM_BANK_ADDR_WIDTH       -1: 0]  r_weights_pingpong_rd_addr          ;
+    reg     [IACTS_SRAM_BANK_ADDR_WIDTH         -1: 0]  r_iacts_feed_addr_end               ;
+    reg     [WEIGHTS_SRAM_BANK_ADDR_WIDTH       -1: 0]  r_weights_feed_addr_end             ;
 
     wire    [OUTBUF_NUM_BANKS                   -1: 0]  w_bypass_to_scale                   ;
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_bypass_to_scale                   ;
@@ -309,6 +315,9 @@ module feather_controller #(
     reg                                                 r_weights_ping_pong_sel             ;
     reg     [PE_SEL_WIDTH                       -1: 0]  r_pe_sel                            ;
     reg     [LOG2_WEIGHTS_DEPTH                 -1: 0]  r_weights_to_use                    ;
+    reg                                                 r_weights_ping_pong_sel_d1          ;
+    reg     [PE_SEL_WIDTH                       -1: 0]  r_pe_sel_d1                         ;
+    reg     [LOG2_WEIGHTS_DEPTH                 -1: 0]  r_weights_to_use_d1                 ;
 
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_o_birrd_data_bus_valid            ;
     reg     [OUTBUF_NUM_BANKS                   -1: 0]  r_partial_sum_done                  ;
@@ -374,14 +383,27 @@ module feather_controller #(
             r_birrd_instr                   <=  0;
             r_iacts_pingpong_rd_addr        <=  0;
             r_weights_pingpong_rd_addr      <=  0;
+            r_iacts_feed_addr_end           <=  0;
+            r_weights_feed_addr_end         <=  0;
             r_weights_ping_pong_sel         <=  0;
             r_pe_sel                        <=  0;
-            r_weights_to_use                <=  0;
+            r_weights_to_use                <=  WEIGHTS_TO_USE_MAX;
+            r_weights_ping_pong_sel_d1      <=  0;
+            r_pe_sel_d1                     <=  0;
+            r_weights_to_use_d1             <=  WEIGHTS_TO_USE_MAX;
             r_acts_buf_ping_pong_state      <=  IACTS_PINGPONG_IDLE;
             r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_IDLE;
+            r_acts_buf_ping_pong_state_d1   <=  IACTS_PINGPONG_IDLE;
+            r_weights_buf_ping_pong_state_d1<=  WEIGHTS_PINGPONG_IDLE;
         end
         else
         begin
+            // 1-cycle pipeline registers to align feed control and mux selects with synchronous SRAM reads
+            r_acts_buf_ping_pong_state_d1   <=  r_acts_buf_ping_pong_state;
+            r_weights_buf_ping_pong_state_d1<=  r_weights_buf_ping_pong_state;
+            r_weights_ping_pong_sel_d1      <=  r_weights_ping_pong_sel;
+            r_pe_sel_d1                     <=  r_pe_sel;
+            r_weights_to_use_d1             <=  r_weights_to_use;
 
         //________________________________________________________________________________________________________________________
             //  r_acts_buf_ping_pong_state  FSM
@@ -404,13 +426,14 @@ module feather_controller #(
                     begin
                         r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG;
                         r_iacts_pingpong_rd_addr    <=  0;
+                        r_iacts_feed_addr_end       <=  i_iacts_write_addr_end;
                     end
                 end
 
 
                 IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG:
                 begin
-                    if((r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end) && i_iacts_write_valid)
+                    if(r_iacts_pingpong_rd_addr >= r_iacts_feed_addr_end)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_DRAIN_PONG)
                         begin
@@ -419,6 +442,7 @@ module feather_controller #(
                         else if (w_iacts_pingpong_config ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING)
                         begin
                             r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING;
+                            r_iacts_feed_addr_end       <=  i_iacts_write_addr_end;
                         end
 
                         r_iacts_pingpong_rd_addr        <=  0;
@@ -432,7 +456,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING:
                 begin
-                    if((r_iacts_pingpong_rd_addr ==  i_iacts_write_addr_end) && i_iacts_write_valid)
+                    if(r_iacts_pingpong_rd_addr >= r_iacts_feed_addr_end)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_DRAIN_PING)
                         begin
@@ -441,6 +465,7 @@ module feather_controller #(
                         else if (w_iacts_pingpong_config ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG)
                         begin
                             r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG;
+                            r_iacts_feed_addr_end       <=  i_iacts_write_addr_end;
                         end
                         r_iacts_pingpong_rd_addr        <=  0;
                     end
@@ -454,7 +479,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_DRAIN_PONG:
                 begin
-                    if(i_oacts_read_addr    ==  i_oacts_read_addr_end)
+                    if((i_oacts_read_addr == i_oacts_read_addr_end) && i_oacts_read_valid)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_FILL_PONG)
                         begin
@@ -469,7 +494,7 @@ module feather_controller #(
 
                 IACTS_PINGPONG_DRAIN_PING:
                 begin
-                    if(i_oacts_read_addr    ==  i_oacts_read_addr_end)
+                    if((i_oacts_read_addr == i_oacts_read_addr_end) && i_oacts_read_valid)
                     begin
                         if      (w_iacts_pingpong_config ==  IACTS_PINGPONG_FILL_PONG)
                         begin
@@ -488,6 +513,8 @@ module feather_controller #(
                     if((i_iacts_write_addr == i_iacts_write_addr_end) && i_iacts_write_valid)
                     begin
                         r_acts_buf_ping_pong_state  <=  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING;
+                        r_iacts_pingpong_rd_addr    <=  0;
+                        r_iacts_feed_addr_end       <=  i_iacts_write_addr_end;
                     end
                 end
 
@@ -511,6 +538,7 @@ module feather_controller #(
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_FILL_PING;
                         r_weights_pingpong_rd_addr      <=  0;
+                        r_pe_sel                        <=  0;
                     end
                 end
 
@@ -523,6 +551,9 @@ module feather_controller #(
                         begin
                             r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_PING_FEED_DPE;
                             r_weights_pingpong_rd_addr      <=  0;
+                            r_pe_sel                        <=  0;
+                            r_weights_feed_addr_end         <=  i_weights_write_addr_end;
+                            r_weights_to_use                <=  WEIGHTS_TO_USE_MAX;
                         end
                     end
                 end
@@ -530,7 +561,8 @@ module feather_controller #(
 
                 WEIGHTS_PINGPONG_PING_FEED_DPE:
                 begin
-                    if((r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end) && i_weights_write_valid)
+                    r_weights_to_use                    <=  WEIGHTS_TO_USE_MAX;
+                    if(r_weights_pingpong_rd_addr >= r_weights_feed_addr_end)
                     begin
                         if(w_weights_pingpong_config ==  WEIGHTS_PINGPONG_FILL_PONG)
                         begin
@@ -539,9 +571,9 @@ module feather_controller #(
                         r_weights_pingpong_rd_addr          <=  0;
                         r_pe_sel                            <=  0;
                     end
+                    else
                     begin
                         r_weights_pingpong_rd_addr          <=  r_weights_pingpong_rd_addr + 1;
-                        r_weights_to_use                    <=  $unsigned(WEIGHTS_DEPTH)-1;
                         r_pe_sel                            <=  r_pe_sel + 1;
                     end
                 end
@@ -553,19 +585,26 @@ module feather_controller #(
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_PONG_FEED_DPE;
                         r_weights_pingpong_rd_addr      <=  0;
+                        r_pe_sel                        <=  0;
+                        r_weights_feed_addr_end         <=  i_weights_write_addr_end;
+                        r_weights_to_use                <=  WEIGHTS_TO_USE_MAX;
                     end
                 end
 
 
                 WEIGHTS_PINGPONG_PONG_FEED_DPE:
                 begin
-                    if((r_weights_pingpong_rd_addr   ==  i_weights_write_addr_end) && i_weights_write_valid)
+                    r_weights_to_use                    <=  WEIGHTS_TO_USE_MAX;
+                    if(r_weights_pingpong_rd_addr >= r_weights_feed_addr_end)
                     begin
                         r_weights_buf_ping_pong_state   <=  WEIGHTS_PINGPONG_FILL_PING;
                         r_weights_pingpong_rd_addr      <=  0;
+                        r_pe_sel                        <=  0;
                     end
+                    else
                     begin
                         r_weights_pingpong_rd_addr      <=  r_weights_pingpong_rd_addr + 1;
+                        r_pe_sel                        <=  r_pe_sel + 1;
                     end
                 end
 
@@ -577,7 +616,9 @@ module feather_controller #(
             endcase
             //________________________________________________________________________________________________________________________
             //************************************************************************************************//
-            if(r_pe_sel == $unsigned(DPE_COL_NUM*WEIGHTS_DEPTH)-1)
+            if(((r_weights_buf_ping_pong_state == WEIGHTS_PINGPONG_PING_FEED_DPE) ||
+                (r_weights_buf_ping_pong_state == WEIGHTS_PINGPONG_PONG_FEED_DPE)) &&
+               (r_pe_sel == PE_SEL_MAX))
             begin
                 r_weights_ping_pong_sel <=  ~r_weights_ping_pong_sel;
             end
@@ -709,7 +750,7 @@ module feather_controller #(
                                                                                                                                 0   );
     // for iActs Ping, port B   
     assign  w_iacts_sram_b_rd_addr_ping         =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   {IACTS_NUM_BANKS{r_iacts_pingpong_rd_addr}}     :   (
-                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PING)              ?   {IACTS_NUM_BANKS{i_oacts_read_addr}}            :
+                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PING)              ?   i_oacts_read_addr                               :
                                                                                                                                 0   );
     assign  w_iacts_sram_b_rd_en_ping           =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   ~0                                              :   (
                                                     (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PING)              ?   {IACTS_NUM_BANKS{i_oacts_read_valid}}           :
@@ -727,7 +768,7 @@ module feather_controller #(
                                                                                                                                 0   );
 
     assign  w_iacts_sram_b_rd_addr_pong         =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   {IACTS_NUM_BANKS{r_iacts_pingpong_rd_addr}}     :   (
-                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PONG)              ?   {IACTS_NUM_BANKS{i_oacts_read_addr}}            :
+                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PONG)              ?   i_oacts_read_addr                               :
                                                                                                                                 0   );
 
     assign  w_iacts_sram_b_rd_en_pong           =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   ~0                                              :   (
@@ -735,17 +776,17 @@ module feather_controller #(
                                                                                                                                 0   );
 
 
-    assign  w_iacts_from_ctrl_to_dpe            =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   i_iacts_sram_b_rd_data_ping                     :   (
-                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   i_iacts_sram_b_rd_data_pong                     :
-                                                                                                                                0   );
+    assign  w_iacts_from_ctrl_to_dpe            =   (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   i_iacts_sram_b_rd_data_ping                     :   (
+                                                    (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   i_iacts_sram_b_rd_data_pong                     :
+                                                                                                                                   0   );
 
-    assign  w_iacts_valid_from_ctrl_to_dpe      =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   ~0                                              :   (
-                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   ~0                                              :
-                                                                                                                                0   );
+    assign  w_iacts_valid_from_ctrl_to_dpe      =   (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_PING_FEED_DPE_FILL_PONG) ?   ~0                                              :   (
+                                                    (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_PONG_FEED_DPE_FILL_PING) ?   ~0                                              :
+                                                                                                                                   0   );
 
-    assign  w_oacts_read_data                   =   (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PONG)              ?   i_iacts_sram_b_rd_data_pong                     :   (
-                                                    (r_acts_buf_ping_pong_state ==  IACTS_PINGPONG_DRAIN_PING)              ?   i_iacts_sram_b_rd_data_ping                     :
-                                                                                                                                0   );
+    assign  w_oacts_read_data                   =   (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_DRAIN_PONG)              ?   i_iacts_sram_b_rd_data_pong                     :   (
+                                                    (r_acts_buf_ping_pong_state_d1 ==  IACTS_PINGPONG_DRAIN_PING)              ?   i_iacts_sram_b_rd_data_ping                     :
+                                                                                                                                   0   );
 
         // Weigths Ping, A  
     assign  w_weights_sram_a_wr_data_ping       =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_FILL_PING)          ?   i_weights_write_data                            :
@@ -769,18 +810,18 @@ module feather_controller #(
     assign  w_weights_sram_a_wr_en_pong         =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_FILL_PONG)          ?   {WEIGHTS_NUM_BANKS{i_weights_write_valid}}      :
                                                                                                                                 0;
 
-        // Weigths Pong, B  
-    assign  w_weights_sram_b_rd_addr_pong       =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)      ?   {WEIGHTS_NUM_BANKS{r_weights_pingpong_rd_addr}} :
+        // Weights Pong, B  
+    assign  w_weights_sram_b_rd_addr_pong       =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)      ?   {WEIGHTS_NUM_BANKS{r_weights_pingpong_rd_addr}} :
                                                                                                                                 0;
-    assign  w_weights_sram_b_rd_en_pong         =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)      ?   ~0                                              :
+    assign  w_weights_sram_b_rd_en_pong         =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)      ?   ~0                                              :
                                                                                                                                 0;
 
-    assign  w_weights_from_ctrl_to_dpe          =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)      ?   i_weights_sram_b_rd_data_ping                   :   (
-                                                    (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)      ?   i_weights_sram_b_rd_data_pong                   :
+    assign  w_weights_from_ctrl_to_dpe          =   (r_weights_buf_ping_pong_state_d1  == WEIGHTS_PINGPONG_PING_FEED_DPE)   ?   i_weights_sram_b_rd_data_ping                   :   (
+                                                    (r_weights_buf_ping_pong_state_d1  == WEIGHTS_PINGPONG_PONG_FEED_DPE)   ?   i_weights_sram_b_rd_data_pong                   :
                                                                                                                                 0   );
 
-    assign  w_weights_valid_from_ctrl_to_dpe    =   (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PING_FEED_DPE)      ?   ~0                                              :   (
-                                                    (r_weights_buf_ping_pong_state  == WEIGHTS_PINGPONG_PONG_FEED_DPE)      ?   ~0                                              :
+    assign  w_weights_valid_from_ctrl_to_dpe    =   (r_weights_buf_ping_pong_state_d1  == WEIGHTS_PINGPONG_PING_FEED_DPE)   ?   ~0                                              :   (
+                                                    (r_weights_buf_ping_pong_state_d1  == WEIGHTS_PINGPONG_PONG_FEED_DPE)   ?   ~0                                              :
                                                                                                                                 0   );
 
 //__________________________________________________________________________________________________________________________
@@ -857,8 +898,8 @@ module feather_controller #(
                     r_outbuf_sram_a_wr_addr     [(GENVAR_COL_SRAM_ITER*OUTBUF_SRAM_BANK_ADDR_WIDTH) +:  OUTBUF_SRAM_BANK_ADDR_WIDTH] <=  i_outbuf_wr_instr           [(GENVAR_COL_SRAM_ITER*OUTBUF_SRAM_BANK_ADDR_WIDTH) +:  OUTBUF_SRAM_BANK_ADDR_WIDTH];
                 end
                 r_bypass_to_scale               [GENVAR_COL_SRAM_ITER] <=  w_bypass_to_scale[GENVAR_COL_SRAM_ITER];
-                r_mul_with_scale                [GENVAR_COL_SRAM_ITER] <=  w_mul_with_scale;
-                r_mul_with_scale_and_store_oact [GENVAR_COL_SRAM_ITER] <=  r_mul_with_scale;
+                r_mul_with_scale                [GENVAR_COL_SRAM_ITER] <=  w_mul_with_scale[GENVAR_COL_SRAM_ITER];
+                r_mul_with_scale_and_store_oact [GENVAR_COL_SRAM_ITER] <=  r_mul_with_scale[GENVAR_COL_SRAM_ITER];
 
                 //  registering output of birrd
                 //  so that (1) data is registered to be aligned with r_o_birrd_data_prev and (2) registering so that timing is better w.r.t. adder
@@ -934,9 +975,8 @@ module feather_controller #(
 
 // connect to ports
 
-    // Write enable is conditional to r_bypass_to_scale, becase the partial sum can come 1 cycle later (r_partial_sum_done)
-    assign  o_outbuf_sram_a_wr_en   =  (r_bypass_to_scale == 1)   ?   r_o_birrd_data_bus_valid
-                                                                :   r_partial_sum_done;
+    // Write enable is conditional to r_bypass_to_scale per bank, because the partial sum can come 1 cycle later (r_partial_sum_done)
+    assign  o_outbuf_sram_a_wr_en   =  (r_bypass_to_scale & r_o_birrd_data_bus_valid) | (~r_bypass_to_scale & r_partial_sum_done);
     assign  o_outbuf_sram_b_rd_en   =  ~0;  // Tied to high to always read. read data controlled by address
 
     //  indicate to feather Top that birrd outputs are ready to be written to outbuf banks
@@ -949,9 +989,9 @@ module feather_controller #(
     assign  o_weights_valid_from_ctrl_to_dpe    =   w_weights_valid_from_ctrl_to_dpe    ;
     assign  o_iacts_zp_from_ctrl_to_dpe         =   r_iacts_zp                          ;
     assign  o_weights_zp_from_ctrl_to_dpe       =   r_weights_zp                        ;
-    assign  o_weights_ping_pong_sel             =   r_weights_ping_pong_sel             ;
-    assign  o_pe_sel                            =   r_pe_sel                            ;
-    assign  o_weights_to_use                    =   r_weights_to_use                    ;
+    assign  o_weights_ping_pong_sel             =   r_weights_ping_pong_sel_d1          ;
+    assign  o_pe_sel                            =   r_pe_sel_d1                         ;
+    assign  o_weights_to_use                    =   r_weights_to_use_d1                 ;
     assign  o_birrd_instr                       =   r_birrd_instr                       ;
     assign  o_iacts_sram_a_wr_data_ping         =   w_iacts_sram_a_wr_data_ping         ;
     assign  o_iacts_sram_a_wr_addr_ping         =   w_iacts_sram_a_wr_addr_ping         ;
